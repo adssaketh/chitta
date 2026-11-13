@@ -63,11 +63,12 @@ fun CardSheet(account: Account, figures: CardFigures?, onSave: (limit: Long?, st
             if (figures.credit.value > 0) Text("The card is ${IndianFormat.rupees(figures.credit)} in credit.", style = ChittaTheme.type.label, color = c.inkMuted)
             val bp = figures.utilisationBp
             val lim = limit
-            if (bp != null && lim != null && figures.available != null) {
+            val avail = figures.available
+            if (bp != null && lim != null && avail != null) {
                 Spacer(Modifier.height(Dimens.Gap3))
                 GaugeBar(Segments.gauge(figures.outstanding, Paise(lim), 20), "${account.name} limit used")
                 Text(
-                    (if (figures.overLimit) "Over the limit by ${IndianFormat.rupees(Paise(-figures.available.value))}" else "${IndianFormat.rupees(figures.available)} available") + " · ${bp / 100}.${(bp % 100).toString().padStart(2, '0')}% used",
+                    (if (figures.overLimit) "Over the limit by ${IndianFormat.rupees(Paise(-avail.value))}" else "${IndianFormat.rupees(avail)} available") + " · ${bp / 100}.${(bp % 100).toString().padStart(2, '0')}% used",
                     style = ChittaTheme.type.label, color = if (figures.overLimit) c.warningText else c.inkMuted,
                 )
             }
