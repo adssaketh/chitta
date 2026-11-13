@@ -110,6 +110,13 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
     // The share receiver (or a message that arrived) asks for the bank messages screen.
     val intakeOpen by vms.intake.signals.open.collectAsState()
     LaunchedEffect(intakeOpen) { if (intakeOpen != null && stack.lastOrNull() != "intake") stack = stack + "intake" }
+    // An app link (chitta://add?...) opens Quick Add pre-filled; the person checks it and saves.
+    val link by vms.intake.signals.link.collectAsState()
+    LaunchedEffect(link) {
+        val params = link ?: return@LaunchedEffect
+        vms.intake.signals.consumeLink()
+        vms.quickAdd.applyLink(params) { adding = true }
+    }
     BackHandler(enabled = adding) { adding = false }
     BackHandler(enabled = !adding && stack.isNotEmpty()) { pop() }
     fun openAdd(type: EntryType = EntryType.Expense, pin: com.mansaketh.chitta.core.model.PinnedEntry? = null) { vms.quickAdd.reset(type, pin); adding = true }

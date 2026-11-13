@@ -74,6 +74,7 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
             }
             ValueRow("Note", d.note.ifBlank { "Add a note" }, onClick = { pick = Pick.Note })
             rateNotice?.let { Text(it, style = ChittaTheme.type.label, color = c.inkMuted) }
+            vm.linkNotes.collectAsState().value.forEach { Text(it, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap1)) }
             ui.problem?.let { if (d.amountRaw.isNotEmpty()) Text(it, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2)) }
 
             Spacer(Modifier.height(Dimens.Gap3))

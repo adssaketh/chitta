@@ -252,3 +252,39 @@ class CardsTest {
         assertTrue(Cards.reminderFor(s0, f, LocalDate.of(2026, 12, 5))!!.dueToday)
     }
 }
+
+class AppLinksTest {
+    private val accounts = listOf(
+        com.mansaketh.chitta.core.model.Account("a1", "HDFC", null, null, 0, null, 0, "INR", null, 2, null, null),
+        com.mansaketh.chitta.core.model.Account("a2", "Old", null, null, 0, null, 1, "INR", null, 2, null, null, archived = true),
+    )
+    private val cats = listOf(
+        com.mansaketh.chitta.core.model.Category("food", "Food", null, null, null, 0, null, 0, false, null, null),
+        com.mansaketh.chitta.core.model.Category("pay", "Salary", null, null, null, 0, null, 1, true, null, null),
+    )
+    private val now = ms(2026, 11, 13)
+
+    @Test fun aFullLinkFillsTheDraftAndNeverSaves() {
+        val r = AppLinks.parse(mapOf("amount" to "250", "title" to "Tea", "category" to "food", "account" to "hdfc", "note" to "with Ravi"), accounts, cats, now, IST)
+        assertEquals("250", r.draft.amountRaw); assertEquals("Tea", r.draft.title); assertEquals("food", r.draft.categoryId)
+        assertEquals("a1", r.draft.accountId); assertEquals("with Ravi", r.draft.note); assertEquals(EntryType.Expense, r.draft.type)
+        assertTrue(r.notes.isEmpty())
+    }
+
+    @Test fun badPartsAreLeftBlankAndExplained() {
+        val r = AppLinks.parse(mapOf("amount" to "abc", "category" to "Nope", "account" to "Old", "date" to "13/11/2026"), accounts, cats, now, IST)
+        assertEquals("", r.draft.amountRaw); assertNull(r.draft.categoryId); assertNull(r.draft.accountId); assertEquals(now, r.draft.dateMs)
+        assertEquals(4, r.notes.size)
+    }
+
+    @Test fun incomeOnlyMatchesIncomeCategoriesAndACalculationIsAllowed() {
+        val r = AppLinks.parse(mapOf("type" to "income", "category" to "Salary", "amount" to "1000+500"), accounts, cats, now, IST)
+        assertEquals(EntryType.Income, r.draft.type); assertEquals("pay", r.draft.categoryId); assertEquals("1000+500", r.draft.amountRaw)
+        assertNull(AppLinks.parse(mapOf("type" to "income", "category" to "Food"), accounts, cats, now, IST).draft.categoryId)
+    }
+
+    @Test fun anEmptyLinkOpensAnEmptyExpense() {
+        val r = AppLinks.parse(emptyMap(), accounts, cats, now, IST)
+        assertEquals(EntryType.Expense, r.draft.type); assertEquals("", r.draft.amountRaw); assertTrue(r.notes.isEmpty())
+    }
+}

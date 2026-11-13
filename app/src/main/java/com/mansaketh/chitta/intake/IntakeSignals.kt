@@ -14,6 +14,12 @@ class IntakeSignals @Inject constructor() {
     fun request(what: String) { _open.value = what }
     fun consume() { _open.value = null }
 
+    private val _link = MutableStateFlow<Map<String, String>?>(null)
+    /** The query of a `chitta://add?...` link, waiting for the Quick Add sheet to open pre-filled. Cleared by [consumeLink]. */
+    val link: StateFlow<Map<String, String>?> = _link
+    fun requestLink(params: Map<String, String>) { _link.value = params }
+    fun consumeLink() { _link.value = null }
+
     private val _refresh = MutableStateFlow(0)
     /** Goes up each time something new may be in the inbox. */
     val refresh: StateFlow<Int> = _refresh

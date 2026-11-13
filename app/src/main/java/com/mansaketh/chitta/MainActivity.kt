@@ -72,15 +72,24 @@ class MainActivity : FragmentActivity() {
         signals.refreshNow()
     }
 
+    /** A `chitta://add?...` link: keep its query for the Quick Add sheet. Only plain text values are taken; nothing is saved. */
+    private fun takeLink(i: android.content.Intent?) {
+        val uri = i?.data ?: return
+        if (i.action != android.content.Intent.ACTION_VIEW || uri.scheme != "chitta" || uri.host != "add") return
+        i.data = null
+        signals.requestLink(uri.queryParameterNames.associateWith { uri.getQueryParameter(it).orEmpty().take(500) })
+    }
+
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         takeIntakeRequest(intent)
+        takeLink(intent)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (savedInstanceState == null) takeIntakeRequest(intent)
+        if (savedInstanceState == null) { takeIntakeRequest(intent); takeLink(intent) }
         enableEdgeToEdge()
         setContent {
             var mode by rememberSaveable { mutableStateOf(ThemeMode.System) }

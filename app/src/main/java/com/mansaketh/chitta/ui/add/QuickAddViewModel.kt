@@ -42,7 +42,7 @@ data class CategoryChoice(val category: Category, val parentName: String? = null
 class QuickAddViewModel @Inject constructor(
     private val ledger: LedgerRepository,
     accountRepo: AccountRepository,
-    categoryRepo: CategoryRepository,
+    private val categoryRepo: CategoryRepository,
     private val titleRepo: TitleRepository,
     ruleRepo: com.mansaketh.chitta.core.database.RuleRepository,
     private val pinnedRepo: PinnedRepository,
@@ -98,12 +98,27 @@ class QuickAddViewModel @Inject constructor(
 
     /** Opens a clean sheet, optionally of a given type or filled from a pinned entry. */
     fun reset(type: EntryType = EntryType.Expense, pin: PinnedEntry? = null) {
+        _linkNotes.value = emptyList()
         draft.value = if (pin == null) QuickAddDraft(type = type, dateMs = clock.nowMs())
         else QuickAddDraft(
             type = if (pin.income) EntryType.Income else EntryType.Expense,
             amountRaw = pin.amount?.let { plain(it) } ?: "",
             title = pin.title, categoryId = pin.categoryId, accountId = pin.accountId, dateMs = clock.nowMs(),
         )
+    }
+
+    /** Fills the sheet from an app link. [onReady] runs once it is filled, so the sheet opens with the values in place. */
+    private val _linkNotes = MutableStateFlow<List<String>>(emptyList())
+    /** What an app link asked for that could not be used, shown at the top of the sheet until it closes or is saved. */
+    val linkNotes: StateFlow<List<String>> = _linkNotes
+
+    fun applyLink(params: Map<String, String>, onReady: () -> Unit) = viewModelScope.launch {
+        val accounts = ui.value.accounts
+        val categories = categoryRepo.observeAll().first()
+        val r = AppLinks.parse(params, accounts, categories, clock.nowMs(), clock.zone())
+        draft.value = r.draft
+        _linkNotes.value = r.notes
+        onReady()
     }
 
     fun key(k: com.mansaketh.chitta.core.design.components.KeypadKey) = draft.update { d ->

@@ -1,5 +1,8 @@
 # Changelog
 
+## Phase 8a, slice 3b: app links (13 Nov 2026) - on branch `phase-8a-links`
+- `chitta://add?...` opens Quick Add pre-filled (never saves); notes for ignored parts. `AppLinks` in `:core:domain` with 4 tests. D93 to D95.
+
 ## Phase 8a: Must items, slices 1 and 2 (13 Nov 2026) - on branch `phase-8a-must`, CI green
 - `:core:domain`: `Splits`, `Rules`, `Duplicates`, `Cards` with 28 tests (`Phase8aTest`).
 - Database schema 4 with tested migration from 3: `splitGroupId` on entries, card fields on accounts, `entry_rule` table. History snapshots keep the split group.
