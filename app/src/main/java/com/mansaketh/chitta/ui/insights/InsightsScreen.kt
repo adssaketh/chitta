@@ -1,5 +1,6 @@
 package com.mansaketh.chitta.ui.insights
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -218,6 +219,25 @@ private fun CurrentTab(ui: InsightsUi, onRange: () -> Unit, onAccounts: () -> Un
         Text(if (ui.showIncome) "No income in this range." else "No spending in this range.", style = ChittaTheme.type.body, color = c.inkMuted)
     } else {
         val top = ui.bars.maxOf { it.amount.value }.coerceAtLeast(1L)
+        var donut by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+        TextTabs(listOf("Bars", "Donut"), if (donut) 1 else 0, { donut = it == 1 })
+        Spacer(Modifier.height(Dimens.Gap2))
+        if (donut) {
+            val slices = com.mansaketh.chitta.core.domain.Donut.slices(ui.bars)
+            val whole = com.mansaketh.chitta.core.money.Paise(slices.sumOf { it.amount.value })
+            DonutChart(slices, whole, "Share of ${if (ui.showIncome) "income" else "spending"} by category: " + slices.joinToString(", ") { (it.categoryId?.let { id -> categoryName(id, ui.categories) } ?: "Other") + " ${it.percent} percent" })
+            slices.forEachIndexed { i, sl ->
+                val name = sl.categoryId?.let { categoryName(it, ui.categories) } ?: "Other"
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).let { m -> if (sl.categoryId != null) m.clickable(role = Role.Button, onClickLabel = "Open $name") { onDrill(sl.categoryId!!) } else m },
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.Gap3),
+                ) {
+                    Box(Modifier.size(12.dp).background(if (sl.categoryId == null) c.inkMuted else c.category[i % c.category.size]))
+                    Text("$name · ${sl.percent}%", style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.weight(1f))
+                    com.mansaketh.chitta.core.design.components.AmountText(sl.amount)
+                }
+            }
+        } else
         ui.bars.forEach { bar ->
             Box(Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = "Open ${categoryName(bar.categoryId, ui.categories)}") { onDrill(bar.categoryId) }) {
                 LedgerBar(categoryName(bar.categoryId, ui.categories), bar.amount, bar.amount.value.coerceAtLeast(0L).toFloat() / top)

@@ -288,3 +288,35 @@ class AppLinksTest {
         assertEquals(EntryType.Expense, r.draft.type); assertEquals("", r.draft.amountRaw); assertTrue(r.notes.isEmpty())
     }
 }
+
+class DonutTest {
+    private fun t(id: String, rupees: Long) = CategoryTotal(id, r(rupees))
+
+    @Test fun percentsAlwaysAddToOneHundred() {
+        // Three equal parts: 33.33% each. Largest remainder gives the spare 1% to the first.
+        val s = Donut.slices(listOf(t("a", 100), t("b", 100), t("c", 100)))
+        assertEquals(100, s.sumOf { it.percent })
+        assertEquals(listOf(34, 33, 33), s.map { it.percent })
+    }
+
+    @Test fun smallestCategoriesFoldIntoOther() {
+        val totals = (1..8).map { t("c$it", (9 - it) * 100L) }   // 800, 700, ... 100
+        val s = Donut.slices(totals, maxSlices = 6)
+        assertEquals(6, s.size)
+        assertNull(s.last().categoryId)
+        assertEquals(r(300 + 200 + 100), s.last().amount)          // c6, c7, c8
+        assertEquals(listOf("c1", "c2", "c3", "c4", "c5"), s.dropLast(1).map { it.categoryId })
+        assertEquals(100, s.sumOf { it.percent })
+    }
+
+    @Test fun zeroAndNegativeAreLeftOutAndEmptyGivesNothing() {
+        assertEquals(listOf("a"), Donut.slices(listOf(t("a", 500), t("b", 0), t("c", -50))).map { it.categoryId })
+        assertTrue(Donut.slices(listOf(t("b", 0), t("c", -50))).isEmpty())
+        assertTrue(Donut.slices(emptyList()).isEmpty())
+    }
+
+    @Test fun exactlyMaxSlicesHasNoOther() {
+        val s = Donut.slices((1..6).map { t("c$it", 100) }, maxSlices = 6)
+        assertEquals(6, s.size); assertTrue(s.all { it.categoryId != null }); assertEquals(100, s.sumOf { it.percent })
+    }
+}

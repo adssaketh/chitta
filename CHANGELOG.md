@@ -1,5 +1,8 @@
 # Changelog
 
+## Phase 8a, slice 3c: donut chart (13 Nov 2026) - on branch `phase-8a-donut`
+- Optional flat donut on Insights > By category. `Donut` in `:core:domain` with 4 tests. D96. App links (3b) merged to `main`.
+
 ## Phase 8a, slice 3b: app links (13 Nov 2026) - on branch `phase-8a-links`
 - `chitta://add?...` opens Quick Add pre-filled (never saves); notes for ignored parts. `AppLinks` in `:core:domain` with 4 tests. D93 to D95.
 

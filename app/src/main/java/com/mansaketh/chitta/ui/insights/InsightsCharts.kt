@@ -165,3 +165,31 @@ fun HeatGrid(
         }
     }
 }
+
+/**
+ * The optional flat donut (master section 3): ring segments in the earthy category set with a small gap between them, the total in
+ * the middle, never 3D or a gradient. The legend sits right under it and carries the names, so colour is never the only cue.
+ */
+@Composable
+fun DonutChart(slices: List<com.mansaketh.chitta.core.domain.DonutSlice>, total: Paise, description: String, modifier: Modifier = Modifier) {
+    val c = ChittaTheme.colors
+    val sum = slices.sumOf { it.amount.value }.coerceAtLeast(1L)
+    Box(modifier.fillMaxWidth().aspectRatio(1.6f).clearAndSetSemantics { contentDescription = description }, contentAlignment = Alignment.Center) {
+        Canvas(Modifier.height(168.dp).aspectRatio(1f)) {
+            val stroke = 22.dp.toPx()
+            val inset = stroke / 2
+            val gapDeg = if (slices.size > 1) 2f else 0f
+            var start = -90f
+            slices.forEachIndexed { i, s ->
+                val sweep = 360f * s.amount.value / sum
+                drawArc(
+                    color = if (s.categoryId == null) c.inkMuted else c.category[i % c.category.size],
+                    startAngle = start + gapDeg / 2, sweepAngle = (sweep - gapDeg).coerceAtLeast(0.5f), useCenter = false,
+                    topLeft = Offset(inset, inset), size = Size(size.width - stroke, size.height - stroke), style = Stroke(width = stroke),
+                )
+                start += sweep
+            }
+        }
+        com.mansaketh.chitta.core.design.components.AmountText(total, style = ChittaTheme.type.title)
+    }
+}
