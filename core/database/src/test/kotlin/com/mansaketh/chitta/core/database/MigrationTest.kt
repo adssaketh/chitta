@@ -20,6 +20,7 @@ import org.robolectric.annotation.Config
 import java.io.File
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
  * Builds a real version-1 database from the committed schema file (the exact SQL Room used for version 1),
