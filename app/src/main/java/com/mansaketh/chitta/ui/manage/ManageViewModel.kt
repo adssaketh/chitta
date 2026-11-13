@@ -98,6 +98,11 @@ class ManageViewModel @Inject constructor(
         categoryRepo.save(c.copy(name = n, modifiedAtMs = clock.nowMs()))
     }
 
+    /** Sets (or clears, with null) the icon a category wears. The key is a Phosphor name from [CategoryIconCatalog]. */
+    fun setCategoryIcon(c: Category, key: String?) = viewModelScope.launch {
+        categoryRepo.save(c.copy(iconName = key?.let { com.mansaketh.chitta.core.domain.IconSearch.nameFor(it) }, emojiIconName = null, modifiedAtMs = clock.nowMs()))
+    }
+
     fun archiveCategory(c: Category, archived: Boolean) = viewModelScope.launch { categoryRepo.save(c.copy(archived = archived, modifiedAtMs = clock.nowMs())) }
 
     fun move(c: Category, up: Boolean) = viewModelScope.launch {

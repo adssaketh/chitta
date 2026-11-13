@@ -86,3 +86,5 @@
 - Checked on a real backup (101 entries, 3 accounts): schema 48, all INR with 2 decimals, dates are epoch seconds, every amount is whole paise, every `type` is NULL.
 - CI runs the new tests. Decisions D26 to D34.
 - No screens. No importer screen yet (Phase 4).
+
+- Phase 8a: category icon search. Category menu has "Choose an icon" with a search box over 51 icons; the Ledger draws the category's icon instead of the plain tag. Unit tests for the search.

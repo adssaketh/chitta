@@ -22,6 +22,7 @@ private sealed interface CatSheet {
     data class AddSub(val parent: Category) : CatSheet
     data class Actions(val c: Category) : CatSheet
     data class Rename(val c: Category) : CatSheet
+    data class Icon(val c: Category) : CatSheet
     data class Convert(val c: Category) : CatSheet
     data class Merge(val c: Category) : CatSheet
     data class ConfirmMerge(val from: Category, val to: Category) : CatSheet
@@ -60,6 +61,7 @@ fun CategoriesScreen(vm: ManageViewModel, onBack: () -> Unit) {
                 s.c.name,
                 buildList {
                     add(Choice("Rename", "rename"))
+                    add(Choice("Choose an icon", "icon", "Search by word, like fuel or rent"))
                     add(Choice("Move up", "up")); add(Choice("Move down", "down"))
                     if (s.c.mainCategoryId == null) add(Choice("Add a subcategory", "sub"))
                     if (s.c.mainCategoryId == null) add(Choice("Make it a subcategory of…", "convert"))
@@ -69,6 +71,7 @@ fun CategoriesScreen(vm: ManageViewModel, onBack: () -> Unit) {
                 { v ->
                     when (v) {
                         "rename" -> sheet = CatSheet.Rename(s.c)
+                        "icon" -> sheet = CatSheet.Icon(s.c)
                         "up" -> { vm.move(s.c, true); sheet = CatSheet.None }
                         "down" -> { vm.move(s.c, false); sheet = CatSheet.None }
                         "sub" -> sheet = CatSheet.AddSub(s.c)
@@ -79,6 +82,7 @@ fun CategoriesScreen(vm: ManageViewModel, onBack: () -> Unit) {
                 },
                 { sheet = CatSheet.None },
             )
+            is CatSheet.Icon -> IconPickerSheet(s.c, { key -> vm.setCategoryIcon(s.c, key); sheet = CatSheet.None }, { sheet = CatSheet.None })
             is CatSheet.Convert -> ChoiceSheet("Make ${s.c.name} a subcategory of", ui.categories.filter { it.mainCategoryId == null && it.id != s.c.id && it.income == s.c.income && it.id != "0" }.map { Choice(it.name, it) },
                 { parent -> notice = vm.convertToSub(s.c, parent); sheet = CatSheet.None }, { sheet = CatSheet.None })
             is CatSheet.Merge -> ChoiceSheet("Merge ${s.c.name} into", ui.categories.filter { it.id != s.c.id && it.income == s.c.income && it.id != "0" && it.mainCategoryId != s.c.id }.map { Choice(it.name, it) },

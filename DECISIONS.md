@@ -100,3 +100,7 @@ Status: **decided** once you approved (13 Nov 2026), unless marked otherwise.
 | D94 | 13 Nov 2026 | Rules on Ping, UPI and CSV rows: not applied yet. Default when you decide nothing: they only suggest a category in the review list. Split in Quick Add: not built (D90). | You did not answer. | open |
 | D95 | 13 Nov 2026 | Not built in this slice: the background receiver, notification scanning, category icon search, donut chart. The receiver and the scanner need a design choice first (who may add entries; which apps and templates). Icon search has little to show: the icon set has 39 icons and rows do not yet draw a category's own icon. | Asked in the summary. | open |
 | D96 | 13 Nov 2026 | Donut (Insights > By category > Donut; Bars stays the default): the biggest 5 categories plus one "Other" slice, percents by largest remainder so they add to 100, categories in the earthy set, "Other" in grey, the legend carries the names. Closes gap D61. | Section 3: donut optional, flat, never 3D or a gradient. | decided |
+
+## D97: Category icons are Phosphor names stored as "ph:<name>"
+Category.iconName already existed (imported Paddhu names). A picked icon is saved as `ph:<phosphor-name>` so imported names are never overwritten by a clash and are simply ignored when drawing. Search matches the start of any word in the label or keywords; every typed word must match. 51 icons, chosen for everyday Indian spending; the list lives in CategoryIconCatalog and tools/gen_icons.py (keep both in step). "Plain tag" clears it.
+

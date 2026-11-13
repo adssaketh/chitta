@@ -184,7 +184,7 @@ internal fun Transaction.toRow(ui: LedgerUi, muted: androidx.compose.ui.graphics
     return LedgerEntry(
         title = name.ifBlank { label },
         category = listOfNotNull(label, accountName(accountId, ui.accounts), "Split".takeIf { splitGroupId != null }, "Possible duplicate".takeIf { id in ui.possibleDuplicates }).joinToString(" · "),
-        glyph = if (neutral) ChittaIcons.Transfer else ChittaIcons.Tag,
+        glyph = if (neutral) ChittaIcons.Transfer else (com.mansaketh.chitta.ui.manage.CategoryIconCatalog.imageFor(ui.categories.firstOrNull { it.id == categoryId }?.iconName) ?: ChittaIcons.Tag),
         categoryColor = if (neutral) mutedColor else tintFor(categoryId),
         amount = Paise(Math.abs(amount)),
         tone = if (!neutral && (incomeCat || amount > 0)) AmountTone.Income else AmountTone.Expense,

@@ -21,6 +21,62 @@ ICONS = [
     ("Download", "download-simple"), ("Upload", "upload-simple"), ("Undo", "arrow-counter-clockwise"),
 ]
 
+# Category icons (Phase 8a icon search). Stored on a category as "ph:<phosphor name>"; see CategoryIcons in :core:design.
+CATEGORY_ICONS = [
+    ("CatForkKnife", "fork-knife"),
+    ("CatCoffee", "coffee"),
+    ("CatShoppingCart", "shopping-cart"),
+    ("CatShoppingBag", "shopping-bag"),
+    ("CatBasket", "basket"),
+    ("CatCar", "car"),
+    ("CatGasPump", "gas-pump"),
+    ("CatBus", "bus"),
+    ("CatTrain", "train"),
+    ("CatAirplane", "airplane"),
+    ("CatLightbulb", "lightbulb"),
+    ("CatDrop", "drop"),
+    ("CatWifiHigh", "wifi-high"),
+    ("CatDeviceMobile", "device-mobile"),
+    ("CatTelevision", "television"),
+    ("CatFilmStrip", "film-strip"),
+    ("CatMusicNotes", "music-notes"),
+    ("CatGameController", "game-controller"),
+    ("CatHeartbeat", "heartbeat"),
+    ("CatPill", "pill"),
+    ("CatFirstAidKit", "first-aid-kit"),
+    ("CatGraduationCap", "graduation-cap"),
+    ("CatBook", "book"),
+    ("CatBaby", "baby"),
+    ("CatPawPrint", "paw-print"),
+    ("CatGift", "gift"),
+    ("CatTShirt", "t-shirt"),
+    ("CatScissors", "scissors"),
+    ("CatBarbell", "barbell"),
+    ("CatBicycle", "bicycle"),
+    ("CatUmbrella", "umbrella"),
+    ("CatWrench", "wrench"),
+    ("CatHammer", "hammer"),
+    ("CatMoney", "money"),
+    ("CatPiggyBank", "piggy-bank"),
+    ("CatBriefcase", "briefcase"),
+    ("CatChartLineUp", "chart-line-up"),
+    ("CatHandCoins", "hand-coins"),
+    ("CatHandshake", "handshake"),
+    ("CatBed", "bed"),
+    ("CatTree", "tree"),
+    ("CatSun", "sun"),
+    ("CatHairDryer", "hair-dryer"),
+    ("CatTaxi", "taxi"),
+    ("CatPopcorn", "popcorn"),
+    ("CatBeerBottle", "beer-bottle"),
+    ("CatWine", "wine"),
+    ("CatPizza", "pizza"),
+    ("CatCookingPot", "cooking-pot"),
+    ("CatFlowerLotus", "flower-lotus"),
+    ("CatHouseLine", "house-line")
+]
+ICONS += CATEGORY_ICONS
+
 OUT = "core/design/src/main/java/com/mansaketh/chitta/core/design/icons/ChittaIcons.kt"
 
 def main(src):
@@ -46,8 +102,12 @@ def main(src):
     ]
     for k, f, d in body:
         lines += [f"    /** phosphor: {f} */", f'    val {k}: ImageVector by lazy {{ phosphor("{k}", "{d}") }}', ""]
-    lines += ["    /** Every icon, for the component gallery. */", "    val all: List<Pair<String, ImageVector>> by lazy {", "        listOf("]
-    lines += [f'            "{k}" to {k},' for k, _, _ in body]
+    lines += ["    /** The interface icons, for the component gallery (category icons are listed in byPhosphorName). */", "    val all: List<Pair<String, ImageVector>> by lazy {", "        listOf("]
+    cat_names = {k for k, _ in CATEGORY_ICONS}
+    lines += [f'            "{k}" to {k},' for k, _, _ in body if k not in cat_names]
+    lines += ["        )", "    }", ""]
+    lines += ["    /** Every icon by its Phosphor file name, for categories that store \"ph:<name>\". */", "    val byPhosphorName: Map<String, ImageVector> by lazy {", "        mapOf("]
+    lines += [f'            "{f}" to {k},' for k, f, _ in body]
     lines += ["        )", "    }", "}"]
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     open(OUT, "w").write("\n".join(lines) + "\n")

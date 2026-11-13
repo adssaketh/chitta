@@ -320,3 +320,31 @@ class DonutTest {
         assertEquals(6, s.size); assertTrue(s.all { it.categoryId != null }); assertEquals(100, s.sumOf { it.percent })
     }
 }
+
+class IconSearchTest {
+    private val icons = listOf(
+        IconChoice("coffee", "Coffee", listOf("tea", "cafe")),
+        IconChoice("gas-pump", "Fuel", listOf("petrol", "diesel")),
+        IconChoice("house-line", "Rent", listOf("home", "landlord")),
+        IconChoice("fork-knife", "Food", listOf("restaurant", "eat")),
+    )
+
+    @Test fun emptySearchListsEverythingInOrder() = assertEquals(icons.map { it.key }, IconSearch.search("  ", icons).map { it.key })
+
+    @Test fun matchesLabelOrKeywordFromTheStartOfAWord() {
+        assertEquals(listOf("coffee"), IconSearch.search("cof", icons).map { it.key })
+        assertEquals(listOf("gas-pump"), IconSearch.search("PETROL", icons).map { it.key })
+        assertEquals(listOf("house-line"), IconSearch.search("home", icons).map { it.key })
+        assertTrue(IconSearch.search("ee", icons).isEmpty())            // middle of a word does not match
+    }
+
+    @Test fun everyWordMustMatch() {
+        assertEquals(listOf("fork-knife"), IconSearch.search("food eat", icons).map { it.key })
+        assertTrue(IconSearch.search("food petrol", icons).isEmpty())
+    }
+
+    @Test fun keysRoundTripAndImportedNamesAreIgnored() {
+        assertEquals("coffee", IconSearch.keyOf(IconSearch.nameFor("coffee")))
+        assertNull(IconSearch.keyOf("fast-food.png")); assertNull(IconSearch.keyOf(null)); assertNull(IconSearch.keyOf("ph:"))
+    }
+}
