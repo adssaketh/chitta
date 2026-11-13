@@ -163,6 +163,29 @@ class QuickAddViewModel @Inject constructor(
     }
 
     /** Saves and closes. Returns false (and does nothing) when the draft is not ready. */
+    /** What a split would divide: the amount of the entry Save would make, in the account's currency. Null for transfers or when not ready. */
+    fun splitTotal(): Paise? {
+        val u = ui.value
+        if (!u.ready || u.draft.type == EntryType.Transfer) return null
+        val d = u.draft.copy(rate = u.rateText.takeIf { u.draft.originalCurrency != null })
+        val built = QuickAdd.build(d, u.accounts, ids::newId) as? QuickAddResult.Ready ?: return null
+        return built.entries.singleOrNull()?.let { Paise(Math.abs(it.amount)) }
+    }
+
+    /** Saves the entry as a split: one entry per line sharing a group (D85, D90). Returns false if the lines do not balance. */
+    fun saveSplit(lines: List<com.mansaketh.chitta.core.domain.SplitLine>, onSaved: () -> Unit): Boolean {
+        val u = ui.value
+        val d = u.draft.copy(rate = u.rateText.takeIf { u.draft.originalCurrency != null })
+        val built = QuickAdd.build(d, u.accounts, ids::newId) as? QuickAddResult.Ready ?: return false
+        val entry = built.entries.singleOrNull() ?: return false
+        val parts = com.mansaketh.chitta.core.domain.Splits.build(entry, Paise(Math.abs(entry.amount)), lines, ids::newId) ?: return false
+        viewModelScope.launch {
+            actions.add(parts, "Saved · ${entry.name.ifBlank { "entry" }} split into ${parts.size} lines")
+            onSaved()
+        }
+        return true
+    }
+
     fun save(onSaved: () -> Unit) {
         val u = ui.value
         if (!u.ready) return

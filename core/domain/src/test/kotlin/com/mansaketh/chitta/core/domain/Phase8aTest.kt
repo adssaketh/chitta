@@ -348,3 +348,16 @@ class IconSearchTest {
         assertNull(IconSearch.keyOf("fast-food.png")); assertNull(IconSearch.keyOf(null)); assertNull(IconSearch.keyOf("ph:"))
     }
 }
+
+class RuleSuggestTest {
+    private fun cat(id: String, income: Boolean = false, main: String? = null, archived: Boolean = false) =
+        com.mansaketh.chitta.core.model.Category(id, id, null, null, null, 0, null, 0, income, null, main, archived)
+
+    private val rule = Rule("r1", "Swiggy", listOf(RuleCondition(RuleField.Title, RuleOp.Contains, "swiggy")), RuleActions(categoryId = "food"), 0)
+    private val cats = listOf(cat("food"), cat("salary", income = true))
+
+    @Test fun suggestsForAnExpenseRow() = assertEquals(RuleSuggestion("food", null), RuleSuggest.forRow(listOf(rule), "SWIGGY order", "", -45000, null, false, cats))
+    @Test fun noSuggestionWhenNothingMatches() = assertNull(RuleSuggest.forRow(listOf(rule), "Uber", "", 10000, null, false, cats))
+    @Test fun wrongKindOfCategoryIsNotSuggested() = assertNull(RuleSuggest.forRow(listOf(rule), "swiggy refund", "", 10000, null, true, cats))
+    @Test fun archivedCategoryIsNotSuggested() = assertNull(RuleSuggest.forRow(listOf(rule), "swiggy", "", 10000, null, false, listOf(cat("food", archived = true))))
+}

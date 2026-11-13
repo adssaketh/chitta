@@ -35,6 +35,7 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
     val context = LocalContext.current
     var pick by remember { mutableStateOf(Pick.None) }
     var rateNotice by remember { mutableStateOf<String?>(null) }
+    var splitTotal by remember { mutableStateOf<com.mansaketh.chitta.core.money.Paise?>(null) }
     val zone = remember { ZoneId.systemDefault() }
     val types = EntryType.entries
 
@@ -82,9 +83,17 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
             Spacer(Modifier.height(Dimens.Gap3))
             Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2), modifier = Modifier.fillMaxWidth()) {
                 if (d.type != EntryType.Transfer && d.categoryId != null) ChittaButton("Pin", vm::pinCurrent, style = ButtonStyle.Quiet)
+                if (ui.ready && d.type != EntryType.Transfer && ui.categories.isNotEmpty()) ChittaButton("Split", { splitTotal = vm.splitTotal() }, style = ButtonStyle.Quiet)
                 ChittaButton("Save", { vm.save(onClose) }, modifier = Modifier.weight(1f), enabled = ui.ready, confirmHaptic = true)
             }
         }
+    }
+
+    splitTotal?.let { total ->
+        com.mansaketh.chitta.ui.detail.SplitSheet(
+            total, ui.categories.map { it.category }.filter { it.mainCategoryId == null && !it.archived }, d.categoryId ?: ui.categories.first().category.id,
+            { lines -> vm.saveSplit(lines) { splitTotal = null; onClose() } }, { splitTotal = null },
+        )
     }
 
     when (pick) {

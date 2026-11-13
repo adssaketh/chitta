@@ -5,6 +5,8 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mansaketh.chitta.core.database.CategoryRepository
+import com.mansaketh.chitta.core.database.RuleRepository
+import com.mansaketh.chitta.core.domain.RuleSuggest
 import com.mansaketh.chitta.core.intake.IntakeChoice
 import com.mansaketh.chitta.core.intake.IntakeClaim
 import com.mansaketh.chitta.core.intake.IntakeFormatException
@@ -51,6 +53,7 @@ class IntakeViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val store: IntakeStore,
     private val categoryRepo: CategoryRepository,
+    private val ruleRepo: RuleRepository,
     private val clock: Clock,
     val signals: IntakeSignals,
 ) : ViewModel() {
@@ -112,7 +115,18 @@ class IntakeViewModel @Inject constructor(
 
     private suspend fun review(source: ReviewSource, plan: IntakePlan, skipped: Int) {
         val ctx = store.planContext()
-        val choices = plan.candidates.map { IntakeChoice(it, it.ready, it.accountId, it.categoryId, it.subCategoryId) }
+        val rules = ruleRepo.all()
+        val choices = plan.candidates.map { cand ->
+            // Rules only fill in a category that is still empty, and only as a suggestion: the row keeps its own ticks and is shown
+            // for review as before (D94). The category must exist, be live, and be the right kind (expense vs income).
+            var cat = cand.categoryId; var sub = cand.subCategoryId
+            if (cat == null && rules.isNotEmpty()) {
+                val r = cand.row
+                RuleSuggest.forRow(rules, r.title.ifBlank { r.merchant }, r.extraNote, r.amountPaise, cand.accountId, !r.isExpense, ctx.categories)
+                    ?.let { cat = it.categoryId; sub = it.subCategoryId }
+            }
+            IntakeChoice(cand, cand.ready, cand.accountId, cat, sub)
+        }
         _stage.value = IntakeStage.Review(source, choices, plan.claims, picks(ctx.categories), ctx.accounts.filter { !it.archived }, plan.alreadyImported, skipped)
     }
 

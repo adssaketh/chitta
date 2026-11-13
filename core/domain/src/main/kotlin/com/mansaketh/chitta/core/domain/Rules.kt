@@ -148,3 +148,22 @@ object Rules {
         excludeFromBudgetIds = c.newExcludeFromBudgetIds ?: entry.excludeFromBudgetIds,
     )
 }
+
+/** A category suggested by the rules for a row that is not yet in the book (an import row). */
+data class RuleSuggestion(val categoryId: String, val subCategoryId: String?)
+
+object RuleSuggest {
+    /**
+     * The category the rules would give this row, or null. Only a live category of the right kind counts (expense rows take expense
+     * categories, income rows income ones), and a subcategory is kept only if it belongs to that category. It is a suggestion:
+     * the caller shows it for review and never saves on the strength of it (D94).
+     */
+    fun forRow(rules: List<Rule>, title: String, note: String, amountPaise: Long, accountId: String?, income: Boolean, categories: List<com.mansaketh.chitta.core.model.Category>): RuleSuggestion? {
+        if (rules.isEmpty()) return null
+        val out = Rules.apply(rules, RuleInput(title, note, Paise(kotlin.math.abs(amountPaise)), accountId))
+        val cat = out.categoryId?.let { id -> categories.firstOrNull { it.id == id && !it.archived && it.income == income } } ?: return null
+        val sub = out.subCategoryId?.takeIf { sid -> categories.any { it.id == sid && !it.archived && it.mainCategoryId == cat.id } }
+        return RuleSuggestion(cat.id, sub)
+    }
+}
+

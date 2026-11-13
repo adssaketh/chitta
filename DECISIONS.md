@@ -104,3 +104,6 @@ Status: **decided** once you approved (13 Nov 2026), unless marked otherwise.
 ## D97: Category icons are Phosphor names stored as "ph:<name>"
 Category.iconName already existed (imported Paddhu names). A picked icon is saved as `ph:<phosphor-name>` so imported names are never overwritten by a clash and are simply ignored when drawing. Search matches the start of any word in the label or keywords; every typed word must match. 51 icons, chosen for everyday Indian spending; the list lives in CategoryIconCatalog and tools/gen_icons.py (keep both in step). "Plain tag" clears it.
 
+
+## D98: Rules on imports are suggestions; Split in Quick Add
+Rules fill only an empty category on Ping/UPI/CSV review rows, only with a live category of the right kind (expense vs income), and never change a row's tick: you still look at every row before saving (D94). Quick Add gets a Split button once the entry is ready (not for transfers); it opens the same split sheet as Entry detail and saves one entry per line (D85).

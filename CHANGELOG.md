@@ -88,3 +88,5 @@
 - No screens. No importer screen yet (Phase 4).
 
 - Phase 8a: category icon search. Category menu has "Choose an icon" with a search box over 51 icons; the Ledger draws the category's icon instead of the plain tag. Unit tests for the search.
+
+- Phase 8a: rules suggest categories on Ping, UPI and CSV import review rows (suggest only). Quick Add has a Split button.

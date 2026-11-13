@@ -61,6 +61,7 @@ class CsvImportViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val accountRepo: AccountRepository,
     private val categoryRepo: CategoryRepository,
+    private val ruleRepo: com.mansaketh.chitta.core.database.RuleRepository,
     private val titleRepo: TitleRepository,
     private val ledger: LedgerRepository,
     private val restore: RestoreManager,
@@ -128,7 +129,14 @@ class CsvImportViewModel @Inject constructor(
                 val categories = categoryRepo.observeAll().first()
                 val ctx = CsvContext(accounts, categories, ledger.observeAllOnce(), titleRepo.observeAll().first(), clock.zone())
                 val parse = withContext(Dispatchers.Default) { CsvImport.read(s.rows, s.mapping, ctx) }
-                _stage.value = CsvStage.Review(parse, CsvImport.initialChoices(parse), picks(categories), accounts.filter { !it.archived })
+                val rules = ruleRepo.all()
+                // Rules only fill an empty category, as a suggestion shown for review; ticks stay as the importer set them (D94).
+                val choices = CsvImport.initialChoices(parse).map { c ->
+                    if (c.categoryId != null) c
+                    else com.mansaketh.chitta.core.domain.RuleSuggest.forRow(rules, c.row.title, c.row.note, c.row.amountPaise, c.accountId, c.row.income, categories)
+                        ?.let { c.copy(categoryId = it.categoryId, subCategoryId = it.subCategoryId) } ?: c
+                }
+                _stage.value = CsvStage.Review(parse, choices, picks(categories), accounts.filter { !it.archived })
             } catch (e: Exception) {
                 _stage.value = CsvStage.Failed("The file could not be checked (${e.message ?: e.javaClass.simpleName}). Nothing was changed.")
             }
