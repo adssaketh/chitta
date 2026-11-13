@@ -232,4 +232,23 @@ class CardsTest {
         assertEquals(Paise.ZERO, onCut.unbilled)
         assertEquals(0, Cards.figures(setup, book, LocalDate.of(2026, 12, 5), IST).daysToDue)
     }
+
+    @Test fun reminderOnReminderDayAndDueDayOnlyWhileOwed() {
+        val figs = { d: LocalDate -> Cards.figures(setup, book, d, IST) }
+        // Due 5 Dec, reminder 3 days before = 2 Dec.
+        val ahead = Cards.reminderFor(setup, figs(LocalDate.of(2026, 12, 2)), LocalDate.of(2026, 12, 2))
+        assertNotNull(ahead); assertFalse(ahead.dueToday); assertEquals(3, ahead.daysToDue)
+        val due = Cards.reminderFor(setup, figs(LocalDate.of(2026, 12, 5)), LocalDate.of(2026, 12, 5))
+        assertNotNull(due); assertTrue(due.dueToday)
+        assertNull(Cards.reminderFor(setup, figs(LocalDate.of(2026, 12, 3)), LocalDate.of(2026, 12, 3)))
+        // Nothing owed: no reminder.
+        val paid = book + tx("pay", 2_500_000, account = "card", date = ms(2026, 11, 30), cat = QuickAdd.TRANSFER_CATEGORY_ID, paired = "z")
+        assertNull(Cards.reminderFor(setup, Cards.figures(setup, paid, LocalDate.of(2026, 12, 2), IST), LocalDate.of(2026, 12, 2)))
+    }
+
+    @Test fun zeroDayReminderSendsOnlyTheDueDayOne() {
+        val s0 = setup.copy(remindDaysBefore = 0)
+        val f = Cards.figures(s0, book, LocalDate.of(2026, 12, 5), IST)
+        assertTrue(Cards.reminderFor(s0, f, LocalDate.of(2026, 12, 5))!!.dueToday)
+    }
 }

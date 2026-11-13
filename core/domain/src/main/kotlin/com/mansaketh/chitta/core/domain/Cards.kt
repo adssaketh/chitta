@@ -43,7 +43,29 @@ data class CardFigures(
  * spending is negative, payments and refunds are positive. A bill payment from the bank account is the paired
  * transfer, which shows up here as a positive entry on the card.
  */
+/** A card payment notification to post. [key] is stable so it is posted once. */
+data class CardReminder(val key: String, val accountId: String, val dueToday: Boolean, val daysToDue: Long, val outstanding: Paise, val minimumDue: Paise?)
+
 object Cards {
+    /** The setup of an account, or null until both the statement day and the due day are set. */
+    fun setupOf(a: com.mansaketh.chitta.core.model.Account): CardSetup? {
+        val s = a.statementDay ?: return null
+        val d = a.dueDay ?: return null
+        return CardSetup(a.id, a.creditLimit?.let { Paise(it) }, s, d, a.minimumDue?.let { Paise(it) }, a.remindDaysBefore ?: 3)
+    }
+
+    /**
+     * The notification for [today], or null. One on the reminder day and one on the due day, only while something is owed.
+     * With a reminder of 0 days the two coincide and only the due-day one is sent.
+     */
+    fun reminderFor(setup: CardSetup, f: CardFigures, today: LocalDate): CardReminder? {
+        if (f.outstanding.value <= 0) return null
+        val onDue = today == f.nextDue
+        val onReminder = today == f.reminderDate
+        if (!onDue && !onReminder) return null
+        return CardReminder("card|${setup.accountId}|${f.nextDue}|${if (onDue) "due" else "ahead"}", setup.accountId, onDue, f.daysToDue, f.outstanding, f.minimumDue)
+    }
+
     private fun clampDay(ym: YearMonth, day: Int): LocalDate = ym.atDay(minOf(day.coerceIn(1, 31), ym.lengthOfMonth()))
 
     /** The latest statement date that is on or before [today]. */

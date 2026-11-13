@@ -40,6 +40,7 @@ private const val WORK_NAME = "chitta-reminders"
 @InstallIn(SingletonComponent::class)
 interface ReminderEntryPoint {
     fun ledger(): LedgerRepository
+    fun accounts(): com.mansaketh.chitta.core.database.AccountRepository
     fun prefs(): AppPrefs
     fun clock(): Clock
 }
@@ -84,6 +85,21 @@ class ReminderWorker(private val context: Context, params: WorkerParameters) : C
                     val amount = IndianFormat.rupees(r.amount)
                     val text = if (r.kind == ReminderKind.DueToday) (if (r.income) "$amount is due to come in today" else "$amount is due today") else (if (r.income) "$amount is due to come in tomorrow" else "$amount is due tomorrow")
                     ReminderNotifications.post(context, r.key.hashCode(), CHANNEL_BILLS, r.title.ifBlank { "A bill" }, text)
+                    posted += r.key
+                }
+            }
+            if (settings.dueBills) {
+                // Credit-card payments (master section 8): on the reminder day and on the due day, only while something is owed.
+                val entries = ep.ledger().observeAllOnce()
+                ep.accounts().observeAll().first().forEach { acc ->
+                    val setup = com.mansaketh.chitta.core.domain.Cards.setupOf(acc) ?: return@forEach
+                    val f = com.mansaketh.chitta.core.domain.Cards.figures(setup, entries, today, zone)
+                    val r = com.mansaketh.chitta.core.domain.Cards.reminderFor(setup, f, today) ?: return@forEach
+                    if (r.key in posted) return@forEach
+                    val owed = IndianFormat.rupees(r.outstanding)
+                    val min = r.minimumDue?.let { " Minimum due ${IndianFormat.rupees(it)}." } ?: ""
+                    val text = if (r.dueToday) "$owed is due today.$min" else "$owed is due in ${r.daysToDue} ${if (r.daysToDue == 1L) "day" else "days"}.$min"
+                    ReminderNotifications.post(context, r.key.hashCode(), CHANNEL_BILLS, "${acc.name} payment", text)
                     posted += r.key
                 }
             }

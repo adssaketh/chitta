@@ -135,8 +135,4 @@ class ManageViewModel @Inject constructor(
 }
 
 /** The card setup of an account, or null until both days are set. */
-internal fun cardSetup(a: Account): com.mansaketh.chitta.core.domain.CardSetup? {
-    val s = a.statementDay ?: return null
-    val d = a.dueDay ?: return null
-    return com.mansaketh.chitta.core.domain.CardSetup(a.id, a.creditLimit?.let { Paise(it) }, s, d, a.minimumDue?.let { Paise(it) }, a.remindDaysBefore ?: 3)
-}
+internal fun cardSetup(a: Account): com.mansaketh.chitta.core.domain.CardSetup? = com.mansaketh.chitta.core.domain.Cards.setupOf(a)
