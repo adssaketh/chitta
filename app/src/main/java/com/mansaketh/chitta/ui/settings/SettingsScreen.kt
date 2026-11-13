@@ -122,6 +122,7 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
             SectionHeader("Import and export")
             HairlineRule()
             ValueRow("Rules", "", onClick = { onOpen("rules") })
+            ValueRow("Automation", "", onClick = { onOpen("automation") })
             ValueRow("Bank messages and UPI", if (waiting > 0) "$waiting waiting" else "", onClick = { onOpen("intake") })
             ValueRow("Import entries from CSV", "", onClick = { onOpen("csv-import") })
             ValueRow("Export entries to CSV", "", onClick = { sheet = "csv-account" })

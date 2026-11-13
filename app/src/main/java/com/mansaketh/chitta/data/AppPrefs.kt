@@ -55,5 +55,15 @@ class AppPrefs @Inject constructor(@ApplicationContext context: Context) {
         get() = p.getStringSet("csvTemplates", emptySet())?.toSet() ?: emptySet()
         set(v) { p.edit().putStringSet("csvTemplates", v.toSet()).apply() }
 
+    /** Apps whose notifications Chitta may read (Phase 8a). Empty = scanning does nothing. */
+    var scanApps: Set<String>
+        get() = p.getStringSet("scanApps", emptySet())?.toSet() ?: emptySet()
+        set(v) { p.edit().putStringSet("scanApps", v.toSet()).apply() }
+
+    /** The secret another app must send to add an entry in the background. Null = the receiver is off. Device-only. */
+    var broadcastSecret: String?
+        get() = p.getString("broadcastSecret", null)
+        set(v) { if (v == null) p.edit().remove("broadcastSecret").apply() else p.edit().putString("broadcastSecret", v).apply() }
+
     companion object { const val UNDO_IMPORT_DAYS = 30L }
 }
