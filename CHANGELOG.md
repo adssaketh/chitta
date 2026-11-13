@@ -1,9 +1,11 @@
 # Changelog
 
-## Phase 8a, slice 1: domain rules (13 Nov 2026) - on branch `phase-8a-must`
-- `:core:domain`: `Splits`, `Rules`, `Duplicates`, `Cards` with 28 tests (`Phase8aTest`). `Transaction.splitGroupId` added to the model.
-- Not yet: database schema 4, screens, app links, notification scanning, background receiver, icon search, donut. Decisions D85 to D88.
-- Written without a local build (no usable Gradle here); CI is the first compile and test run.
+## Phase 8a: Must items, slices 1 and 2 (13 Nov 2026) - on branch `phase-8a-must`, CI green
+- `:core:domain`: `Splits`, `Rules`, `Duplicates`, `Cards` with 28 tests (`Phase8aTest`).
+- Database schema 4 with tested migration from 3: `splitGroupId` on entries, card fields on accounts, `entry_rule` table. History snapshots keep the split group.
+- Screens: Ledger marks "Split" and "Possible duplicate"; Accounts > Credit card details (limit, statement and due day, minimum due, reminder days, outstanding, available, utilisation gauge); Settings > Rules (new, edit, turn off, delete with Undo, apply to history with a preview); rules suggest a category in Quick Add; Split on Entry detail with a live remainder.
+- Decisions D85 to D92. Not yet: card reminder notification, rules on imports, app links, notification scanning, background receiver, icon search, donut.
+- Written without a local build; CI compiled and ran every test (one smart-cast error found and fixed on the way).
 
 ## Phase 7b: Ping and share intake, PhonePe and other UPI apps (13 Nov 2026) - 0.8.0-phase7b - on `main`
 - Ping: the share receiver (JSON text, JSON file, or a payment screenshot, statement PDF or CSV from any app), the inbox provider (caller must be `com.ping.sms` with the pinned certificate), and a date-range file picker. Messages Chitta is sure about are saved at once with Undo; the rest wait in a review list with a count in Settings.
