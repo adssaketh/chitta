@@ -28,6 +28,7 @@ class MainActivity : ComponentActivity() {
     private val detail: com.mansaketh.chitta.ui.detail.EntryDetailViewModel by viewModels()
     private val manage: com.mansaketh.chitta.ui.manage.ManageViewModel by viewModels()
     private val imports: com.mansaketh.chitta.ui.imports.ImportViewModel by viewModels()
+    private val plan: com.mansaketh.chitta.ui.plan.PlanViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,7 +37,7 @@ class MainActivity : ComponentActivity() {
             var mode by rememberSaveable { mutableStateOf(ThemeMode.System) }
             var hide by rememberSaveable { mutableStateOf(false) }
             ChittaTheme(mode = mode, hideAmounts = hide) {
-                val vms = com.mansaketh.chitta.ui.AppViewModels(root, ledger, quickAdd, detail, manage, imports)
+                val vms = com.mansaketh.chitta.ui.AppViewModels(root, ledger, quickAdd, detail, manage, imports, plan)
                 if (BuildConfig.DEBUG) {
                     // Component gallery stays reachable from More in debug builds only (Phase 2 decision).
                     com.mansaketh.chitta.ui.AppRoot(vms) { onBack -> ComponentGallery(mode, { mode = it }, hide, { hide = it }) ; androidx.activity.compose.BackHandler(onBack = onBack) }

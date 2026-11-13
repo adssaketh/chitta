@@ -18,6 +18,7 @@ import com.mansaketh.chitta.core.design.tokens.Dimens
 import com.mansaketh.chitta.core.domain.LedgerSearch
 import com.mansaketh.chitta.core.domain.Totals
 import com.mansaketh.chitta.core.model.HistoryAction
+import com.mansaketh.chitta.core.model.TransactionKind
 import com.mansaketh.chitta.core.money.IndianFormat
 import com.mansaketh.chitta.core.money.Paise
 import com.mansaketh.chitta.ui.*
@@ -25,11 +26,11 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
-private enum class Edit { None, Title, Amount, Category, Account, Note, Date, Delete }
+private enum class Edit { None, Title, Amount, Category, Account, Note, Date, Delete, Repeat }
 
 /** Entry detail (PDF p.15): stamps, editable rows, History, and Duplicate / Pin / Delete. */
 @Composable
-fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> Unit, onHistory: () -> Unit) {
+fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> Unit, onHistory: () -> Unit, plan: com.mansaketh.chitta.ui.plan.PlanViewModel? = null) {
     LaunchedEffect(entryId) { vm.load(entryId) }
     val ui by vm.ui.collectAsState()
     val e = ui.entry
@@ -69,6 +70,7 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
                         if (transfer) ui.twin?.let { ValueRow("Other half", accountName(it.accountId, ui.accounts)) }
                         ValueRow("Date", dayAndTime(e.dateMs, zone), onClick = { edit = Edit.Date })
                         ValueRow("Note", e.note.ifBlank { "No note" }, onClick = { edit = Edit.Note })
+                        if (plan != null && !neutral && e.kind != TransactionKind.LENT && e.kind != TransactionKind.BORROWED) ValueRow("Repeat", e.repeat?.let { com.mansaketh.chitta.ui.plan.repeatLabel(it, e.periodLength ?: 1) } ?: "Does not repeat", onClick = { edit = Edit.Repeat })
                         ValueRow("History", "${ui.history.size} ${if (ui.history.size == 1) "version" else "versions"}", onClick = onHistory)
                         Spacer(Modifier.height(Dimens.Gap4))
                         Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
@@ -107,6 +109,7 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
                 }
                 ConfirmSheet("Delete?", lines, "Delete", { vm.confirmDelete(im, onBack); edit = Edit.None }, { edit = Edit.None })
             }
+            Edit.Repeat -> if (plan != null) com.mansaketh.chitta.ui.plan.RepeatSheet(e, zone, { r, len, end -> plan.repeatEntry(e, r, len, end); edit = Edit.None }, { edit = Edit.None })
             Edit.None -> Unit
         }
     }

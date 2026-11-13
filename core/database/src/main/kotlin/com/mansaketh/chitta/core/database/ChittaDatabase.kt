@@ -12,7 +12,7 @@ import androidx.room.RoomDatabase
         ActivityLogEntity::class, SettingEntity::class, LoanTermsEntity::class, FixedDepositEntity::class, CardDueEntity::class,
         PinnedEntryEntity::class, EntryVersionEntity::class, ExchangeRateEntity::class, RateOverrideEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class ChittaDatabase : RoomDatabase() {
@@ -32,7 +32,7 @@ abstract class ChittaDatabase : RoomDatabase() {
 
         fun open(context: Context): ChittaDatabase =
             Room.databaseBuilder(context.applicationContext, ChittaDatabase::class.java, FILE_NAME)
-                .addMigrations(Migrations.V1_TO_V2)
+                .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3)
                 .build()
     }
 }

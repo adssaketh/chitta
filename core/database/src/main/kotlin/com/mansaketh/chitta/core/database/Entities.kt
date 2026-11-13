@@ -84,6 +84,8 @@ data class TransactionEntity(
     val originalAmountPaise: Long? = null,
     val originalCurrency: String? = null,
     val exchangeRate: String? = null,
+    // Added in schema 3 (Phase 5): the day of month a monthly or yearly bill belongs on (a bill on the 31st).
+    val anchorDay: Int? = null,
 )
 
 @Entity(tableName = "budget")

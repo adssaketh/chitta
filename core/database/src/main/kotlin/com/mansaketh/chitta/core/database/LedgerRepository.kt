@@ -16,6 +16,8 @@ class LedgerRepository(private val db: ChittaDatabase, private val clock: () -> 
 
     fun observeAll(): Flow<List<Transaction>> = db.transactions().observeAll().map { rows -> rows.map { it.toModel() } }
     fun observe(id: String): Flow<Transaction?> = db.transactions().observe(id).map { it?.toModel() }
+    /** Every entry once, newest first, for work that needs the whole list (Phase 5 unlinking a deleted goal). */
+    suspend fun observeAllOnce(): List<Transaction> = db.transactions().getAll().map { it.toModel() }
     suspend fun get(id: String): Transaction? = db.transactions().get(id)?.toModel()
 
     fun observeHistory(entryId: String): Flow<List<EntryVersion>> = db.versions().observeFor(entryId).map { rows -> rows.map { it.toModel() } }

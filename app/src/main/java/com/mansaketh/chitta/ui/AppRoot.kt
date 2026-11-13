@@ -27,10 +27,12 @@ import com.mansaketh.chitta.ui.ledger.LedgerViewModel
 import com.mansaketh.chitta.ui.manage.AccountsScreen
 import com.mansaketh.chitta.ui.manage.CategoriesScreen
 import com.mansaketh.chitta.ui.manage.ManageViewModel
+import com.mansaketh.chitta.ui.plan.*
+import com.mansaketh.chitta.core.model.Objective
 
 class AppViewModels(
     val root: RootViewModel, val ledger: LedgerViewModel, val quickAdd: QuickAddViewModel,
-    val detail: EntryDetailViewModel, val manage: ManageViewModel, val imports: ImportViewModel,
+    val detail: EntryDetailViewModel, val manage: ManageViewModel, val imports: ImportViewModel, val plan: PlanViewModel,
 )
 
 /**
@@ -83,6 +85,9 @@ private fun Main(vms: AppViewModels, extra: (@Composable (onBack: () -> Unit) ->
     var stack by rememberSaveable { mutableStateOf(listOf<String>()) }
     var adding by rememberSaveable { mutableStateOf(false) }
     var addMenu by remember { mutableStateOf(false) }
+    var planTab by rememberSaveable { mutableStateOf(0) }
+    // "new-budget", "edit-goal:ID", ... the form open over the Plan screens
+    var planSheet by rememberSaveable { mutableStateOf<String?>(null) }
     val pinned by vms.quickAdd.ui.collectAsState()
     val top = stack.lastOrNull()
     fun push(s: String) { stack = stack + s }
@@ -98,9 +103,13 @@ private fun Main(vms: AppViewModels, extra: (@Composable (onBack: () -> Unit) ->
                     top == null -> when (NavDestination.valueOf(tab)) {
                         NavDestination.Ledger -> LedgerScreen(vms.ledger, onOpen = { push("detail:$it") }, onAdd = { openAdd() })
                         NavDestination.More -> MoreScreen(onAccounts = { push("accounts") }, onCategories = { push("categories") }, onImport = { push("import") }, onGallery = if (extra != null) ({ push("gallery") }) else null)
+                        NavDestination.Plan -> PlanScreen(vms.plan, planTab, { planTab = it }, { push(it) }, { planSheet = it })
                         else -> NotBuilt(NavDestination.valueOf(tab).label)
                     }
-                    top.startsWith("detail:") -> EntryDetailScreen(vms.detail, top.removePrefix("detail:"), onBack = ::pop, onHistory = { push("history:" + top.removePrefix("detail:")) })
+                    top.startsWith("detail:") -> EntryDetailScreen(vms.detail, top.removePrefix("detail:"), onBack = ::pop, onHistory = { push("history:" + top.removePrefix("detail:")) }, plan = vms.plan)
+                    top.startsWith("budget:") -> BudgetDetailScreen(vms.plan, top.removePrefix("budget:"), ::pop, { planSheet = "edit-budget:" + top.removePrefix("budget:") })
+                    top.startsWith("goal:") -> GoalDetailScreen(vms.plan, top.removePrefix("goal:"), ::pop, { planSheet = "edit-goal:" + top.removePrefix("goal:") }, { push("detail:$it") })
+                    top.startsWith("loan:") -> LoanDetailScreen(vms.plan, top.removePrefix("loan:"), ::pop, { planSheet = "edit-loan:" + top.removePrefix("loan:") }, { push("detail:$it") })
                     top.startsWith("history:") -> EntryHistoryScreen(vms.detail, top.removePrefix("history:"), onBack = ::pop)
                     top == "accounts" -> AccountsScreen(vms.manage, onBack = ::pop, onTransfer = { openAdd(EntryType.Transfer) })
                     top == "categories" -> CategoriesScreen(vms.manage, onBack = ::pop)
@@ -117,6 +126,7 @@ private fun Main(vms: AppViewModels, extra: (@Composable (onBack: () -> Unit) ->
             "Add",
             buildList {
                 add(Choice("Expense", "expense")); add(Choice("Income", "income")); add(Choice("Transfer between accounts", "transfer"))
+                add(Choice("New bill", "new-bill")); add(Choice("New budget", "new-budget")); add(Choice("New goal", "new-goal")); add(Choice("New loan", "new-loan"))
                 pinned.pinned.forEach { add(Choice("Pinned · ${it.title}", "pin:${it.id}")) }
             },
             { v ->
@@ -125,12 +135,14 @@ private fun Main(vms: AppViewModels, extra: (@Composable (onBack: () -> Unit) ->
                     v == "expense" -> openAdd(EntryType.Expense)
                     v == "income" -> openAdd(EntryType.Income)
                     v == "transfer" -> openAdd(EntryType.Transfer)
+                    v.startsWith("new-") -> { tab = NavDestination.Plan.name; stack = emptyList(); planTab = when (v) { "new-budget" -> 0; "new-goal" -> 1; "new-loan" -> 2; else -> 3 }; planSheet = v }
                     v.startsWith("pin:") -> pinned.pinned.firstOrNull { it.id == v.removePrefix("pin:") }?.let { openAdd(pin = it) }
                 }
             },
             { addMenu = false },
         )
         if (adding) QuickAddSheet(vms.quickAdd, onClose = { adding = false })
+        planSheet?.let { PlanSheetHost(vms.plan, it) { planSheet = null } }
     }
 }
 
@@ -151,5 +163,24 @@ private fun MoreScreen(onAccounts: () -> Unit, onCategories: () -> Unit, onImpor
         ValueRow("Categories", "", onClick = onCategories)
         ValueRow("Bring over your book", "", onClick = onImport)
         if (onGallery != null) ValueRow("Design gallery", "Debug builds only", onClick = onGallery)
+    }
+}
+
+/** The Plan forms (budget, goal, loan, bill) open over whatever screen asked for them. [which] is "new-x" or "edit-x:ID". */
+@Composable
+private fun PlanSheetHost(vm: PlanViewModel, which: String, close: () -> Unit) {
+    val ui by vm.ui.collectAsState()
+    val kind = which.substringAfter("-").substringBefore(":")
+    val id = which.substringAfter(":", "")
+    when (kind) {
+        "budget" -> BudgetSheet(ui.budgets.firstOrNull { it.id == id }, ui, { f -> vm.saveBudget(ui.budgets.firstOrNull { it.id == id }, f); close() }, close)
+        "goal" -> GoalSheet(ui.objectives.firstOrNull { it.id == id }, ui.zone, ui.nowMs, { n, t, inc, end -> vm.saveGoal(ui.objectives.firstOrNull { it.id == id }, n, t, inc, end); close() }, close)
+        "loan" -> {
+            val existing: Objective? = ui.objectives.firstOrNull { it.id == id }
+            LoanSheet(existing, ui, { n, lent, initial, off, acc, problem -> vm.addLoan(n, lent, initial, off, acc, problem).also { if (it) close() } }, { n, off -> existing?.let { vm.renameLoan(it, n, off) }; close() }, { n, lent, terms -> vm.saveTerms(n, lent, terms); close() }, close)
+        }
+        "bill" -> BillSheet(ui.entries.firstOrNull { it.id == id }, ui, { title, amount, income, acc, cat, due, rep, len, end, notify, sub ->
+            vm.saveBill(ui.entries.firstOrNull { it.id == id }, title, amount, income, acc, cat, due, rep, len, end, notify, sub); close()
+        }, close)
     }
 }

@@ -11,14 +11,15 @@ import com.mansaketh.chitta.core.money.Paise
  * Sign convention (checked on Paddhu's data): expenses are stored negative, income positive; lent and
  * borrowed entries carry the sign of the money that moved.
  *
- * **Assumption to verify (DECISIONS D35):** a normal entry always counts; lent and borrowed entries count;
- * upcoming, subscription and repeating entries count only once paid and not skipped. This is my reading of
- * Cashew, not something I confirmed in Paddhu's source. The dry run prints every balance under this rule so you
- * can compare it with Paddhu's screen before anything is imported for real.
+ * DECISIONS D35 (corrected in Phase 5, D45): a normal entry always counts. Upcoming, subscription and repeating entries
+ * count once paid and not skipped. Lent and borrowed entries count while they are paid; collecting or settling one in
+ * full sets it back to unpaid, so its net is zero. Paddhu's own totals sum only `paid = true` rows
+ * (`getTotalTowardsObjective`, `markAsPaid`, `openPayDebtCreditPopup` in the Paddhu source).
  */
 object Balances {
     fun countsTowardBalance(t: Transaction): Boolean = when (t.kind) {
-        null, TransactionKind.LENT, TransactionKind.BORROWED -> true
+        null -> true
+        TransactionKind.LENT, TransactionKind.BORROWED -> t.paid
         TransactionKind.UPCOMING, TransactionKind.SUBSCRIPTION, TransactionKind.REPETITIVE -> t.paid && !t.skipPaid
     }
 

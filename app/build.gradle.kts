@@ -13,8 +13,8 @@ android {
         applicationId = "com.mansaketh.chitta"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.2.0-phase2"
+        versionCode = 5
+        versionName = "0.5.0-phase5"
         // arm64 only (master section 8). There is no native code yet, so this is a guard for later.
         ndk { abiFilters += "arm64-v8a" }
     }
@@ -71,6 +71,7 @@ dependencies {
     implementation(platform(libs.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.work.runtime)
     testImplementation(libs.junit)
     testImplementation(kotlin("test"))
 }

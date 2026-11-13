@@ -17,4 +17,11 @@ object Migrations {
             db.execSQL("CREATE TABLE IF NOT EXISTS `rate_override` (`fromCurrency` TEXT NOT NULL, `toCurrency` TEXT NOT NULL, `rate` TEXT NOT NULL, `setAtMs` INTEGER NOT NULL, PRIMARY KEY(`fromCurrency`, `toCurrency`))")
         }
     }
+
+    /** Phase 5: the day of month a monthly or yearly bill belongs on, so a bill on the 31st survives short months. Nothing is dropped. */
+    val V2_TO_V3 = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `txn` ADD COLUMN `anchorDay` INTEGER")
+        }
+    }
 }

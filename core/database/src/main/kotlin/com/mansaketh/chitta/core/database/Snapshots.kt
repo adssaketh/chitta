@@ -34,6 +34,7 @@ object Snapshots {
         put("excludeFromBudgets", buildJsonArray { t.excludeFromBudgetIds.forEach { add(JsonPrimitive(it)) } })
         put("owner", t.ownerUid); put("private", t.isPrivate); put("householdSyncedAt", t.householdSyncedAtMs)
         put("originalAmount", t.originalAmount); put("originalCurrency", t.originalCurrency); put("exchangeRate", t.exchangeRate)
+        put("anchorDay", t.anchorDay)
     }.toString()
 
     fun decode(json: String): Transaction {
@@ -53,6 +54,7 @@ object Snapshots {
             excludeFromBudgetIds = (o["excludeFromBudgets"] as? JsonArray)?.map { it.jsonPrimitive.content } ?: emptyList(),
             ownerUid = str("owner"), isPrivate = bool("private")!!, householdSyncedAtMs = lng("householdSyncedAt"),
             originalAmount = lng("originalAmount"), originalCurrency = str("originalCurrency"), exchangeRate = str("exchangeRate"),
+            anchorDay = int("anchorDay"),
         )
     }
 }

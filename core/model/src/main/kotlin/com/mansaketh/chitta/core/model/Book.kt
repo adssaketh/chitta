@@ -88,6 +88,11 @@ data class Transaction(
     val originalCurrency: String? = null,
     /** Decimal text such as "83.2150" (original currency to the account's), never a Double. */
     val exchangeRate: String? = null,
+    /**
+     * New in Chitta (schema 3). The day of the month a monthly or yearly bill is really due on, so a bill on the 31st
+     * goes Jan 31, Feb 28, Mar 31 and not Jan 31, Feb 28, Mar 28. Null means "use the day of the due date".
+     */
+    val anchorDay: Int? = null,
 )
 
 data class Budget(

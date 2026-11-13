@@ -6,6 +6,7 @@ import com.mansaketh.chitta.core.database.BookRepository
 import com.mansaketh.chitta.core.database.CategoryRepository
 import com.mansaketh.chitta.core.database.ChittaDatabase
 import com.mansaketh.chitta.core.database.LedgerRepository
+import com.mansaketh.chitta.core.database.PlanRepository
 import com.mansaketh.chitta.core.database.CategoryWriter
 import com.mansaketh.chitta.core.database.PinnedRepository
 import com.mansaketh.chitta.core.database.RatesRepository
@@ -28,6 +29,7 @@ interface Clock { fun nowMs(): Long; fun zone(): ZoneId }
 object AppModule {
     @Provides @Singleton fun database(@ApplicationContext context: Context): ChittaDatabase = ChittaDatabase.open(context)
     @Provides @Singleton fun ledger(db: ChittaDatabase) = LedgerRepository(db)
+    @Provides @Singleton fun plan(db: ChittaDatabase, ledger: LedgerRepository) = PlanRepository(db, ledger)
     @Provides @Singleton fun accounts(db: ChittaDatabase) = AccountRepository(db)
     @Provides @Singleton fun categories(db: ChittaDatabase) = CategoryRepository(db)
     @Provides @Singleton fun pinned(db: ChittaDatabase) = PinnedRepository(db)

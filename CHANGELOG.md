@@ -1,5 +1,16 @@
 # Changelog
 
+## Phase 5: planning (13 Nov 2026) - 0.5.0-phase5 - branch `phase-5-planning`
+- Plan tab with five views: Budgets, Goals, Loans, Bills (upcoming and subscriptions) and Calendar.
+- Budgets: pace graph, even-pace line, forecast from day 7, category goals (press and hold to edit), breakdown, earlier periods, create/edit with accounts, left-out categories and lent/borrowed switch.
+- Goals: progress, monthly need, contributions. Loans: long-term loans (repay, lend more), one-time lent/borrowed (collect all or part; a part makes a long-term loan), instalment loans with a tickable schedule.
+- Bills: overdue first, scheduled totals page, pay (also a different amount or account), skip, set a missing amount, edit, delete; Auto-pay overdue and paid-date setting. Bill calendar: tap a day to pay, skip or undo.
+- "Repeat" row on entry detail. Reminders (WorkManager 2.12.0): due bills the day before and on the day, 9:00 am, and a log reminder at 9:00 pm; permission-denied note with a link to Android settings.
+- Database v3 (adds `anchorDay`, migration tested from the committed v2 schema). New `PlanRepository`.
+- `:core:domain` gains Periods, Bills, Budgets, Goals, Loans, BillCalendar and Reminders. 71 new unit tests (110 in domain).
+- Decisions D45 to D55. D45 corrects D35. Items to verify on your phone are marked in DECISIONS.md.
+- Not in this phase: fixed deposits (Phase 8), shared loans (Phase 7), rollover budgets and sinking funds (Phase 8), card-due reminders (Phase 8), Home and Safe to spend (Phase 6).
+
 ## Phase 4: core loop (13 Nov 2026) - 0.4.0-phase4
 - New `:core:domain`: exact keypad calculator, balances, totals, Quick Add rules, transfers, balance corrections, ledger search and grouping, bulk edit, delete impact, edit diff, exchange conversion, category merge/convert/move. 39 unit tests.
 - Database v2 (migration tested against the committed v1 schema): original amount/currency/rate on entries, archived flags, pinned entries, entry history, exchange rates and overrides.

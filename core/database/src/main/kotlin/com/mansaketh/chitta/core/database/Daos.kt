@@ -61,12 +61,29 @@ interface BudgetDao {
     @Query("SELECT * FROM budget ORDER BY sortOrder, name") suspend fun getAll(): List<BudgetEntity>
     @Insert(onConflict = OnConflictStrategy.ABORT) suspend fun insertLimits(rows: List<CategoryLimitEntity>)
     @Query("SELECT * FROM category_budget_limit ORDER BY id") suspend fun getLimits(): List<CategoryLimitEntity>
+
+    // ---- Phase 5
+    @Query("SELECT * FROM budget ORDER BY sortOrder, name") fun observeAll(): Flow<List<BudgetEntity>>
+    @Query("SELECT * FROM budget WHERE id = :id") suspend fun get(id: String): BudgetEntity?
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(row: BudgetEntity)
+    @Query("DELETE FROM budget WHERE id = :id") suspend fun delete(id: String)
+    @Query("SELECT * FROM category_budget_limit ORDER BY id") fun observeLimits(): Flow<List<CategoryLimitEntity>>
+    @Query("SELECT * FROM category_budget_limit WHERE budgetId = :budgetId ORDER BY id") suspend fun getLimitsFor(budgetId: String): List<CategoryLimitEntity>
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertLimits(rows: List<CategoryLimitEntity>)
+    @Query("DELETE FROM category_budget_limit WHERE budgetId = :budgetId") suspend fun deleteLimitsFor(budgetId: String)
+    @Query("DELETE FROM category_budget_limit WHERE id = :id") suspend fun deleteLimit(id: String)
 }
 
 @Dao
 interface ObjectiveDao {
     @Insert(onConflict = OnConflictStrategy.ABORT) suspend fun insertAll(rows: List<ObjectiveEntity>)
     @Query("SELECT * FROM objective ORDER BY sortOrder, name") suspend fun getAll(): List<ObjectiveEntity>
+
+    // ---- Phase 5
+    @Query("SELECT * FROM objective ORDER BY sortOrder, name") fun observeAll(): Flow<List<ObjectiveEntity>>
+    @Query("SELECT * FROM objective WHERE id = :id") suspend fun get(id: String): ObjectiveEntity?
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(row: ObjectiveEntity)
+    @Query("DELETE FROM objective WHERE id = :id") suspend fun delete(id: String)
 }
 
 @Dao
@@ -87,6 +104,9 @@ interface MiscDao {
     @Query("SELECT * FROM setting ORDER BY `key`") suspend fun getSettings(): List<SettingEntity>
     @Insert(onConflict = OnConflictStrategy.ABORT) suspend fun insertLoanTerms(rows: List<LoanTermsEntity>)
     @Query("SELECT * FROM loan_terms ORDER BY objectiveId") suspend fun getLoanTerms(): List<LoanTermsEntity>
+    @Query("SELECT * FROM loan_terms ORDER BY objectiveId") fun observeLoanTerms(): Flow<List<LoanTermsEntity>>
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertLoanTerms(row: LoanTermsEntity)
+    @Query("DELETE FROM loan_terms WHERE objectiveId = :objectiveId") suspend fun deleteLoanTerms(objectiveId: String)
     @Insert(onConflict = OnConflictStrategy.ABORT) suspend fun insertDeposits(rows: List<FixedDepositEntity>)
     @Query("SELECT * FROM fixed_deposit ORDER BY id") suspend fun getDeposits(): List<FixedDepositEntity>
     @Insert(onConflict = OnConflictStrategy.ABORT) suspend fun insertCardDues(rows: List<CardDueEntity>)

@@ -43,13 +43,13 @@ fun Transaction.toEntity() = TransactionEntity(
     id, pairedTransactionId, name, amount, currency, note, categoryId, subCategoryId, accountId, dateMs, modifiedAtMs, originalDueMs,
     income, periodLength, repeat?.code, endDateMs, upcomingNotification, kind?.code, paid, createdAnotherFuture, skipPaid,
     methodAdded?.code, objectiveId, objectiveLoanId, excludeFromBudgetIds.takeIf { it.isNotEmpty() }.toJson(), ownerUid, isPrivate, householdSyncedAtMs,
-    originalAmount, originalCurrency, exchangeRate,
+    originalAmount, originalCurrency, exchangeRate, anchorDay,
 )
 fun TransactionEntity.toModel() = Transaction(
     id, pairedTransactionId, name, amountPaise, currency, note, categoryId, subCategoryId, accountId, dateMs, modifiedAtMs, originalDueMs,
     income, periodLength, Repeat.fromCode(repeatCode), endDateMs, upcomingNotification, TransactionKind.fromCode(kindCode), paid, createdAnotherFuture, skipPaid,
     MethodAdded.fromCode(methodAddedCode), objectiveId, objectiveLoanId, excludeFromBudgetIdsJson.toStrings() ?: emptyList(), ownerUid, isPrivate, householdSyncedAtMs,
-    originalAmountPaise, originalCurrency, exchangeRate,
+    originalAmountPaise, originalCurrency, exchangeRate, anchorDay,
 )
 
 fun Budget.toEntity() = BudgetEntity(
