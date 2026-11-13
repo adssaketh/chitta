@@ -2,6 +2,7 @@ package com.mansaketh.chitta.di
 
 import android.content.Context
 import com.mansaketh.chitta.core.database.AccountRepository
+import com.mansaketh.chitta.core.database.AssetsRepository
 import com.mansaketh.chitta.core.database.BookRepository
 import com.mansaketh.chitta.core.database.CategoryRepository
 import com.mansaketh.chitta.core.database.ChittaDatabase
@@ -31,6 +32,7 @@ object AppModule {
     @Provides @Singleton fun database(@ApplicationContext context: Context): ChittaDatabase = ChittaDatabase.open(context)
     @Provides @Singleton fun ledger(db: ChittaDatabase) = LedgerRepository(db)
     @Provides @Singleton fun plan(db: ChittaDatabase, ledger: LedgerRepository) = PlanRepository(db, ledger)
+    @Provides @Singleton fun assets(db: ChittaDatabase) = AssetsRepository(db)
     @Provides @Singleton fun rules(db: ChittaDatabase) = RuleRepository(db)
     @Provides @Singleton fun accounts(db: ChittaDatabase) = AccountRepository(db)
     @Provides @Singleton fun categories(db: ChittaDatabase) = CategoryRepository(db)

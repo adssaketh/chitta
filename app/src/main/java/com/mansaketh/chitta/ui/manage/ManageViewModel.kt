@@ -27,6 +27,13 @@ data class ManageUi(
     val loading: Boolean = true,
     /** Card figures for accounts that have both days set (master section 12, credit card). */
     val cards: Map<String, com.mansaketh.chitta.core.domain.CardFigures> = emptyMap(),
+    /** Phase 8b: fixed deposits, card messages read from SMS, and the two Net worth switches. */
+    val deposits: List<FixedDeposit> = emptyList(),
+    val dues: List<CardDue> = emptyList(),
+    val nwDeposits: Boolean = false,
+    val nwInstalments: Boolean = true,
+    val nowMs: Long = 0L,
+    val zone: java.time.ZoneId = java.time.ZoneId.systemDefault(),
 )
 
 @HiltViewModel
@@ -37,6 +44,8 @@ class ManageViewModel @Inject constructor(
     private val categoryWriter: CategoryWriter,
     private val titleRepo: TitleRepository,
     private val ratesRepo: RatesRepository,
+    private val assets: AssetsRepository,
+    private val prefs: com.mansaketh.chitta.data.UiPrefs,
     private val fetcher: RateFetcher,
     private val actions: EntryActions,
     private val undo: UndoCenter,
@@ -46,11 +55,48 @@ class ManageViewModel @Inject constructor(
     private val entries = ledger.observeAll().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     private val titles = titleRepo.observeAll().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    val ui: StateFlow<ManageUi> = combine(accountRepo.observeAll(), categoryRepo.observeAll(), entries, ratesRepo.observeRates(), ratesRepo.observeOverrides()) { a, c, e, r, o ->
-        val today = java.time.Instant.ofEpochMilli(clock.nowMs()).atZone(clock.zone()).toLocalDate()
-        val cards = a.mapNotNull { acc -> cardSetup(acc)?.let { acc.id to com.mansaketh.chitta.core.domain.Cards.figures(it, e, today, clock.zone()) } }.toMap()
-        ManageUi(a, c, Balances.balances(e), r, o, loading = false, cards = cards)
+    private data class Base(val accounts: List<Account>, val categories: List<Category>, val entries: List<Transaction>, val rates: List<ExchangeRateEntity>, val overrides: List<RateOverrideEntity>)
+
+    private val base = combine(accountRepo.observeAll(), categoryRepo.observeAll(), entries, ratesRepo.observeRates(), ratesRepo.observeOverrides()) { a, c, e, r, o -> Base(a, c, e, r, o) }
+
+    val ui: StateFlow<ManageUi> = combine(base, assets.observeDeposits(), assets.observeCardDues(), prefs.netWorthDeposits, prefs.netWorthInstalments) { b, d, du, nd, ni ->
+        val now = clock.nowMs()
+        val today = java.time.Instant.ofEpochMilli(now).atZone(clock.zone()).toLocalDate()
+        // Card messages feed the cockpit, minus the ones an entry on the card already covers (CardDues.flowsFor).
+        val cards = b.accounts.mapNotNull { acc ->
+            cardSetup(acc)?.let { acc.id to com.mansaketh.chitta.core.domain.Cards.figures(it, b.entries, today, clock.zone(), CardDues.flowsFor(acc, du, b.entries)) }
+        }.toMap()
+        ManageUi(b.accounts, b.categories, Balances.balances(b.entries), b.rates, b.overrides, loading = false, cards = cards, deposits = d, dues = du, nwDeposits = nd, nwInstalments = ni, nowMs = now, zone = clock.zone())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ManageUi())
+
+    // ---- fixed deposits (Phase 8b)
+    /** Saves a new or edited deposit; Undo puts the old one back (or removes the new one). */
+    fun saveDeposit(entered: FixedDeposit) = viewModelScope.launch {
+        val d = if (entered.id.isEmpty()) entered.copy(id = ids.newId()) else entered
+        val old = ui.value.deposits.firstOrNull { it.id == d.id }
+        assets.saveDeposit(d.copy(updatedAtMs = clock.nowMs()))
+        undo.post(if (old == null) "Fixed deposit added" else "Fixed deposit saved") { if (old == null) assets.deleteDeposit(d.id) else assets.saveDeposit(old) }
+    }
+
+    fun deleteDeposit(id: String) = viewModelScope.launch {
+        val old = assets.deleteDeposit(id) ?: return@launch
+        undo.post("Fixed deposit deleted") { assets.saveDeposit(old) }
+    }
+
+    fun setNetWorthDeposits(v: Boolean) = prefs.setNetWorthDeposits(v)
+    fun setNetWorthInstalments(v: Boolean) = prefs.setNetWorthInstalments(v)
+
+    // ---- card messages (Phase 8b)
+    /** Makes [card] show [targetOwed] by adding a hand-made "opening" row for the difference. Undo removes it. Returns false when nothing needed changing. */
+    fun setCardOwed(card: String, targetOwed: Long): Boolean {
+        val current = CardDues.owedByCard(ui.value.dues)[card] ?: 0L
+        val row = CardDues.correctionFor(card, current, targetOwed, clock.nowMs(), ids::newId) ?: return false
+        viewModelScope.launch {
+            assets.saveCardDue(row)
+            undo.post("Set what is owed on $card") { assets.deleteCardDues(listOf(row.id)) }
+        }
+        return true
+    }
 
     // ---- accounts
     fun addAccount(name: String, currency: String = "INR") = viewModelScope.launch {

@@ -42,6 +42,7 @@ private const val WORK_NAME = "chitta-reminders"
 interface ReminderEntryPoint {
     fun ledger(): LedgerRepository
     fun accounts(): com.mansaketh.chitta.core.database.AccountRepository
+    fun assets(): com.mansaketh.chitta.core.database.AssetsRepository
     fun prefs(): AppPrefs
     fun clock(): Clock
 }
@@ -93,9 +94,10 @@ class ReminderWorker(private val context: Context, params: WorkerParameters) : C
             if (settings.dueBills) {
                 // Credit-card payments (master section 8): on the reminder day and on the due day, only while something is owed.
                 val entries = ep.ledger().observeAllOnce()
+                val dues = ep.assets().cardDues()
                 ep.accounts().observeAll().first().forEach { acc ->
                     val setup = com.mansaketh.chitta.core.domain.Cards.setupOf(acc) ?: return@forEach
-                    val f = com.mansaketh.chitta.core.domain.Cards.figures(setup, entries, today, zone)
+                    val f = com.mansaketh.chitta.core.domain.Cards.figures(setup, entries, today, zone, com.mansaketh.chitta.core.domain.CardDues.flowsFor(acc, dues, entries))
                     val r = com.mansaketh.chitta.core.domain.Cards.reminderFor(setup, f, today) ?: return@forEach
                     if (r.key in posted) return@forEach
                     val owed = IndianFormat.rupees(r.outstanding)
@@ -103,6 +105,20 @@ class ReminderWorker(private val context: Context, params: WorkerParameters) : C
                     val text = if (r.dueToday) "$owed is due today.$min" else "$owed is due in ${r.daysToDue} ${if (r.daysToDue == 1L) "day" else "days"}.$min"
                     ReminderNotifications.post(context, r.key.hashCode(), CHANNEL_BILLS, "${acc.name} payment", text)
                     posted += r.key
+                }
+            }
+            if (settings.dueBills) {
+                // Fixed deposits (Phase 8b): a note 7 days ahead, the day before and on the day, while the deposit is open.
+                val fds = com.mansaketh.chitta.core.domain.FixedDeposits
+                fds.maturingSoon(ep.assets().deposits(), now, zone, 7).forEach { d ->
+                    val left = fds.daysToMaturity(d, now, zone)
+                    if (left !in setOf(7L, 1L, 0L)) return@forEach
+                    val key = "fd|${d.id}|$left"
+                    if (key in posted) return@forEach
+                    val whenText = when (left) { 0L -> "today"; 1L -> "tomorrow"; else -> "in $left days" }
+                    val value = IndianFormat.rupees(fds.maturityValue(d, zone))
+                    ReminderNotifications.post(context, key.hashCode(), CHANNEL_BILLS, "${d.bank} fixed deposit", "Matures $whenText. About $value.")
+                    posted += key
                 }
             }
             if (settings.logReminder && Instant.ofEpochMilli(now).atZone(zone).toLocalTime().hour >= settings.logHour && "log|$today" !in posted) {

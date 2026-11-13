@@ -111,6 +111,15 @@ interface MiscDao {
     @Query("SELECT * FROM fixed_deposit ORDER BY id") suspend fun getDeposits(): List<FixedDepositEntity>
     @Insert(onConflict = OnConflictStrategy.ABORT) suspend fun insertCardDues(rows: List<CardDueEntity>)
     @Query("SELECT * FROM card_due ORDER BY dateMs, id") suspend fun getCardDues(): List<CardDueEntity>
+    @Query("SELECT * FROM fixed_deposit ORDER BY maturityMs, id") fun observeDeposits(): Flow<List<FixedDepositEntity>>
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertDeposit(row: FixedDepositEntity)
+    @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insertDepositIfNew(row: FixedDepositEntity): Long
+    @Query("DELETE FROM fixed_deposit WHERE id = :id") suspend fun deleteDeposit(id: String)
+    @Query("SELECT * FROM card_due ORDER BY dateMs, id") fun observeCardDues(): Flow<List<CardDueEntity>>
+    /** Returns the row id of each insert, or -1 for a message that was already there (same id), so a message counts once. */
+    @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insertCardDuesIfNew(rows: List<CardDueEntity>): List<Long>
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertCardDue(row: CardDueEntity)
+    @Query("DELETE FROM card_due WHERE id IN (:ids)") suspend fun deleteCardDues(ids: List<String>)
 }
 
 @Dao

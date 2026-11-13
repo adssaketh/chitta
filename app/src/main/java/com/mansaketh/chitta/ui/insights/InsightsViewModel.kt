@@ -15,6 +15,8 @@ import com.mansaketh.chitta.core.domain.History
 import com.mansaketh.chitta.core.domain.HistoryPoint
 import com.mansaketh.chitta.core.domain.Insights
 import com.mansaketh.chitta.core.domain.NetWorth
+import com.mansaketh.chitta.core.domain.NetWorthExtras
+import com.mansaketh.chitta.data.NetWorthInputs
 import com.mansaketh.chitta.core.domain.NetWorthFigures
 import com.mansaketh.chitta.core.domain.NetWorthPoint
 import com.mansaketh.chitta.core.domain.Period
@@ -84,6 +86,7 @@ data class InsightsUi(
     val cumulative: Boolean = false,
     val netNow: NetWorthFigures? = null,
     val netSeries: List<NetWorthPoint> = emptyList(),
+    val netExtras: NetWorthExtras = NetWorthExtras.NONE,
     val hasEntries: Boolean = false,
 )
 
@@ -94,9 +97,10 @@ class InsightsViewModel @Inject constructor(
     accountRepo: AccountRepository,
     categoryRepo: CategoryRepository,
     private val prefs: UiPrefs,
+    netWorthInputs: NetWorthInputs,
     private val clock: Clock,
 ) : ViewModel() {
-    private data class Raw(val entries: List<Transaction>, val objectives: List<Objective>, val categories: List<Category>, val accounts: List<Account>)
+    private data class Raw(val entries: List<Transaction>, val objectives: List<Objective>, val categories: List<Category>, val accounts: List<Account>, val extras: NetWorthExtras = NetWorthExtras.NONE)
     private data class Q(
         val range: RangeChoice, val accountIds: Set<String>, val income: Boolean, val bucket: Bucket, val cumulative: Boolean, val drill: String?, val firstDay: DayOfWeek,
     )
@@ -108,7 +112,7 @@ class InsightsViewModel @Inject constructor(
     private val cumulative = MutableStateFlow(false)
     private val drill = MutableStateFlow<String?>(null)
 
-    private val raw = combine(ledger.observeAll(), plan.observeObjectives(), categoryRepo.observeAll(), accountRepo.observeAll()) { e, o, c, a -> Raw(e, o, c, a) }
+    private val raw = combine(combine(ledger.observeAll(), plan.observeObjectives(), categoryRepo.observeAll(), accountRepo.observeAll()) { e, o, c, a -> Raw(e, o, c, a) }, netWorthInputs.extras) { r, x -> r.copy(extras = x) }
     private val q = combine(range, accountIds, income, bucket, cumulative) { r, a, i, b, c -> Triple(Triple(r, a, i), b, c) }
     private val query = combine(q, drill, prefs.firstDay) { t, d, f -> Q(t.first.first, t.first.second, t.first.third, t.second, t.third, d, f) }
 
@@ -168,8 +172,8 @@ class InsightsViewModel @Inject constructor(
             loading = false, nowMs = now, zone = zone, categories = r.categories, accounts = r.accounts, accountIds = q.accountIds, range = q.range,
             period = period, comparison = cmp, summary = summary, previous = previous, flow = flow, flowBucket = flowBucket, bars = bars,
             showIncome = q.income, changes = changes, drill = drillData, history = history, historyBucket = q.bucket, historyAverage = History.average(history),
-            cumulative = q.cumulative, netNow = NetWorth.at(now, r.entries, r.accounts, r.objectives),
-            netSeries = NetWorth.series(r.entries, r.accounts, r.objectives, now, zone, 12), hasEntries = r.entries.isNotEmpty(),
+            cumulative = q.cumulative, netNow = NetWorth.at(now, r.entries, r.accounts, r.objectives, r.extras, zone),
+            netSeries = NetWorth.series(r.entries, r.accounts, r.objectives, now, zone, 12, r.extras), hasEntries = r.entries.isNotEmpty(), netExtras = r.extras,
         )
     }
 

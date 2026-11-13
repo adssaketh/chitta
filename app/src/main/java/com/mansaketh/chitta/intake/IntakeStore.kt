@@ -2,6 +2,7 @@ package com.mansaketh.chitta.intake
 
 import android.content.Context
 import com.mansaketh.chitta.core.database.AccountRepository
+import com.mansaketh.chitta.core.database.AssetsRepository
 import com.mansaketh.chitta.core.database.CategoryRepository
 import com.mansaketh.chitta.core.database.LedgerRepository
 import com.mansaketh.chitta.core.database.TitleRepository
@@ -9,6 +10,7 @@ import com.mansaketh.chitta.core.domain.RestoreKind
 import com.mansaketh.chitta.core.intake.IntakeChoice
 import com.mansaketh.chitta.core.intake.IntakeClaim
 import com.mansaketh.chitta.core.intake.IntakeContext
+import com.mansaketh.chitta.core.intake.FdSms
 import com.mansaketh.chitta.core.intake.IntakeFormatException
 import com.mansaketh.chitta.core.intake.IntakePlan
 import com.mansaketh.chitta.core.intake.IntakePlanner
@@ -16,7 +18,9 @@ import com.mansaketh.chitta.core.intake.IntakeRow
 import com.mansaketh.chitta.core.intake.KnownAccounts
 import com.mansaketh.chitta.core.intake.PingContract
 import com.mansaketh.chitta.core.intake.PingExport
+import com.mansaketh.chitta.core.domain.FixedDeposits
 import com.mansaketh.chitta.core.model.Account
+import com.mansaketh.chitta.core.model.CardDue
 import com.mansaketh.chitta.data.RestoreManager
 import com.mansaketh.chitta.di.Clock
 import com.mansaketh.chitta.di.IdSource
@@ -38,15 +42,16 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /** What one read of the inbox or a Ping file did. */
-data class IntakeResult(val autoSaved: Int = 0, val toReview: Int = 0, val alreadyImported: Int = 0, val notTransactions: Int = 0, val parkedDeposits: Int = 0, val unreadable: Int = 0, val matchedToEntries: Int = 0) {
-    val anything: Boolean get() = autoSaved + toReview + alreadyImported + notTransactions + parkedDeposits + unreadable + matchedToEntries > 0
+data class IntakeResult(val autoSaved: Int = 0, val toReview: Int = 0, val alreadyImported: Int = 0, val notTransactions: Int = 0, val parkedDeposits: Int = 0, val unreadable: Int = 0, val matchedToEntries: Int = 0,
+    val addedDeposits: Int = 0, val cardsUpdated: Int = 0) {
+    val anything: Boolean get() = autoSaved + toReview + alreadyImported + notTransactions + parkedDeposits + unreadable + matchedToEntries + addedDeposits + cardsUpdated > 0
 }
 
 /**
  * Holds what Ping sent. Three small files in the app's private folder, no database change:
  *  - ping_inbox/: one JSON file per message handed over by Ping (written by [PingInboxProvider] and the share receiver),
  *  - intake/pending.json: messages that were not confident enough to save, waiting in the review list,
- *  - intake/parked-fd.json: fixed deposit messages, kept for a later phase (DECISIONS D79).
+ *  - intake/parked-fd.json: fixed deposit messages that could not be read completely (amount or maturity missing); nothing is guessed (D100).
  * [processInbox] reads the inbox when Chitta opens: confident messages are saved at once (with Undo), the rest go to pending.
  */
 @Singleton
@@ -56,6 +61,7 @@ class IntakeStore @Inject constructor(
     private val categoryRepo: CategoryRepository,
     private val titleRepo: TitleRepository,
     private val ledger: LedgerRepository,
+    private val assets: AssetsRepository,
     private val restore: RestoreManager,
     private val undo: UndoCenter,
     private val ids: IdSource,
@@ -90,6 +96,7 @@ class IntakeStore @Inject constructor(
     // ---------------------------------------------------------------- pending and parked
     private fun readItems(f: File): List<JsonObject> = try { if (f.isFile) PingExport.items(f.readText()) else emptyList() } catch (e: Exception) { emptyList() }
     private fun idOf(o: JsonObject) = (o["id"] as? JsonPrimitive)?.content.orEmpty()
+    private fun JsonObject.text(key: String) = (get(key) as? JsonPrimitive)?.content.orEmpty()
 
     private fun writeItems(f: File, items: List<JsonObject>) {
         dir.mkdirs()
@@ -160,24 +167,57 @@ class IntakeStore @Inject constructor(
         val auto = IntakePlanner.autoEntries(plan, ctx.accounts, clock.nowMs(), ids::newId)
         val autoIds = plan.toAutoSave.filter { it.saveable }.map { it.row.sourceId }
         val reviewIds = plan.candidates.map { it.row.sourceId }.toSet() - autoIds.toSet()
+        // One Undo for everything this read saved: entries, deposits and card dues (the bar holds a single item).
+        val undoSteps = ArrayList<suspend () -> Unit>()
+        val said = ArrayList<String>()
         if (auto.isNotEmpty()) {
             if (auto.size >= RESTORE_POINT_FROM) restore.create(RestoreKind.BeforeImport)
             ledger.add(auto)
             val saved = auto.map { it.id }
             val back = autoIds.mapNotNull { byId[it] }
-            undo.post("Saved ${auto.size} from your bank messages") {
+            said += "Saved ${auto.size} from your bank messages"
+            // Undo puts them back in the review list, so they are not saved again behind your back.
+            undoSteps += {
                 ledger.delete(saved)
-                // Undo puts them back in the review list, so they are not saved again behind your back.
                 mutex.withLock { withContext(Dispatchers.IO) { addTo(PENDING, back); _pending.value = readItems(File(dir, PENDING)).size } }
             }
         }
+
+        // Card dues (Phase 8b): spend, payment and refund messages change what a card owes. They write no entries.
+        val now = clock.nowMs()
+        val addedDues = assets.addCardDues(intake.cardDues.map { CardDue(it.id, it.card, it.kind, it.amountPaise, it.dateMs, it.note, now) })
+        if (addedDues.isNotEmpty()) {
+            val cards = addedDues.map { it.card }.distinct().size
+            said += "Updated what you owe on $cards ${if (cards == 1) "card" else "cards"}"
+            val dueIds = addedDues.map { it.id }
+            undoSteps += { assets.deleteCardDues(dueIds) }
+        }
+
+        // Fixed deposits (Phase 8b): read completely, or kept parked. A deposit never creates an entry; the bank's debit message does.
+        val have = assets.deposits().toMutableList()
+        val addedFds = ArrayList<String>()
+        val unreadFds = ArrayList<JsonObject>()
+        for (id in intake.fixedDepositIds) {
+            val item = byId[id] ?: continue
+            val d = FdSms.parse(item.text("body"), item.text("address"), item.text("date").toLongOrNull() ?: now, id, clock.zone())
+            if (d == null) { unreadFds += item; continue }
+            if (have.any { FixedDeposits.same(it, d, clock.zone()) }) continue
+            val stamped = d.copy(updatedAtMs = now)
+            if (assets.addDepositIfNew(stamped)) { have += stamped; addedFds += stamped.id }
+        }
+        if (addedFds.isNotEmpty()) {
+            said += if (addedFds.size == 1) "Added a fixed deposit. Check its details" else "Added ${addedFds.size} fixed deposits. Check their details"
+            undoSteps += { addedFds.forEach { assets.deleteDeposit(it) } }
+        }
+        if (said.isNotEmpty()) undo.post(said.joinToString(". ")) { undoSteps.forEach { it() } }
+
         withContext(Dispatchers.IO) {
             addTo(PENDING, reviewIds.mapNotNull { byId[it] })
             removeFromPending(autoIds)
-            addTo(PARKED, intake.fixedDepositIds.mapNotNull { byId[it] })
+            addTo(PARKED, unreadFds)
             _pending.value = readItems(File(dir, PENDING)).size
         }
-        return IntakeResult(auto.size, reviewIds.size, plan.alreadyImported, intake.skipped, intake.fixedDepositIds.size, 0, plan.claims.size)
+        return IntakeResult(auto.size, reviewIds.size, plan.alreadyImported, intake.skipped, unreadFds.size, 0, plan.claims.size, addedFds.size, addedDues.map { it.card }.distinct().size)
     }
 
     /**

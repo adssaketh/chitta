@@ -78,7 +78,9 @@ class IntakeViewModel @Inject constructor(
         if (r.matchedToEntries > 0) parts.add("${r.matchedToEntries} matched to entries you already have")
         if (r.alreadyImported > 0) parts.add("${r.alreadyImported} already in your book")
         if (r.notTransactions > 0) parts.add("${r.notTransactions} not payments")
-        if (r.parkedDeposits > 0) parts.add("${r.parkedDeposits} fixed deposit ${if (r.parkedDeposits == 1) "message" else "messages"} kept for later")
+        if (r.cardsUpdated > 0) parts.add("what you owe was updated on ${r.cardsUpdated} ${if (r.cardsUpdated == 1) "card" else "cards"} (no entries)")
+        if (r.addedDeposits > 0) parts.add("${r.addedDeposits} fixed ${if (r.addedDeposits == 1) "deposit" else "deposits"} added, check the details")
+        if (r.parkedDeposits > 0) parts.add("${r.parkedDeposits} fixed deposit ${if (r.parkedDeposits == 1) "message" else "messages"} could not be read in full, so nothing was added")
         return if (parts.isEmpty()) "Nothing new was found in that file." else parts.joinToString(". ") + "."
     }
 
