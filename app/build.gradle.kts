@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 android {
@@ -55,7 +57,20 @@ kotlin { jvmToolchain(21) }
 
 dependencies {
     implementation(project(":core:design"))
+    implementation(project(":core:model"))
+    implementation(project(":core:money"))
+    implementation(project(":core:domain"))
+    implementation(project(":core:database"))
+    implementation(project(":core:importer"))
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.compose.foundation)
+    implementation(libs.compose.material3)
     implementation(platform(libs.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
+    testImplementation(libs.junit)
+    testImplementation(kotlin("test"))
 }

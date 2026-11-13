@@ -39,8 +39,8 @@ object LedgerSearch {
             when (filter.tab) {
                 LedgerTab.All -> true
                 LedgerTab.Upcoming -> isUpcoming(t)
-                LedgerTab.Income -> !isUpcoming(t) && !Totals.isTransfer(t) && (t.categoryId in incomeCategory || (t.categoryId !in categoryName && t.amount > 0))
-                LedgerTab.Spending -> !isUpcoming(t) && !Totals.isTransfer(t) && !(t.categoryId in incomeCategory || (t.categoryId !in categoryName && t.amount > 0))
+                LedgerTab.Income -> !isUpcoming(t) && !Totals.isNeutral(t) && (t.categoryId in incomeCategory || (t.categoryId !in categoryName && t.amount > 0))
+                LedgerTab.Spending -> !isUpcoming(t) && !Totals.isNeutral(t) && !(t.categoryId in incomeCategory || (t.categoryId !in categoryName && t.amount > 0))
             }
         }.filter { filter.categoryIds.isEmpty() || it.categoryId in filter.categoryIds || it.subCategoryId in filter.categoryIds }
             .filter { filter.accountIds.isEmpty() || it.accountId in filter.accountIds }

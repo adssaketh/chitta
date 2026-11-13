@@ -1,6 +1,8 @@
 package com.mansaketh.chitta.core.design.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,6 +30,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.mansaketh.chitta.core.design.icons.ChittaIcons
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.tokens.Dimens
 import com.mansaketh.chitta.core.money.IndianFormat
@@ -44,6 +47,10 @@ data class LedgerEntry(
     /** Plain word for a status stamp, for example "Upcoming". At most two stamps per screen. */
     val stamp: String? = null,
     val stampTone: StampTone = StampTone.Neutral,
+    /** The entry's id, so a screen can tell which row was tapped. Not shown. */
+    val id: String = "",
+    /** In multi-select mode: ticked rows show an ink check in place of the category glyph. */
+    val selected: Boolean = false,
 )
 
 /**
@@ -58,6 +65,7 @@ fun LedgerDay(
     dayTotal: Paise,
     modifier: Modifier = Modifier,
     onEntryClick: (LedgerEntry) -> Unit = {},
+    onEntryLongClick: (LedgerEntry) -> Unit = {},
 ) {
     val c = ChittaTheme.colors
     Row(modifier.fillMaxWidth().height(IntrinsicSize.Min).semantics(mergeDescendants = false) {}) {
@@ -71,7 +79,7 @@ fun LedgerDay(
             Text(weekday, style = ChittaTheme.type.label, color = c.inkMuted)
         }
         Column(Modifier.weight(1f)) {
-            entries.forEach { LedgerRow(it, onClick = { onEntryClick(it) }) }
+            entries.forEach { LedgerRow(it, onClick = { onEntryClick(it) }, onLongClick = { onEntryLongClick(it) }) }
             Row(
                 Modifier.fillMaxWidth().heightIn(min = Dimens.Gap8).padding(top = Dimens.Gap2),
                 verticalAlignment = Alignment.CenterVertically,
@@ -90,20 +98,28 @@ fun LedgerDay(
  * Title, a small category glyph, optional stamp, amount right-aligned. At least 56 dp, taller as text grows.
  * From 150% text upward the amount moves under the title, so a stamp such as UPCOMING keeps its full width.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LedgerRow(
     entry: LedgerEntry,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
+    onLongClick: () -> Unit = {},
 ) {
     val c = ChittaTheme.colors
     val stacked = LocalDensity.current.fontScale >= 1.5f
     val glyph: @Composable () -> Unit = {
-        Box(
-            Modifier.size(32.dp).clip(CircleShape).background(entry.categoryColor.copy(alpha = 0.16f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(entry.glyph, contentDescription = null, tint = entry.categoryColor, modifier = Modifier.size(20.dp))
+        if (entry.selected) {
+            Box(Modifier.size(32.dp).clip(CircleShape).background(c.ink), contentAlignment = Alignment.Center) {
+                Icon(ChittaIcons.Check, contentDescription = "Selected", tint = c.background, modifier = Modifier.size(20.dp))
+            }
+        } else {
+            Box(
+                Modifier.size(32.dp).clip(CircleShape).background(entry.categoryColor.copy(alpha = 0.16f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(entry.glyph, contentDescription = null, tint = entry.categoryColor, modifier = Modifier.size(20.dp))
+            }
         }
     }
     val text: @Composable (Modifier) -> Unit = { m ->
@@ -122,7 +138,7 @@ fun LedgerRow(
     val base = modifier
         .fillMaxWidth()
         .heightIn(min = Dimens.RowMin)
-        .clickable(role = Role.Button, onClick = onClick)
+        .combinedClickable(role = Role.Button, onClick = onClick, onLongClick = onLongClick)
         .padding(vertical = Dimens.Gap2)
     if (stacked) {
         Column(base, verticalArrangement = Arrangement.spacedBy(Dimens.Gap1)) {

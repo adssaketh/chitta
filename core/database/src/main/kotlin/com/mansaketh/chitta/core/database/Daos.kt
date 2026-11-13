@@ -26,6 +26,8 @@ interface CategoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(row: CategoryEntity)
     @Query("SELECT * FROM category ORDER BY sortOrder, name") fun observeAll(): Flow<List<CategoryEntity>>
     @Query("SELECT * FROM category ORDER BY sortOrder, name") suspend fun getAll(): List<CategoryEntity>
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertAll(rows: List<CategoryEntity>)
+    @Query("DELETE FROM category WHERE id IN (:ids)") suspend fun deleteMany(ids: List<String>)
     @Query("SELECT COUNT(*) FROM category") suspend fun count(): Int
 }
 
@@ -71,6 +73,8 @@ interface ObjectiveDao {
 interface TitleMemoryDao {
     @Insert(onConflict = OnConflictStrategy.ABORT) suspend fun insertAll(rows: List<TitleMemoryEntity>)
     @Query("SELECT * FROM title_memory ORDER BY sortOrder, id") suspend fun getAll(): List<TitleMemoryEntity>
+    @Query("SELECT * FROM title_memory ORDER BY sortOrder, id") fun observeAll(): Flow<List<TitleMemoryEntity>>
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertAll(rows: List<TitleMemoryEntity>)
 }
 
 @Dao

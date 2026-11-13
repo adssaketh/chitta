@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,7 +20,15 @@ import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.theme.ThemeMode
 import com.mansaketh.chitta.core.design.tokens.Dimens
 
+@dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private val root: com.mansaketh.chitta.ui.RootViewModel by viewModels()
+    private val ledger: com.mansaketh.chitta.ui.ledger.LedgerViewModel by viewModels()
+    private val quickAdd: com.mansaketh.chitta.ui.add.QuickAddViewModel by viewModels()
+    private val detail: com.mansaketh.chitta.ui.detail.EntryDetailViewModel by viewModels()
+    private val manage: com.mansaketh.chitta.ui.manage.ManageViewModel by viewModels()
+    private val imports: com.mansaketh.chitta.ui.imports.ImportViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -27,13 +36,12 @@ class MainActivity : ComponentActivity() {
             var mode by rememberSaveable { mutableStateOf(ThemeMode.System) }
             var hide by rememberSaveable { mutableStateOf(false) }
             ChittaTheme(mode = mode, hideAmounts = hide) {
+                val vms = com.mansaketh.chitta.ui.AppViewModels(root, ledger, quickAdd, detail, manage, imports)
                 if (BuildConfig.DEBUG) {
-                    // Component gallery: debug builds only (Phase 2 decision).
-                    ComponentGallery(mode, { mode = it }, hide, { hide = it })
+                    // Component gallery stays reachable from More in debug builds only (Phase 2 decision).
+                    com.mansaketh.chitta.ui.AppRoot(vms) { onBack -> ComponentGallery(mode, { mode = it }, hide, { hide = it }) ; androidx.activity.compose.BackHandler(onBack = onBack) }
                 } else {
-                    Box(Modifier.fillMaxSize().background(ChittaTheme.colors.background).padding(Dimens.Margin)) {
-                        Text("Chitta", style = ChittaTheme.type.headline, color = ChittaTheme.colors.ink)
-                    }
+                    com.mansaketh.chitta.ui.AppRoot(vms)
                 }
             }
         }

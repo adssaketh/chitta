@@ -36,3 +36,33 @@ class AccountEditor(private val db: ChittaDatabase) {
         db.accounts().upsert(a.copy(archived = archived))
     }
 }
+
+class TitleRepository(private val db: ChittaDatabase) {
+    fun observeAll(): Flow<List<com.mansaketh.chitta.core.model.TitleMemory>> = db.titles().observeAll().map { rows -> rows.map { it.toModel() } }
+
+    /** Remembers [title] for [categoryId] the first time it is saved (Paddhu's titles memory). */
+    suspend fun remember(title: String, categoryId: String, nowMs: Long, newId: String) {
+        val t = title.trim()
+        if (t.isEmpty()) return
+        val all = db.titles().getAll()
+        if (all.any { it.title.equals(t, ignoreCase = true) }) return
+        db.titles().upsertAll(listOf(TitleMemoryEntity(newId, categoryId, t, nowMs, null, (all.maxOfOrNull { it.sortOrder } ?: -1) + 1, false)))
+    }
+
+    suspend fun saveAll(rows: List<com.mansaketh.chitta.core.model.TitleMemory>) = db.titles().upsertAll(rows.map { it.toEntity() })
+}
+
+/** Category writes that touch several rows at once (merge, reorder, convert). */
+class CategoryWriter(private val db: ChittaDatabase) {
+    suspend fun saveAll(rows: List<Category>) = db.categories().upsertAll(rows.map { it.toEntity() })
+    suspend fun delete(ids: List<String>) = db.categories().deleteMany(ids)
+}
+
+class RatesRepository(private val db: ChittaDatabase) {
+    fun observeRates(): Flow<List<ExchangeRateEntity>> = db.rates().observeRates()
+    fun observeOverrides(): Flow<List<RateOverrideEntity>> = db.rates().observeOverrides()
+    suspend fun rates(): List<ExchangeRateEntity> = db.rates().getRates()
+    suspend fun store(rows: List<ExchangeRateEntity>) = db.rates().putRates(rows)
+    suspend fun setOverride(from: String, to: String, rate: String, nowMs: Long) = db.rates().putOverride(RateOverrideEntity(from, to, rate, nowMs))
+    suspend fun removeOverride(from: String, to: String) = db.rates().removeOverride(from, to)
+}

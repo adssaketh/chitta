@@ -40,7 +40,7 @@ dependencies {
     api(project(":core:model"))
     api(project(":core:importer"))
     implementation(project(":core:money"))
-    implementation(libs.androidx.room.runtime)
+    api(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(libs.kotlinx.coroutines.android)
     ksp(libs.androidx.room.compiler)

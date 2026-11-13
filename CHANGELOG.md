@@ -1,5 +1,13 @@
 # Changelog
 
+## Phase 4: core loop (13 Nov 2026) - 0.4.0-phase4
+- New `:core:domain`: exact keypad calculator, balances, totals, Quick Add rules, transfers, balance corrections, ledger search and grouping, bulk edit, delete impact, edit diff, exchange conversion, category merge/convert/move. 39 unit tests.
+- Database v2 (migration tested against the committed v1 schema): original amount/currency/rate on entries, archived flags, pinned entries, entry history, exchange rates and overrides.
+- Hilt added. Screens: first-run chooser, Ledger (tabs, search, filters, multi-select, bulk edit, copy, share totals), Quick Add (expense, income, transfer, pinned strip, long-press + menu, currency and rate), entry detail with history and restore, Accounts (balances, correct balance, rates), Categories, import flow with preview and 30-day Undo import.
+- Every save, edit and delete shows Undo for 10 seconds.
+- Decisions D35 to D44. Two are assumptions to verify on your real backup (D35, D36). Navigation Compose skipped (D37).
+- Home, Plan and Insights show a plain "not built yet" line.
+
 ## Phase 0: audit (13 Nov 2026)
 - Added `docs/phase-0-audit.md`: feature inventory against master section 7, conflicts, Drift to Room map, risks, recommendations for the two open decisions.
 - Added `DECISIONS.md` with decisions D1 to D11, all approved.

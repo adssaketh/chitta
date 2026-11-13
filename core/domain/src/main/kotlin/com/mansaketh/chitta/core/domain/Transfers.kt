@@ -47,3 +47,19 @@ object Transfers {
         return listOf(entry, twin)
     }
 }
+
+/** A balance correction entry: moves [account]'s balance from [current] to [wanted] without counting as spending. */
+object BalanceCorrection {
+    /** Null when the balance already matches. */
+    fun create(account: com.mansaketh.chitta.core.model.Account, current: com.mansaketh.chitta.core.money.Paise, wanted: com.mansaketh.chitta.core.money.Paise, atMs: Long, ownerUid: String?, newId: () -> String): Transaction? {
+        val delta = wanted - current
+        if (delta.isZero) return null
+        return Transaction(
+            id = newId(), pairedTransactionId = null, name = "Balance correction", amount = delta.value, currency = account.currency, note = "",
+            categoryId = QuickAdd.TRANSFER_CATEGORY_ID, subCategoryId = null, accountId = account.id, dateMs = atMs, modifiedAtMs = atMs,
+            originalDueMs = null, income = delta.value > 0, periodLength = null, repeat = null, endDateMs = null, upcomingNotification = null,
+            kind = null, paid = true, createdAnotherFuture = null, skipPaid = false, methodAdded = null, objectiveId = null,
+            objectiveLoanId = null, excludeFromBudgetIds = emptyList(), ownerUid = ownerUid, isPrivate = false, householdSyncedAtMs = null,
+        )
+    }
+}

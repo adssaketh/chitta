@@ -368,3 +368,48 @@ class BulkAndDeleteTest {
         assertEquals(emptyList(), EditDiff.between(before, before))
     }
 }
+
+class CategoryAndCorrectionTest {
+    private val food = cat("food", order = 0)
+    private val groc = cat("groc", order = 1)
+    private val sub = cat("veg", main = "groc", order = 0)
+    private val pay = cat("pay", income = true)
+
+    @Test fun mergeMovesEntriesAndTitlesAndRemovesTheSourceFamily() {
+        val entries = listOf(tx("1", -1, category = "groc"), tx("2", -1, category = "food").copy(subCategoryId = "veg"), tx("3", -1, category = "food"))
+        val titles = listOf(TitleMemory("m1", "groc", "BigBasket", 0, null, 0, false))
+        val r = CategoryOps.merge(groc, food, listOf(food, groc, sub), entries, titles, nowMs = 50)
+        assertEquals(listOf("1", "2"), r.entries.map { it.id })
+        assertTrue(r.entries.all { it.categoryId == "food" && it.subCategoryId == null && it.modifiedAtMs == 50L })
+        assertEquals("food", r.titles.single().categoryId)
+        assertEquals(setOf("groc", "veg"), r.removedCategoryIds.toSet())
+    }
+
+    @Test fun convertRulesAreExplained() {
+        val all = listOf(food, groc, sub, pay)
+        assertEquals("Pick a different category.", CategoryOps.cannotConvert(food, food, all))
+        assertEquals("A subcategory cannot hold subcategories.", CategoryOps.cannotConvert(food, sub, all))
+        assertEquals("This category has subcategories. Merge or move them first.", CategoryOps.cannotConvert(groc, food, all))
+        assertEquals("Income and expense categories cannot be mixed.", CategoryOps.cannotConvert(food, pay, all))
+        assertNull(CategoryOps.cannotConvert(food, groc, all.filter { it.id != "veg" }))
+        assertEquals("groc", CategoryOps.convertToSub(food, groc, 1).mainCategoryId)
+    }
+
+    @Test fun moveSwapsNeighboursAndReturnsOnlyChangedRows() {
+        val a = cat("a", order = 0); val b = cat("b", order = 1); val c = cat("c", order = 2)
+        val changed = CategoryOps.move(listOf(a, b, c), "c", up = true, nowMs = 9)
+        assertEquals(mapOf("b" to 2, "c" to 1), changed.associate { it.id to it.sortOrder })
+        assertEquals(emptyList(), CategoryOps.move(listOf(a, b, c), "a", up = true, nowMs = 9))
+    }
+
+    @Test fun balanceCorrectionMovesTheBalanceAndIsNotSpending() {
+        val a = acct("a1")
+        val fix = BalanceCorrection.create(a, current = Paise.rupees(1_000), wanted = Paise.rupees(1_250), atMs = 5, ownerUid = null) { "x" }!!
+        assertEquals(25_000L, fix.amount)
+        assertEquals(Paise.rupees(1_250), Balances.balance(listOf(tx("old", 100_000), fix), "a1") )
+        assertEquals(Paise.ZERO, Totals.of(listOf(fix), listOf(food, pay)).let { it.moneyIn + it.moneyOut })
+        assertNull(BalanceCorrection.create(a, Paise(5), Paise(5), 0, null) { "y" })
+        val down = BalanceCorrection.create(a, Paise.rupees(100), Paise.rupees(40), 0, null) { "z" }!!
+        assertEquals(-6_000L, down.amount)
+    }
+}

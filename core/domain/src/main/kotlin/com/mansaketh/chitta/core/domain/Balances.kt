@@ -42,8 +42,14 @@ object Totals {
     /** A leg of a transfer between own accounts. */
     fun isTransfer(t: Transaction): Boolean = t.pairedTransactionId != null
 
+    /** A balance correction: moves a balance to match reality, so it is neither spending nor income. */
+    fun isBalanceCorrection(t: Transaction): Boolean = t.categoryId == QuickAdd.TRANSFER_CATEGORY_ID && t.pairedTransactionId == null
+
+    /** Entries that never count as spending or income: transfers and balance corrections. */
+    fun isNeutral(t: Transaction): Boolean = isTransfer(t) || isBalanceCorrection(t)
+
     /**
-     * Totals for the month header and the Insights summary. Transfers between own accounts are left out;
+     * Totals for the month header and the Insights summary. Transfers between own accounts and balance corrections are left out;
      * lent and borrowed entries are left out (they have their own totals); upcoming entries count once paid.
      * An entry in an income category adds to money in (a negative one reduces it); every other entry adds to
      * money out, so a refund (positive, in an expense category) reduces what was spent (section 12).
@@ -53,7 +59,7 @@ object Totals {
         var moneyIn = Paise.ZERO
         var moneyOut = Paise.ZERO
         for (t in entries) {
-            if (!Balances.countsTowardBalance(t) || isTransfer(t)) continue
+            if (!Balances.countsTowardBalance(t) || isNeutral(t)) continue
             if (t.kind == TransactionKind.LENT || t.kind == TransactionKind.BORROWED) continue
             if (t.categoryId in incomeCategory) moneyIn += Paise(t.amount) else moneyOut -= Paise(t.amount)
         }
@@ -62,7 +68,7 @@ object Totals {
 
     /** What a day's total on the rule shows: the signed net of entries that count, transfers excluded. */
     fun dayNet(entries: List<Transaction>): Paise =
-        entries.asSequence().filter { Balances.countsTowardBalance(it) && !isTransfer(it) }
+        entries.asSequence().filter { Balances.countsTowardBalance(it) && !isNeutral(it) }
             .filter { it.kind != TransactionKind.LENT && it.kind != TransactionKind.BORROWED }
             .fold(Paise.ZERO) { acc, t -> acc + Paise(t.amount) }
 }
