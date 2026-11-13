@@ -18,3 +18,12 @@
 - GitHub Actions workflow `build-apk.yml`; `.gitignore`.
 - Decisions D15 to D25. Light warning-text and mark-grey colours changed from the PDF for contrast (D19).
 - No feature screens.
+
+## Phase 3: data layer (13 Nov 2026) - branch `phase-3-data-layer`
+- `:core:model` (new, pure Kotlin): enums with explicit stored codes, and the `Book` data classes the importer produces and the database stores.
+- `:core:money`: `paiseFromDriftDouble` and `paiseFromDecimal` (shortest decimal, then HALF_EVEN), with 7 tests. 32 money tests in total.
+- `:core:importer` (new, pure Kotlin): reads a Paddhu backup (schema 33 to 48) through a `BackupSource`. Reads all ten Drift tables and the settings blob (loan terms, fixed deposits, card dues). Returns a `Report` (counts, rounded amounts, per-account conversion check, items not carried over, issues). Refuses older, newer or non-Paddhu files. 25 tests on a fixture built from the real v48 column layout.
+- `:core:database` (new, Android): Room version 1 with 13 tables, DAOs, `BookRepository` (writes a book in one transaction, refuses a non-empty database, reads it back), account, category and transaction repositories, `AndroidBackupSource` (read-only). 8 Robolectric tests, schema exported to `core/database/schemas/1.json`.
+- Checked on a real backup (101 entries, 3 accounts): schema 48, all INR with 2 decimals, dates are epoch seconds, every amount is whole paise, every `type` is NULL.
+- CI runs the new tests. Decisions D26 to D34.
+- No screens. No importer screen yet (Phase 4).

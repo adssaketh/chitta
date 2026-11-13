@@ -17,7 +17,7 @@ jobs:
         with:
           gradle-version: 9.9.1
       - name: Tests and screenshot check
-        run: gradle :core:money:test :core:design:testDebugUnitTest :core:design:verifyRoborazziDebug --no-daemon
+        run: gradle :core:money:test :core:importer:test :core:database:testDebugUnitTest :core:design:testDebugUnitTest :core:design:verifyRoborazziDebug --no-daemon
       - name: Debug APK
         run: gradle :app:assembleDebug --no-daemon
       - name: Signed release APK (only if secrets exist)

@@ -1,0 +1,1162 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "192d91dd9753a6824090554209233272",
+    "entities": [
+      {
+        "tableName": "account",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `colour` TEXT, `iconName` TEXT, `createdAtMs` INTEGER NOT NULL, `modifiedAtMs` INTEGER, `sortOrder` INTEGER NOT NULL, `currency` TEXT, `currencyFormat` TEXT, `decimals` INTEGER NOT NULL, `homeWidgetsJson` TEXT, `ownerUid` TEXT, `archived` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "colour",
+            "columnName": "colour",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "iconName",
+            "columnName": "iconName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAtMs",
+            "columnName": "createdAtMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modifiedAtMs",
+            "columnName": "modifiedAtMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sortOrder",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currency",
+            "columnName": "currency",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "currencyFormat",
+            "columnName": "currencyFormat",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "decimals",
+            "columnName": "decimals",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "homeWidgetsJson",
+            "columnName": "homeWidgetsJson",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "ownerUid",
+            "columnName": "ownerUid",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "archived",
+            "columnName": "archived",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "category",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `colour` TEXT, `iconName` TEXT, `emojiIconName` TEXT, `createdAtMs` INTEGER NOT NULL, `modifiedAtMs` INTEGER, `sortOrder` INTEGER NOT NULL, `income` INTEGER NOT NULL, `methodAddedCode` INTEGER, `mainCategoryId` TEXT, `archived` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "colour",
+            "columnName": "colour",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "iconName",
+            "columnName": "iconName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "emojiIconName",
+            "columnName": "emojiIconName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAtMs",
+            "columnName": "createdAtMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modifiedAtMs",
+            "columnName": "modifiedAtMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sortOrder",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "income",
+            "columnName": "income",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "methodAddedCode",
+            "columnName": "methodAddedCode",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "mainCategoryId",
+            "columnName": "mainCategoryId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "archived",
+            "columnName": "archived",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_category_mainCategoryId",
+            "unique": false,
+            "columnNames": [
+              "mainCategoryId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_category_mainCategoryId` ON `${TABLE_NAME}` (`mainCategoryId`)"
+          }
+        ]
+      },
+      {
+        "tableName": "txn",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `pairedTransactionId` TEXT, `name` TEXT NOT NULL, `amountPaise` INTEGER NOT NULL, `currency` TEXT, `note` TEXT NOT NULL, `categoryId` TEXT NOT NULL, `subCategoryId` TEXT, `accountId` TEXT NOT NULL, `dateMs` INTEGER NOT NULL, `modifiedAtMs` INTEGER, `originalDueMs` INTEGER, `income` INTEGER NOT NULL, `periodLength` INTEGER, `repeatCode` INTEGER, `endDateMs` INTEGER, `upcomingNotification` INTEGER, `kindCode` INTEGER, `paid` INTEGER NOT NULL, `createdAnotherFuture` INTEGER, `skipPaid` INTEGER NOT NULL, `methodAddedCode` INTEGER, `objectiveId` TEXT, `objectiveLoanId` TEXT, `excludeFromBudgetIdsJson` TEXT, `ownerUid` TEXT, `isPrivate` INTEGER NOT NULL, `householdSyncedAtMs` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pairedTransactionId",
+            "columnName": "pairedTransactionId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amountPaise",
+            "columnName": "amountPaise",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currency",
+            "columnName": "currency",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categoryId",
+            "columnName": "categoryId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subCategoryId",
+            "columnName": "subCategoryId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dateMs",
+            "columnName": "dateMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modifiedAtMs",
+            "columnName": "modifiedAtMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "originalDueMs",
+            "columnName": "originalDueMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "income",
+            "columnName": "income",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "periodLength",
+            "columnName": "periodLength",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "repeatCode",
+            "columnName": "repeatCode",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "endDateMs",
+            "columnName": "endDateMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "upcomingNotification",
+            "columnName": "upcomingNotification",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "kindCode",
+            "columnName": "kindCode",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "paid",
+            "columnName": "paid",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAnotherFuture",
+            "columnName": "createdAnotherFuture",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "skipPaid",
+            "columnName": "skipPaid",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "methodAddedCode",
+            "columnName": "methodAddedCode",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "objectiveId",
+            "columnName": "objectiveId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "objectiveLoanId",
+            "columnName": "objectiveLoanId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "excludeFromBudgetIdsJson",
+            "columnName": "excludeFromBudgetIdsJson",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "ownerUid",
+            "columnName": "ownerUid",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isPrivate",
+            "columnName": "isPrivate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "householdSyncedAtMs",
+            "columnName": "householdSyncedAtMs",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_txn_accountId",
+            "unique": false,
+            "columnNames": [
+              "accountId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_txn_accountId` ON `${TABLE_NAME}` (`accountId`)"
+          },
+          {
+            "name": "index_txn_categoryId",
+            "unique": false,
+            "columnNames": [
+              "categoryId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_txn_categoryId` ON `${TABLE_NAME}` (`categoryId`)"
+          },
+          {
+            "name": "index_txn_dateMs",
+            "unique": false,
+            "columnNames": [
+              "dateMs"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_txn_dateMs` ON `${TABLE_NAME}` (`dateMs`)"
+          },
+          {
+            "name": "index_txn_pairedTransactionId",
+            "unique": false,
+            "columnNames": [
+              "pairedTransactionId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_txn_pairedTransactionId` ON `${TABLE_NAME}` (`pairedTransactionId`)"
+          },
+          {
+            "name": "index_txn_objectiveId",
+            "unique": false,
+            "columnNames": [
+              "objectiveId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_txn_objectiveId` ON `${TABLE_NAME}` (`objectiveId`)"
+          },
+          {
+            "name": "index_txn_objectiveLoanId",
+            "unique": false,
+            "columnNames": [
+              "objectiveLoanId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_txn_objectiveLoanId` ON `${TABLE_NAME}` (`objectiveLoanId`)"
+          }
+        ]
+      },
+      {
+        "tableName": "budget",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `amountPaise` INTEGER NOT NULL, `colour` TEXT, `startMs` INTEGER NOT NULL, `endMs` INTEGER NOT NULL, `accountIdsJson` TEXT, `categoryIdsJson` TEXT, `excludedCategoryIdsJson` TEXT, `income` INTEGER NOT NULL, `archived` INTEGER NOT NULL, `addedTransactionsOnly` INTEGER NOT NULL, `periodLength` INTEGER NOT NULL, `repeatCode` INTEGER, `createdAtMs` INTEGER NOT NULL, `modifiedAtMs` INTEGER, `pinned` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, `accountId` TEXT NOT NULL, `filtersJson` TEXT, `memberFiltersJson` TEXT, `absoluteSpendingLimit` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amountPaise",
+            "columnName": "amountPaise",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "colour",
+            "columnName": "colour",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "startMs",
+            "columnName": "startMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endMs",
+            "columnName": "endMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountIdsJson",
+            "columnName": "accountIdsJson",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "categoryIdsJson",
+            "columnName": "categoryIdsJson",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "excludedCategoryIdsJson",
+            "columnName": "excludedCategoryIdsJson",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "income",
+            "columnName": "income",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "archived",
+            "columnName": "archived",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "addedTransactionsOnly",
+            "columnName": "addedTransactionsOnly",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "periodLength",
+            "columnName": "periodLength",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "repeatCode",
+            "columnName": "repeatCode",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "createdAtMs",
+            "columnName": "createdAtMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modifiedAtMs",
+            "columnName": "modifiedAtMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "pinned",
+            "columnName": "pinned",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sortOrder",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "filtersJson",
+            "columnName": "filtersJson",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "memberFiltersJson",
+            "columnName": "memberFiltersJson",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "absoluteSpendingLimit",
+            "columnName": "absoluteSpendingLimit",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "category_budget_limit",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `categoryId` TEXT NOT NULL, `budgetId` TEXT NOT NULL, `amountPaise` INTEGER NOT NULL, `modifiedAtMs` INTEGER, `accountId` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categoryId",
+            "columnName": "categoryId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "budgetId",
+            "columnName": "budgetId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amountPaise",
+            "columnName": "amountPaise",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modifiedAtMs",
+            "columnName": "modifiedAtMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_category_budget_limit_budgetId",
+            "unique": false,
+            "columnNames": [
+              "budgetId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_category_budget_limit_budgetId` ON `${TABLE_NAME}` (`budgetId`)"
+          },
+          {
+            "name": "index_category_budget_limit_categoryId",
+            "unique": false,
+            "columnNames": [
+              "categoryId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_category_budget_limit_categoryId` ON `${TABLE_NAME}` (`categoryId`)"
+          }
+        ]
+      },
+      {
+        "tableName": "objective",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `kindCode` INTEGER NOT NULL, `name` TEXT NOT NULL, `amountPaise` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, `colour` TEXT, `createdAtMs` INTEGER NOT NULL, `endDateMs` INTEGER, `modifiedAtMs` INTEGER, `iconName` TEXT, `emojiIconName` TEXT, `income` INTEGER NOT NULL, `pinned` INTEGER NOT NULL, `archived` INTEGER NOT NULL, `accountId` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kindCode",
+            "columnName": "kindCode",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amountPaise",
+            "columnName": "amountPaise",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sortOrder",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "colour",
+            "columnName": "colour",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAtMs",
+            "columnName": "createdAtMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endDateMs",
+            "columnName": "endDateMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "modifiedAtMs",
+            "columnName": "modifiedAtMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "iconName",
+            "columnName": "iconName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "emojiIconName",
+            "columnName": "emojiIconName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "income",
+            "columnName": "income",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pinned",
+            "columnName": "pinned",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "archived",
+            "columnName": "archived",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "title_memory",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `categoryId` TEXT NOT NULL, `title` TEXT NOT NULL, `createdAtMs` INTEGER NOT NULL, `modifiedAtMs` INTEGER, `sortOrder` INTEGER NOT NULL, `exactMatch` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categoryId",
+            "columnName": "categoryId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAtMs",
+            "columnName": "createdAtMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modifiedAtMs",
+            "columnName": "modifiedAtMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sortOrder",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exactMatch",
+            "columnName": "exactMatch",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_title_memory_categoryId",
+            "unique": false,
+            "columnNames": [
+              "categoryId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_title_memory_categoryId` ON `${TABLE_NAME}` (`categoryId`)"
+          }
+        ]
+      },
+      {
+        "tableName": "scan_template",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `createdAtMs` INTEGER NOT NULL, `modifiedAtMs` INTEGER, `name` TEXT NOT NULL, `contains` TEXT NOT NULL, `titleBefore` TEXT NOT NULL, `titleAfter` TEXT NOT NULL, `amountBefore` TEXT NOT NULL, `amountAfter` TEXT NOT NULL, `defaultCategoryId` TEXT NOT NULL, `accountId` TEXT NOT NULL, `ignore` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAtMs",
+            "columnName": "createdAtMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modifiedAtMs",
+            "columnName": "modifiedAtMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "contains",
+            "columnName": "contains",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "titleBefore",
+            "columnName": "titleBefore",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "titleAfter",
+            "columnName": "titleAfter",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amountBefore",
+            "columnName": "amountBefore",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amountAfter",
+            "columnName": "amountAfter",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "defaultCategoryId",
+            "columnName": "defaultCategoryId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ignore",
+            "columnName": "ignore",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "activity_log",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `entryId` TEXT NOT NULL, `entityCode` INTEGER NOT NULL, `atMs` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entryId",
+            "columnName": "entryId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityCode",
+            "columnName": "entityCode",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "atMs",
+            "columnName": "atMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "setting",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`key` TEXT NOT NULL, `json` TEXT NOT NULL, PRIMARY KEY(`key`))",
+        "fields": [
+          {
+            "fieldPath": "key",
+            "columnName": "key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "json",
+            "columnName": "json",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "key"
+          ]
+        }
+      },
+      {
+        "tableName": "loan_terms",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`objectiveId` TEXT NOT NULL, `principalPaise` INTEGER NOT NULL, `annualRatePct` TEXT NOT NULL, `months` INTEGER NOT NULL, `emiPaise` INTEGER NOT NULL, `firstEmiMs` INTEGER NOT NULL, `feePaise` INTEGER NOT NULL, `gstPct` TEXT NOT NULL, `feePaid` INTEGER NOT NULL, `paidInstalmentsJson` TEXT NOT NULL, `accountId` TEXT, `note` TEXT NOT NULL, `updatedAtMs` INTEGER, PRIMARY KEY(`objectiveId`))",
+        "fields": [
+          {
+            "fieldPath": "objectiveId",
+            "columnName": "objectiveId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "principalPaise",
+            "columnName": "principalPaise",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "annualRatePct",
+            "columnName": "annualRatePct",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "months",
+            "columnName": "months",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "emiPaise",
+            "columnName": "emiPaise",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstEmiMs",
+            "columnName": "firstEmiMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "feePaise",
+            "columnName": "feePaise",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gstPct",
+            "columnName": "gstPct",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "feePaid",
+            "columnName": "feePaid",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "paidInstalmentsJson",
+            "columnName": "paidInstalmentsJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAtMs",
+            "columnName": "updatedAtMs",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "objectiveId"
+          ]
+        }
+      },
+      {
+        "tableName": "fixed_deposit",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `bank` TEXT NOT NULL, `fdNumber` TEXT NOT NULL, `principalPaise` INTEGER NOT NULL, `ratePct` TEXT NOT NULL, `startMs` INTEGER NOT NULL, `maturityMs` INTEGER NOT NULL, `compoundingPerYear` INTEGER NOT NULL, `maturityAmountPaise` INTEGER, `accountId` TEXT, `closed` INTEGER NOT NULL, `note` TEXT NOT NULL, `fromSms` INTEGER NOT NULL, `smsId` TEXT NOT NULL, `updatedAtMs` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bank",
+            "columnName": "bank",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fdNumber",
+            "columnName": "fdNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "principalPaise",
+            "columnName": "principalPaise",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ratePct",
+            "columnName": "ratePct",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startMs",
+            "columnName": "startMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maturityMs",
+            "columnName": "maturityMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "compoundingPerYear",
+            "columnName": "compoundingPerYear",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maturityAmountPaise",
+            "columnName": "maturityAmountPaise",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "closed",
+            "columnName": "closed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fromSms",
+            "columnName": "fromSms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "smsId",
+            "columnName": "smsId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAtMs",
+            "columnName": "updatedAtMs",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "card_due",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `card` TEXT NOT NULL, `kind` TEXT NOT NULL, `amountPaise` INTEGER NOT NULL, `dateMs` INTEGER NOT NULL, `note` TEXT NOT NULL, `updatedAtMs` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "card",
+            "columnName": "card",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amountPaise",
+            "columnName": "amountPaise",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dateMs",
+            "columnName": "dateMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAtMs",
+            "columnName": "updatedAtMs",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_card_due_card",
+            "unique": false,
+            "columnNames": [
+              "card"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_card_due_card` ON `${TABLE_NAME}` (`card`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '192d91dd9753a6824090554209233272')"
+    ]
+  }
+}
