@@ -45,6 +45,8 @@ class MainActivity : FragmentActivity() {
     private val insights: com.mansaketh.chitta.ui.insights.InsightsViewModel by viewModels()
     private val settings: com.mansaketh.chitta.ui.settings.SettingsViewModel by viewModels()
     private val csvImport: com.mansaketh.chitta.ui.imports.CsvImportViewModel by viewModels()
+    private val intake: com.mansaketh.chitta.ui.intake.IntakeViewModel by viewModels()
+    @Inject lateinit var signals: com.mansaketh.chitta.intake.IntakeSignals
 
     /** Leaving the screen starts the lock timer; a rotation does not (the activity is recreated, the app was never away). */
     override fun onStop() {
@@ -61,21 +63,39 @@ class MainActivity : FragmentActivity() {
         BiometricGate.prompt(this, "Unlock Chitta", null, onSuccess = { appLock.unlocked() })
     }
 
+    /** The share receiver opens this screen with a note of what arrived (bank messages, or a payment screenshot, PDF or CSV). */
+    private fun takeIntakeRequest(i: android.content.Intent?) {
+        val what = i?.getStringExtra(com.mansaketh.chitta.intake.ShareReceiverActivity.EXTRA_OPEN) ?: return
+        i.removeExtra(com.mansaketh.chitta.intake.ShareReceiverActivity.EXTRA_OPEN)
+        signals.request(what)
+        signals.refreshNow()
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        takeIntakeRequest(intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (savedInstanceState == null) takeIntakeRequest(intent)
         enableEdgeToEdge()
         setContent {
             var mode by rememberSaveable { mutableStateOf(ThemeMode.System) }
             var hide by rememberSaveable { mutableStateOf(false) }
             val locked by appLock.locked.collectAsState()
             val hideInRecents by security.hideInRecents.collectAsState()
+            // Bank messages Ping handed over while Chitta was closed are read when it opens (and again when something arrives).
+            val inboxTick by signals.refresh.collectAsState()
+            LaunchedEffect(locked, inboxTick) { if (!locked) intake.processInbox() }
             // A secure window blanks the recent-apps preview (and blocks screenshots).
             LaunchedEffect(hideInRecents) {
                 if (hideInRecents) window.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
                 else window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
             }
             ChittaTheme(mode = mode, hideAmounts = hide) {
-                val vms = com.mansaketh.chitta.ui.AppViewModels(root, ledger, quickAdd, detail, manage, imports, plan, home, insights, settings, csvImport)
+                val vms = com.mansaketh.chitta.ui.AppViewModels(root, ledger, quickAdd, detail, manage, imports, plan, home, insights, settings, csvImport, intake)
                 if (locked) {
                     // While locked nothing from the book is composed, so nothing can be read or heard from behind the lock.
                     LockScreen(onUnlock = ::askToUnlock)

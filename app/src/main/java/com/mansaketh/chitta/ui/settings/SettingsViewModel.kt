@@ -62,7 +62,11 @@ class SettingsViewModel @Inject constructor(
     private val accountRepo: AccountRepository,
     private val categoryRepo: CategoryRepository,
     private val ledger: LedgerRepository,
+    intake: com.mansaketh.chitta.intake.IntakeStore,
 ) : ViewModel() {
+    /** Bank messages waiting for a look, shown next to "Bank messages and UPI". */
+    val pendingIntake: kotlinx.coroutines.flow.StateFlow<Int> = intake.pendingCount
+
     private val points = MutableStateFlow(restore.list())
     private val busy = MutableStateFlow(false)
     private val notice = MutableStateFlow<String?>(null)

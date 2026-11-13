@@ -1,5 +1,14 @@
 # Changelog
 
+## Phase 7b: Ping and share intake, PhonePe and other UPI apps (13 Nov 2026) - 0.8.0-phase7b - on `main`
+- Ping: the share receiver (JSON text, JSON file, or a payment screenshot, statement PDF or CSV from any app), the inbox provider (caller must be `com.ping.sms` with the pinned certificate), and a date-range file picker. Messages Chitta is sure about are saved at once with Undo; the rest wait in a review list with a count in Settings.
+- Review list: Ready / needs a look, change account or category, one category for every row without one, make an account from the bank's name, remove a message for good, View SMS in Ping (also on an entry made from a Ping SMS), Ping logos for senders (kept 24 hours).
+- De-duplication: by message id and by the day-plus-text key already used by the old app; a payment that is already in the book as the other half (bank SMS or UPI page) only gets its details added to that entry's note.
+- UPI payments: PhonePe screenshot, statement PDF and statement CSV, plus the old app's Google Pay, Paytm, BHIM, CRED and MobiKwik screenshot readers. Text is read on the phone (ML Kit 16.0.1 for pictures, pdfbox-android 2.0.27.0 for PDFs). A payment page is never saved without the review list.
+- Known accounts are loaded from a file the person picks, so no account digits are published with the code.
+- New pure module `:core:intake` (SMS and instrument parsers, Ping export reader, auto-save rule, planner, UPI parser, Ping contract) with 43 unit tests that use the contract's golden vectors and invented UPI text. No database change.
+- Decisions D75 to D84. Moved to Phase 8: app links, notification scanning, the background receiver and fixed-deposit messages.
+
 ## Phase 7a: data safety (13 Nov 2026) - 0.7.0-phase7a - on `main`
 - App lock (fingerprint, face or phone PIN) with timeout, and hide in recents. Locked screen composes nothing from the book.
 - Data Recovery: automatic daily restore points, manual points, restore with a safety point first.

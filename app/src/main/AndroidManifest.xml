@@ -4,6 +4,11 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <queries>
+        <!-- "View SMS in Ping" and Ping's logos: without this Android 11+ hides Ping from Chitta -->
+        <package android:name="com.ping.sms" />
+    </queries>
+
     <application
         android:name=".ChittaApp"
         android:allowBackup="false"
@@ -19,5 +24,44 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- A payment screenshot, statement PDF/CSV or Ping file shared to Chitta. Has no screen: it keeps a copy and opens the review list. -->
+        <activity
+            android:name=".intake.ShareReceiverActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/json" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+                <data android:mimeType="application/pdf" />
+                <data android:mimeType="text/csv" />
+                <data android:mimeType="text/comma-separated-values" />
+                <data android:mimeType="application/csv" />
+            </intent-filter>
+        </activity>
+
+        <!--
+          Ping starts the receiver by this exact name (contract/ping-paddhu/SPEC.md section 4). The name belongs to the final release package
+          (Paddhu Pusthakam), so Ping reaches the app only after the application id is renamed at release; until then Chitta is tested with
+          sample files (DECISIONS D76). It carries no intent filters of its own, so the share sheet shows Chitta once.
+        -->
+        <activity-alias
+            android:name="com.mansaketh.paddhupusthakam.ShareReceiverActivity"
+            android:exported="true"
+            android:targetActivity=".intake.ShareReceiverActivity" />
+
+        <!-- Ping hands over new bank SMS here while Chitta is closed. Only Ping is accepted: package and pinned certificate (PingInboxProvider). -->
+        <provider
+            android:name=".intake.PingInboxProvider"
+            android:authorities="${applicationId}.pinginbox"
+            android:exported="true" />
     </application>
 </manifest>

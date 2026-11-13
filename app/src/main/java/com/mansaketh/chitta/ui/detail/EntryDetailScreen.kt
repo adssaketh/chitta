@@ -70,6 +70,7 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
                         if (transfer) ui.twin?.let { ValueRow("Other half", accountName(it.accountId, ui.accounts)) }
                         ValueRow("Date", dayAndTime(e.dateMs, zone), onClick = { edit = Edit.Date })
                         ValueRow("Note", e.note.ifBlank { "No note" }, onClick = { edit = Edit.Note })
+                        if (remember(e.note) { com.mansaketh.chitta.intake.PingBridge.viewIntent(context, e.note) != null }) ValueRow("View SMS in Ping", "", onClick = { com.mansaketh.chitta.intake.PingBridge.open(context, e.note) })
                         if (plan != null && !neutral && e.kind != TransactionKind.LENT && e.kind != TransactionKind.BORROWED) ValueRow("Repeat", e.repeat?.let { com.mansaketh.chitta.ui.plan.repeatLabel(it, e.periodLength ?: 1) } ?: "Does not repeat", onClick = { edit = Edit.Repeat })
                         ValueRow("History", "${ui.history.size} ${if (ui.history.size == 1) "version" else "versions"}", onClick = onHistory)
                         Spacer(Modifier.height(Dimens.Gap4))

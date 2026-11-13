@@ -61,6 +61,7 @@ private fun onOff(v: Boolean) = if (v) "On" else "Off"
  */
 @Composable
 fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -> Unit) {
+    val waiting by vm.pendingIntake.collectAsState()
     val ui by vm.ui.collectAsState()
     val c = ChittaTheme.colors
     val context = LocalContext.current
@@ -120,6 +121,7 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
             Spacer(Modifier.height(Dimens.SectionGap))
             SectionHeader("Import and export")
             HairlineRule()
+            ValueRow("Bank messages and UPI", if (waiting > 0) "$waiting waiting" else "", onClick = { onOpen("intake") })
             ValueRow("Import entries from CSV", "", onClick = { onOpen("csv-import") })
             ValueRow("Export entries to CSV", "", onClick = { sheet = "csv-account" })
             ValueRow("Bring over your Paddhu book", "", onClick = { onOpen("import") })

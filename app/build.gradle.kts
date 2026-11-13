@@ -13,8 +13,8 @@ android {
         applicationId = "com.mansaketh.chitta"
         minSdk = 26
         targetSdk = 36
-        versionCode = 7
-        versionName = "0.7.0-phase7a"
+        versionCode = 8
+        versionName = "0.8.0-phase7b"
         // arm64 only (master section 8). There is no native code yet, so this is a guard for later.
         ndk { abiFilters += "arm64-v8a" }
     }
@@ -62,6 +62,7 @@ dependencies {
     implementation(project(":core:domain"))
     implementation(project(":core:database"))
     implementation(project(":core:importer"))
+    implementation(project(":core:intake"))
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.kotlinx.coroutines.android)
@@ -73,6 +74,9 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.biometric)
+    // Reads text in payment screenshots on the phone (bundled model, nothing leaves the phone) and text in statement PDFs.
+    implementation(libs.mlkit.text.recognition)
+    implementation(libs.pdfbox.android)
     implementation(libs.androidx.fragment)
     testImplementation(libs.junit)
     testImplementation(kotlin("test"))
