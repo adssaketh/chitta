@@ -93,6 +93,11 @@ data class Transaction(
      * goes Jan 31, Feb 28, Mar 31 and not Jan 31, Feb 28, Mar 28. Null means "use the day of the due date".
      */
     val anchorDay: Int? = null,
+    /**
+     * New in Chitta (schema 4). Entries made by one split share this id; each line is a normal entry, so every total
+     * and budget works unchanged. Null means not part of a split.
+     */
+    val splitGroupId: String? = null,
 )
 
 data class Budget(

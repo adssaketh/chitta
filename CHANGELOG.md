@@ -1,5 +1,10 @@
 # Changelog
 
+## Phase 8a, slice 1: domain rules (13 Nov 2026) - on branch `phase-8a-must`
+- `:core:domain`: `Splits`, `Rules`, `Duplicates`, `Cards` with 28 tests (`Phase8aTest`). `Transaction.splitGroupId` added to the model.
+- Not yet: database schema 4, screens, app links, notification scanning, background receiver, icon search, donut. Decisions D85 to D88.
+- Written without a local build (no usable Gradle here); CI is the first compile and test run.
+
 ## Phase 7b: Ping and share intake, PhonePe and other UPI apps (13 Nov 2026) - 0.8.0-phase7b - on `main`
 - Ping: the share receiver (JSON text, JSON file, or a payment screenshot, statement PDF or CSV from any app), the inbox provider (caller must be `com.ping.sms` with the pinned certificate), and a date-range file picker. Messages Chitta is sure about are saved at once with Undo; the rest wait in a review list with a count in Settings.
 - Review list: Ready / needs a look, change account or category, one category for every row without one, make an account from the bank's name, remove a message for good, View SMS in Ping (also on an entry made from a Ping SMS), Ping logos for senders (kept 24 hours).
