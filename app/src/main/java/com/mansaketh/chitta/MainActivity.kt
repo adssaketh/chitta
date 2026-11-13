@@ -46,6 +46,7 @@ class MainActivity : FragmentActivity() {
     private val settings: com.mansaketh.chitta.ui.settings.SettingsViewModel by viewModels()
     private val csvImport: com.mansaketh.chitta.ui.imports.CsvImportViewModel by viewModels()
     private val intake: com.mansaketh.chitta.ui.intake.IntakeViewModel by viewModels()
+    private val rules: com.mansaketh.chitta.ui.rules.RulesViewModel by viewModels()
     @Inject lateinit var signals: com.mansaketh.chitta.intake.IntakeSignals
 
     /** Leaving the screen starts the lock timer; a rotation does not (the activity is recreated, the app was never away). */
@@ -95,7 +96,7 @@ class MainActivity : FragmentActivity() {
                 else window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
             }
             ChittaTheme(mode = mode, hideAmounts = hide) {
-                val vms = com.mansaketh.chitta.ui.AppViewModels(root, ledger, quickAdd, detail, manage, imports, plan, home, insights, settings, csvImport, intake)
+                val vms = com.mansaketh.chitta.ui.AppViewModels(root, ledger, quickAdd, detail, manage, imports, plan, home, insights, settings, csvImport, intake, rules)
                 if (locked) {
                     // While locked nothing from the book is composed, so nothing can be read or heard from behind the lock.
                     LockScreen(onUnlock = ::askToUnlock)

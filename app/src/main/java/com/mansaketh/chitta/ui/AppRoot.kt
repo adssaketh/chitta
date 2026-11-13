@@ -43,6 +43,7 @@ class AppViewModels(
     val home: HomeViewModel, val insights: InsightsViewModel,
     val settings: com.mansaketh.chitta.ui.settings.SettingsViewModel, val csvImport: com.mansaketh.chitta.ui.imports.CsvImportViewModel,
     val intake: com.mansaketh.chitta.ui.intake.IntakeViewModel,
+    val rules: com.mansaketh.chitta.ui.rules.RulesViewModel,
 )
 
 /**
@@ -148,6 +149,7 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                     top == "import" -> ImportScreen(vms.imports, onBack = { vms.imports.reset(); pop() }, onFinished = { vms.imports.reset(); stack = emptyList() })
                     top == "settings" -> com.mansaketh.chitta.ui.settings.SettingsScreen(vms.settings, onBack = ::pop, onOpen = { push(it) })
                     top == "restore-points" -> com.mansaketh.chitta.ui.settings.RestorePointsScreen(vms.settings, onBack = ::pop)
+                    top == "rules" -> com.mansaketh.chitta.ui.rules.RulesScreen(vms.rules, onBack = ::pop)
                     top == "intake" -> com.mansaketh.chitta.ui.intake.IntakeScreen(vms.intake, onBack = ::pop)
                     top == "csv-import" -> com.mansaketh.chitta.ui.imports.CsvImportScreen(vms.csvImport, onBack = ::pop)
                     top == "gallery" -> extra?.invoke(::pop)

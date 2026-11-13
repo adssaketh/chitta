@@ -44,6 +44,7 @@ class QuickAddViewModel @Inject constructor(
     accountRepo: AccountRepository,
     categoryRepo: CategoryRepository,
     private val titleRepo: TitleRepository,
+    ruleRepo: com.mansaketh.chitta.core.database.RuleRepository,
     private val pinnedRepo: PinnedRepository,
     private val ratesRepo: RatesRepository,
     private val fetcher: RateFetcher,
@@ -54,6 +55,7 @@ class QuickAddViewModel @Inject constructor(
     private val draft = MutableStateFlow(QuickAddDraft(dateMs = clock.nowMs()))
     private val entries = ledger.observeAll()
     private val memory = titleRepo.observeAll().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    private val rules = ruleRepo.observeAll().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     private fun plain(paise: Long): String {
         val whole = paise / 100; val frac = paise % 100
@@ -116,8 +118,15 @@ class QuickAddViewModel @Inject constructor(
 
     fun setType(t: EntryType) = draft.update { it.copy(type = t, categoryId = if (t == EntryType.Transfer) null else it.categoryId.takeIf { c -> t == it.type } ) }
     fun setTitle(s: String) = draft.update { d ->
+        // A category you chose for this exact title wins; then a rule. A rule never overrides a category you picked by hand,
+        // and never suggests one of the wrong kind (an expense category on an income entry).
         val remembered = TitleSuggest.categoryFor(s, memory.value)
-        d.copy(title = s, categoryId = remembered ?: d.categoryId)
+        val amount = AmountExpression.evaluate(d.amountRaw) ?: Paise.ZERO
+        val ruled = if (remembered == null && d.categoryId == null) {
+            Rules.apply(rules.value, RuleInput(s, d.note, amount, d.accountId)).categoryId
+                ?.takeIf { id -> ui.value.categories.any { it.category.id == id } }
+        } else null
+        d.copy(title = s, categoryId = remembered ?: ruled ?: d.categoryId)
     }
     fun pickSuggestion(m: TitleMemory) = draft.update { it.copy(title = m.title, categoryId = m.categoryId) }
     fun setCategory(id: String) = draft.update { it.copy(categoryId = id) }
