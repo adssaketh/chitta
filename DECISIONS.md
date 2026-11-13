@@ -15,3 +15,6 @@ Status: **decided** once you approved (13 Nov 2026), unless marked otherwise.
 | D9 | 13 Nov 2026 | Build pinned transactions and restore points (Data Recovery) as new work. Drop tags, Cashew "Intelligence" and the broadcast receiver. | They are not in the Paddhu source; master lists them as existing. | decided |
 | D10 | 13 Nov 2026 | Drop Gmail email scanning and Firestore shared budgets (household replaces them). Keep notification scanning. | Gmail is outside the network list in master section 2. | decided |
 | D11 | 13 Nov 2026 | Attachments stay on the phone only; no Drive upload. | Master section 2, rule 2. | decided |
+| D12 | 13 Nov 2026 | Drop the bill splitter. | Settle up covers shared household entries. | decided |
+| D13 | 13 Nov 2026 | Lock uses the phone's system prompt; no in-app PIN. | Master section 9 over design PDF p.6 (C1). | decided |
+| D14 | 13 Nov 2026 | Undrawn screens are drawn in their build phase, from existing parts. | Phase 1 is placement only. | pending |
