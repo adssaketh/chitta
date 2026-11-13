@@ -25,6 +25,8 @@ data class DetailUi(
     val accounts: List<Account> = emptyList(),
     val categories: List<Category> = emptyList(),
     val history: List<EntryVersion> = emptyList(),
+    /** Other lines of the same split, for the detail screen. */
+    val siblings: List<Transaction> = emptyList(),
     val loading: Boolean = true,
 )
 
@@ -44,9 +46,9 @@ class EntryDetailViewModel @Inject constructor(
     fun load(entryId: String) { id.value = entryId }
 
     val ui: StateFlow<DetailUi> = id.filterNotNull().flatMapLatest { eid ->
-        combine(ledger.observe(eid), ledger.observeHistory(eid), accounts.observeAll(), categories.observeAll()) { e, h, a, c ->
+        combine(ledger.observe(eid), ledger.observeHistory(eid), accounts.observeAll(), categories.observeAll(), ledger.observeAll()) { e, h, a, c, all ->
             val twin = e?.pairedTransactionId?.let { ledger.get(it) }
-            DetailUi(e, twin, a, c, h, loading = false)
+            DetailUi(e, twin, a, c, h, siblings = e?.let { Splits.siblings(it, all) } ?: emptyList(), loading = false)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DetailUi())
 
@@ -54,6 +56,22 @@ class EntryDetailViewModel @Inject constructor(
         val e = ui.value.entry ?: return
         val next = change(e).copy(modifiedAtMs = clock.nowMs())
         viewModelScope.launch { actions.save(listOf(next), "Saved changes") }
+    }
+
+    /**
+     * Replaces this entry with one entry per split line (DECISIONS D85). One Undo puts the original back and removes the lines.
+     * Returns false when the lines are not balanced (the sheet keeps Save off until they are).
+     */
+    fun split(lines: List<SplitLine>, onDone: () -> Unit): Boolean {
+        val e = ui.value.entry ?: return false
+        val built = Splits.build(e.copy(modifiedAtMs = clock.nowMs()), Paise(Math.abs(e.amount)), lines, ids::newId) ?: return false
+        viewModelScope.launch {
+            val removed = ledger.delete(listOf(e.id))
+            ledger.add(built)
+            undo.post("Split into ${built.size} lines") { ledger.delete(built.map { it.id }); ledger.restoreDeleted(removed) }
+            onDone()
+        }
+        return true
     }
 
     val isTransfer get() = ui.value.entry?.let(Totals::isNeutral) == true

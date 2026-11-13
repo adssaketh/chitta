@@ -26,7 +26,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
-private enum class Edit { None, Title, Amount, Category, Account, Note, Date, Delete, Repeat }
+private enum class Edit { None, Title, Amount, Category, Account, Note, Date, Delete, Repeat, Split }
 
 /** Entry detail (PDF p.15): stamps, editable rows, History, and Duplicate / Pin / Delete. */
 @Composable
@@ -72,11 +72,16 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
                         ValueRow("Note", e.note.ifBlank { "No note" }, onClick = { edit = Edit.Note })
                         if (remember(e.note) { com.mansaketh.chitta.intake.PingBridge.viewIntent(context, e.note) != null }) ValueRow("View SMS in Ping", "", onClick = { com.mansaketh.chitta.intake.PingBridge.open(context, e.note) })
                         if (plan != null && !neutral && e.kind != TransactionKind.LENT && e.kind != TransactionKind.BORROWED) ValueRow("Repeat", e.repeat?.let { com.mansaketh.chitta.ui.plan.repeatLabel(it, e.periodLength ?: 1) } ?: "Does not repeat", onClick = { edit = Edit.Repeat })
+                        if (ui.siblings.isNotEmpty()) {
+                            Text("Part of a split of ${IndianFormat.rupees(Paise(Math.abs(e.amount) + ui.siblings.sumOf { Math.abs(it.amount) }), alwaysShowPaise = true)}. Other lines:", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
+                            ui.siblings.forEach { s -> ValueRow(categoryName(s.categoryId, ui.categories), IndianFormat.rupees(Paise(Math.abs(s.amount)), alwaysShowPaise = true)) }
+                        }
                         ValueRow("History", "${ui.history.size} ${if (ui.history.size == 1) "version" else "versions"}", onClick = onHistory)
                         Spacer(Modifier.height(Dimens.Gap4))
                         Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
                             if (!neutral) ChittaButton("Duplicate", { vm.duplicate(onBack) }, style = ButtonStyle.Quiet)
                             if (!neutral) ChittaButton("Pin", vm::pin, style = ButtonStyle.Quiet)
+                            if (!neutral && e.kind == null && e.splitGroupId == null) ChittaButton("Split", { edit = Edit.Split }, style = ButtonStyle.Quiet)
                             ChittaButton("Delete", { impact = vm.deleteImpact(); edit = Edit.Delete }, style = ButtonStyle.Quiet)
                         }
                     }
@@ -110,6 +115,10 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
                 }
                 ConfirmSheet("Delete?", lines, "Delete", { vm.confirmDelete(im, onBack); edit = Edit.None }, { edit = Edit.None })
             }
+            Edit.Split -> SplitSheet(
+                Paise(Math.abs(e.amount)), ui.categories.filter { it.mainCategoryId == null && !it.archived && it.income == e.income }, e.categoryId,
+                { lines -> vm.split(lines) { edit = Edit.None; onBack() } }, { edit = Edit.None },
+            )
             Edit.Repeat -> if (plan != null) com.mansaketh.chitta.ui.plan.RepeatSheet(e, zone, { r, len, end -> plan.repeatEntry(e, r, len, end); edit = Edit.None }, { edit = Edit.None })
             Edit.None -> Unit
         }
