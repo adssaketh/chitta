@@ -33,21 +33,23 @@ private fun String?.toStrings(): List<String>? = this?.let { Json.parseToJsonEle
 private fun List<Int>?.intsToJson(): String? = this?.let { l -> Json.encodeToString(JsonArray.serializer(), buildJsonArray { l.forEach { add(JsonPrimitive(it)) } }) }
 private fun String?.toInts(): List<Int>? = this?.let { Json.parseToJsonElement(it) as JsonArray }?.map { it.jsonPrimitive.int }
 
-fun Account.toEntity() = AccountEntity(id, name, colour, iconName, createdAtMs, modifiedAtMs, sortOrder, currency, currencyFormat, decimals, homeWidgets?.map { it.code }.intsToJson(), ownerUid)
-fun AccountEntity.toModel() = Account(id, name, colour, iconName, createdAtMs, modifiedAtMs, sortOrder, currency, currencyFormat, decimals, homeWidgetsJson.toInts()?.mapNotNull { AccountWidget.fromCode(it) }, ownerUid)
+fun Account.toEntity() = AccountEntity(id, name, colour, iconName, createdAtMs, modifiedAtMs, sortOrder, currency, currencyFormat, decimals, homeWidgets?.map { it.code }.intsToJson(), ownerUid, archived)
+fun AccountEntity.toModel() = Account(id, name, colour, iconName, createdAtMs, modifiedAtMs, sortOrder, currency, currencyFormat, decimals, homeWidgetsJson.toInts()?.mapNotNull { AccountWidget.fromCode(it) }, ownerUid, archived)
 
-fun Category.toEntity() = CategoryEntity(id, name, colour, iconName, emojiIconName, createdAtMs, modifiedAtMs, sortOrder, income, methodAdded?.code, mainCategoryId)
-fun CategoryEntity.toModel() = Category(id, name, colour, iconName, emojiIconName, createdAtMs, modifiedAtMs, sortOrder, income, MethodAdded.fromCode(methodAddedCode), mainCategoryId)
+fun Category.toEntity() = CategoryEntity(id, name, colour, iconName, emojiIconName, createdAtMs, modifiedAtMs, sortOrder, income, methodAdded?.code, mainCategoryId, archived)
+fun CategoryEntity.toModel() = Category(id, name, colour, iconName, emojiIconName, createdAtMs, modifiedAtMs, sortOrder, income, MethodAdded.fromCode(methodAddedCode), mainCategoryId, archived)
 
 fun Transaction.toEntity() = TransactionEntity(
     id, pairedTransactionId, name, amount, currency, note, categoryId, subCategoryId, accountId, dateMs, modifiedAtMs, originalDueMs,
     income, periodLength, repeat?.code, endDateMs, upcomingNotification, kind?.code, paid, createdAnotherFuture, skipPaid,
     methodAdded?.code, objectiveId, objectiveLoanId, excludeFromBudgetIds.takeIf { it.isNotEmpty() }.toJson(), ownerUid, isPrivate, householdSyncedAtMs,
+    originalAmount, originalCurrency, exchangeRate,
 )
 fun TransactionEntity.toModel() = Transaction(
     id, pairedTransactionId, name, amountPaise, currency, note, categoryId, subCategoryId, accountId, dateMs, modifiedAtMs, originalDueMs,
     income, periodLength, Repeat.fromCode(repeatCode), endDateMs, upcomingNotification, TransactionKind.fromCode(kindCode), paid, createdAnotherFuture, skipPaid,
     MethodAdded.fromCode(methodAddedCode), objectiveId, objectiveLoanId, excludeFromBudgetIdsJson.toStrings() ?: emptyList(), ownerUid, isPrivate, householdSyncedAtMs,
+    originalAmountPaise, originalCurrency, exchangeRate,
 )
 
 fun Budget.toEntity() = BudgetEntity(

@@ -17,6 +17,7 @@ class AccountRepository(private val db: ChittaDatabase) {
 class CategoryRepository(private val db: ChittaDatabase) {
     fun observeAll(): Flow<List<Category>> = db.categories().observeAll().map { rows -> rows.map { it.toModel() } }
     suspend fun save(category: Category) = db.categories().upsert(category.toEntity())
+    suspend fun get(id: String): Category? = db.categories().getAll().firstOrNull { it.id == id }?.toModel()
 }
 
 class TransactionRepository(private val db: ChittaDatabase) {
@@ -26,4 +27,12 @@ class TransactionRepository(private val db: ChittaDatabase) {
         db.transactions().observeBetween(fromMs, toMs).map { rows -> rows.map { it.toModel() } }
     fun observeForAccount(accountId: String): Flow<List<Transaction>> =
         db.transactions().observeForAccount(accountId).map { rows -> rows.map { it.toModel() } }
+}
+
+/** Plain-language account/category edits used by the Accounts and Categories screens. */
+class AccountEditor(private val db: ChittaDatabase) {
+    suspend fun archive(id: String, archived: Boolean) {
+        val a = db.accounts().get(id) ?: return
+        db.accounts().upsert(a.copy(archived = archived))
+    }
 }

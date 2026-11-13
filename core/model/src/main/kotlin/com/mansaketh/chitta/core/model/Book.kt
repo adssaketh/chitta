@@ -36,6 +36,7 @@ data class Account(
     val decimals: Int,
     val homeWidgets: List<AccountWidget>?,
     val ownerUid: String?,
+    val archived: Boolean = false,
 )
 
 data class Category(
@@ -50,6 +51,7 @@ data class Category(
     val income: Boolean,
     val methodAdded: MethodAdded?,
     val mainCategoryId: String?, // null = main category, set = subcategory
+    val archived: Boolean = false,
 )
 
 data class Transaction(
@@ -81,6 +83,11 @@ data class Transaction(
     val ownerUid: String?,
     val isPrivate: Boolean,
     val householdSyncedAtMs: Long?,
+    /** Set only when the entry was typed in another currency: what was typed, in which currency, at what rate. */
+    val originalAmount: Long? = null,
+    val originalCurrency: String? = null,
+    /** Decimal text such as "83.2150" (original currency to the account's), never a Double. */
+    val exchangeRate: String? = null,
 )
 
 data class Budget(
@@ -214,4 +221,34 @@ data class CardDue(
     val dateMs: Long,
     val note: String,
     val updatedAtMs: Long?,
+)
+
+/** A one-tap template shown as the first row of Quick Add (master section 7, pinned transactions). */
+data class PinnedEntry(
+    val id: String,
+    val title: String,
+    val amount: Long?,        // paise, null = ask each time
+    val income: Boolean,
+    val categoryId: String,
+    val accountId: String,
+    val sortOrder: Int,
+    val createdAtMs: Long,
+)
+
+/** What happened to an entry, kept forever and never edited (master section 13). */
+enum class HistoryAction(val code: Int) {
+    CREATED(0), EDITED(1), DELETED(2), RESTORED(3);
+
+    companion object {
+        fun fromCode(code: Int): HistoryAction? = entries.firstOrNull { it.code == code }
+    }
+}
+
+/** One saved version of an entry. [snapshot] is the whole entry as it was after the action (before it, for DELETED). */
+data class EntryVersion(
+    val id: Long,
+    val entryId: String,
+    val action: HistoryAction,
+    val atMs: Long,
+    val snapshot: Transaction,
 )

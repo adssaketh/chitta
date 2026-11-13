@@ -80,6 +80,10 @@ data class TransactionEntity(
     val ownerUid: String?,
     val isPrivate: Boolean,
     val householdSyncedAtMs: Long?,
+    // Added in schema 2 (exchange): what was typed in another currency, and the rate used.
+    val originalAmountPaise: Long? = null,
+    val originalCurrency: String? = null,
+    val exchangeRate: String? = null,
 )
 
 @Entity(tableName = "budget")
@@ -220,4 +224,47 @@ data class CardDueEntity(
     val dateMs: Long,
     val note: String,
     val updatedAtMs: Long?,
+)
+
+// ---- Added in schema 2 (Phase 4) ----
+
+@Entity(tableName = "pinned_entry")
+data class PinnedEntryEntity(
+    @PrimaryKey val id: String,
+    val title: String,
+    val amountPaise: Long?,
+    val income: Boolean,
+    val categoryId: String,
+    val accountId: String,
+    val sortOrder: Int,
+    val createdAtMs: Long,
+)
+
+/** One saved version of an entry. Rows are only ever added, never changed or removed (master section 13). */
+@Entity(tableName = "entry_version", indices = [Index("entryId")])
+data class EntryVersionEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val entryId: String,
+    val actionCode: Int,
+    val atMs: Long,
+    val snapshotJson: String,
+)
+
+/** Latest daily rates: units of the base currency's rate table per one unit of [currency] is derived from these. */
+@Entity(tableName = "exchange_rate")
+data class ExchangeRateEntity(
+    @PrimaryKey val currency: String, // upper-case code, e.g. "USD"
+    val perBase: String,              // decimal text: units of this currency per 1 unit of the base
+    val base: String,                 // e.g. "INR"
+    val asOfDate: String,             // the file's own date, e.g. "2026-11-12"
+    val fetchedAtMs: Long,
+)
+
+/** A rate the person typed, which wins over the daily rate for that pair. */
+@Entity(tableName = "rate_override", primaryKeys = ["fromCurrency", "toCurrency"])
+data class RateOverrideEntity(
+    val fromCurrency: String,
+    val toCurrency: String,
+    val rate: String,
+    val setAtMs: Long,
 )

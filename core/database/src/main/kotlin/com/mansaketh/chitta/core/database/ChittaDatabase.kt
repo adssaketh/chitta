@@ -10,8 +10,9 @@ import androidx.room.RoomDatabase
         AccountEntity::class, CategoryEntity::class, TransactionEntity::class, BudgetEntity::class,
         CategoryLimitEntity::class, ObjectiveEntity::class, TitleMemoryEntity::class, ScanTemplateEntity::class,
         ActivityLogEntity::class, SettingEntity::class, LoanTermsEntity::class, FixedDepositEntity::class, CardDueEntity::class,
+        PinnedEntryEntity::class, EntryVersionEntity::class, ExchangeRateEntity::class, RateOverrideEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class ChittaDatabase : RoomDatabase() {
@@ -22,11 +23,16 @@ abstract class ChittaDatabase : RoomDatabase() {
     abstract fun objectives(): ObjectiveDao
     abstract fun titles(): TitleMemoryDao
     abstract fun misc(): MiscDao
+    abstract fun pinned(): PinnedDao
+    abstract fun versions(): VersionDao
+    abstract fun rates(): RateDao
 
     companion object {
         const val FILE_NAME = "chitta.db"
 
         fun open(context: Context): ChittaDatabase =
-            Room.databaseBuilder(context.applicationContext, ChittaDatabase::class.java, FILE_NAME).build()
+            Room.databaseBuilder(context.applicationContext, ChittaDatabase::class.java, FILE_NAME)
+                .addMigrations(Migrations.V1_TO_V2)
+                .build()
     }
 }
