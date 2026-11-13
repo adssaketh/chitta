@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Window background only; Compose draws everything else. -->
+    <style name="Theme.Chitta" parent="android:Theme.Material.NoActionBar" />
+</resources>
