@@ -39,7 +39,7 @@ private sealed interface AccSheet {
 
 /** Accounts (PDF p.25): total balance, balances per account, add / rename / archive, transfer, correct balance, exchange rates. */
 @Composable
-fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Unit) {
+fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Unit, onOpenFunds: () -> Unit = {}) {
     val ui by vm.ui.collectAsState()
     val c = ChittaTheme.colors
     var sheet by remember { mutableStateOf<AccSheet>(AccSheet.None) }
@@ -91,6 +91,11 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                             style = ChittaTheme.type.label, color = c.inkMuted,
                         )
                     }
+                }
+                // Mutual funds (Phase 8c) have their own screen.
+                item {
+                    val t = com.mansaketh.chitta.core.domain.MutualFunds.totals(ui.funds)
+                    ValueRow("Mutual funds", if (ui.funds.isEmpty()) "None yet" else if (t.priced > 0) maskedRupees(t.value) else "${t.count} ${if (t.count == 1) "fund" else "funds"}", onClick = onOpenFunds)
                 }
                 item { ValueRow("Count instalment loans in Net worth", if (ui.nwInstalments) "On" else "Off", onClick = { vm.setNetWorthInstalments(!ui.nwInstalments) }) }
                 // Cards read from bank messages (Phase 8b).

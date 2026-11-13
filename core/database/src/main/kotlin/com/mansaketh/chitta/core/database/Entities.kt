@@ -289,3 +289,35 @@ data class RuleEntity(
     val ruleOrder: Int,
     val enabled: Boolean,
 )
+
+// ---- Added in schema 5 (Phase 8c) ----
+
+/** A mutual fund holding. Units and price are decimal text (see core.model.MutualFund). Money is in paise. */
+@Entity(tableName = "mutual_fund", indices = [Index("isin")])
+data class MutualFundEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val isin: String,
+    val schemeCode: String,
+    val units: String,
+    val investedPaise: Long?,
+    val source: String,
+    val unitsAsOfMs: Long,
+    val navText: String?,
+    val navDate: String?,
+    val note: String,
+    val updatedAtMs: Long?,
+    val folio: String,
+    val groupId: String,
+)
+
+/** An NPS account. Its schemes are mutual_fund rows with groupId = id. */
+@Entity(tableName = "nps_account")
+data class NpsAccountEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val netContributionsPaise: Long?,
+    val asOfMs: Long,
+    val note: String,
+    val updatedAtMs: Long?,
+)

@@ -1,5 +1,17 @@
 # Changelog
 
+## Phase 8c: Mutual funds screen (13 Nov 2026) - on branch `phase-8c-mutual-funds`
+- Scope: the screen first, then (files arrived) the statement import and an NPS tab. Still not built: AMFI price fetch, Zerodha Console reader, SIP estimates, the Net worth line.
+- `:core:model`: `MutualFund`. `:core:domain`: `MutualFunds` (value = units x price, gain, totals, STALE after 35 days, ISIN shape) with 12 tests on hand-worked figures.
+- Database schema 5 with tested migration from 4: `mutual_fund` (with folio and NPS group) and `nps_account` tables. `AssetsRepository` gets save, observe, delete with Undo.
+- `:core:intake`: `CasSummary` reads a CAMS / KFintech / MFCentral "Consolidated Account Summary" PDF's text (holdings, cost, units, price, value; refused if the rows do not add to the statement's Total) and `CasImport` plans the import (only statement-sourced funds change; a same-named hand-typed fund is never counted twice). 7 tests on invented text.
+- `:core:intake`: `NpsStatement` reads a CRA NPS Transaction Statement's text (summary line and Investment Details table: units, price, value, contributions; refused if values do not add to the statement's totals) and `NpsImport` plans the import (account created or updated, only statement schemes replaced). 7 tests on invented text. One file picker serves both statement types.
+- NPS: own tab on the Mutual funds screen, never added into mutual funds. `NpsAccount`, `Nps` totals (gain for the whole account: value minus net contributions), 4 tests.
+- App: PDF password asked only when needed, used once, never stored. Statement preview shows what changes before anything is saved, with Undo.
+- App: Accounts > Mutual funds (PDF p.26: value, price date, gain with how many funds it covers, one row per fund with its source and STALE), fund detail, add or edit by hand, delete with Undo, Import holdings sheet (PDF p.27; only "By hand" works).
+- Decisions D108 to D116.
+- Written without a local build (no Android SDK here); CI compiles and runs every test.
+
 ## Phase 8b: fixed deposits, instalment loans in Net worth, card dues from SMS (13 Nov 2026) - on branch `phase-8b-deposits-dues`
 - `:core:domain`: `FixedDeposits` (value today, at maturity, accrued interest, in paise; the bank's stated maturity amount wins), `CardDues` (owed per card, matching a card to an account, no double count with entries), `Cards.figures` now takes card messages, `NetWorth` takes deposits (off by default) and instalment-loan balances (on by default). 29 new tests.
 - `:core:intake`: `FdSms`, the "FD booked" message reader (6 tests, including the Ping contract's FD sample).
