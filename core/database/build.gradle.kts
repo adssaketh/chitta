@@ -39,6 +39,7 @@ ksp {
 dependencies {
     api(project(":core:model"))
     api(project(":core:importer"))
+    implementation(project(":core:domain"))
     implementation(project(":core:money"))
     api(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

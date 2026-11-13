@@ -123,6 +123,7 @@ enum class MoreItem(val key: String, val label: String) {
     Categories("categories", "Categories"),
     Customise("customise", "Customise Home and tabs"),
     Import("import", "Bring over your book"),
+    Settings("settings", "Settings"),
 }
 
 object MoreOrder {

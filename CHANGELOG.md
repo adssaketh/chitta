@@ -1,5 +1,14 @@
 # Changelog
 
+## Phase 7a: data safety (13 Nov 2026) - 0.7.0-phase7a - on `main`
+- App lock (fingerprint, face or phone PIN) with timeout, and hide in recents. Locked screen composes nothing from the book.
+- Data Recovery: automatic daily restore points, manual points, restore with a safety point first.
+- Backup file export and import (full database copy, checked before use).
+- CSV import: column mapping, date formats, saved templates, review list, undo. CSV export by account and range.
+- Settings screen under More: Security, Backup and restore, Import and export, Data (delete all).
+- Pure logic in `:core:domain` (Csv, CsvImport, CsvExport, DataSafety) with unit tests; database file helpers in `:core:database`. Android code is checked by CI.
+- Decisions D67 to D74. Firebase work moved to Phase 9.
+
 ## Phase 6: insights and home (13 Nov 2026) - 0.6.0-phase6 - on `main`
 - Home: Safe to spend (or the cash check when it is lower, or when you force it), budget ring, per-day, range, spent with a pace stamp, month rule, "How this is worked out" sheet, Coming up. Optional sections: Budgets, Balances, Recent entries, Net worth, Goals, Loans, Spending, Heatmap. Only Budgets and Recent are on to start.
 - Insights: Current (range, accounts, Spent and Saved against the period before, totals, cash flow, category bars with drill-down, biggest changes), History (days, weeks, months, years; per period or running total; average of finished periods) and Net worth over 12 months.

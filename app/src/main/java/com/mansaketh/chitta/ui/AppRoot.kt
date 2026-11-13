@@ -41,6 +41,7 @@ class AppViewModels(
     val root: RootViewModel, val ledger: LedgerViewModel, val quickAdd: QuickAddViewModel,
     val detail: EntryDetailViewModel, val manage: ManageViewModel, val imports: ImportViewModel, val plan: PlanViewModel,
     val home: HomeViewModel, val insights: InsightsViewModel,
+    val settings: com.mansaketh.chitta.ui.settings.SettingsViewModel, val csvImport: com.mansaketh.chitta.ui.imports.CsvImportViewModel,
 )
 
 /**
@@ -141,6 +142,9 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                     top == "accounts" -> AccountsScreen(vms.manage, onBack = ::pop, onTransfer = { openAdd(EntryType.Transfer) })
                     top == "categories" -> CategoriesScreen(vms.manage, onBack = ::pop)
                     top == "import" -> ImportScreen(vms.imports, onBack = { vms.imports.reset(); pop() }, onFinished = { vms.imports.reset(); stack = emptyList() })
+                    top == "settings" -> com.mansaketh.chitta.ui.settings.SettingsScreen(vms.settings, onBack = ::pop, onOpen = { push(it) })
+                    top == "restore-points" -> com.mansaketh.chitta.ui.settings.RestorePointsScreen(vms.settings, onBack = ::pop)
+                    top == "csv-import" -> com.mansaketh.chitta.ui.imports.CsvImportScreen(vms.csvImport, onBack = ::pop)
                     top == "gallery" -> extra?.invoke(::pop)
                 }
                 if (top == null && tab != MORE && tab != TabKey.Accounts.key) {

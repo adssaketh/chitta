@@ -12,7 +12,7 @@ import androidx.room.RoomDatabase
         ActivityLogEntity::class, SettingEntity::class, LoanTermsEntity::class, FixedDepositEntity::class, CardDueEntity::class,
         PinnedEntryEntity::class, EntryVersionEntity::class, ExchangeRateEntity::class, RateOverrideEntity::class,
     ],
-    version = 3,
+    version = ChittaDatabase.VERSION,
     exportSchema = true,
 )
 abstract class ChittaDatabase : RoomDatabase() {
@@ -28,6 +28,8 @@ abstract class ChittaDatabase : RoomDatabase() {
     abstract fun rates(): RateDao
 
     companion object {
+        /** The schema number. Restore points and backup files are checked against it. */
+        const val VERSION = 3
         const val FILE_NAME = "chitta.db"
 
         fun open(context: Context): ChittaDatabase =

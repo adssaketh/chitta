@@ -1,7 +1,6 @@
 package com.mansaketh.chitta
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -10,18 +9,31 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.fragment.app.FragmentActivity
+import com.mansaketh.chitta.data.AppLock
+import com.mansaketh.chitta.data.SecurityPrefs
+import com.mansaketh.chitta.di.Clock
+import com.mansaketh.chitta.ui.lock.BiometricGate
+import com.mansaketh.chitta.ui.lock.LockScreen
+import javax.inject.Inject
 import com.mansaketh.chitta.core.design.gallery.ComponentGallery
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.theme.ThemeMode
 import com.mansaketh.chitta.core.design.tokens.Dimens
 
 @dagger.hilt.android.AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
+    @Inject lateinit var appLock: AppLock
+    @Inject lateinit var security: SecurityPrefs
+    @Inject lateinit var clock: Clock
+
     private val root: com.mansaketh.chitta.ui.RootViewModel by viewModels()
     private val ledger: com.mansaketh.chitta.ui.ledger.LedgerViewModel by viewModels()
     private val quickAdd: com.mansaketh.chitta.ui.add.QuickAddViewModel by viewModels()
@@ -31,6 +43,23 @@ class MainActivity : ComponentActivity() {
     private val plan: com.mansaketh.chitta.ui.plan.PlanViewModel by viewModels()
     private val home: com.mansaketh.chitta.ui.home.HomeViewModel by viewModels()
     private val insights: com.mansaketh.chitta.ui.insights.InsightsViewModel by viewModels()
+    private val settings: com.mansaketh.chitta.ui.settings.SettingsViewModel by viewModels()
+    private val csvImport: com.mansaketh.chitta.ui.imports.CsvImportViewModel by viewModels()
+
+    /** Leaving the screen starts the lock timer; a rotation does not (the activity is recreated, the app was never away). */
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations) appLock.onLeft(clock.nowMs())
+    }
+
+    override fun onStart() {
+        super.onStart()
+        appLock.onReturned(clock.nowMs())
+    }
+
+    private fun askToUnlock() {
+        BiometricGate.prompt(this, "Unlock Chitta", null, onSuccess = { appLock.unlocked() })
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,9 +67,19 @@ class MainActivity : ComponentActivity() {
         setContent {
             var mode by rememberSaveable { mutableStateOf(ThemeMode.System) }
             var hide by rememberSaveable { mutableStateOf(false) }
+            val locked by appLock.locked.collectAsState()
+            val hideInRecents by security.hideInRecents.collectAsState()
+            // A secure window blanks the recent-apps preview (and blocks screenshots).
+            LaunchedEffect(hideInRecents) {
+                if (hideInRecents) window.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
+                else window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+            }
             ChittaTheme(mode = mode, hideAmounts = hide) {
-                val vms = com.mansaketh.chitta.ui.AppViewModels(root, ledger, quickAdd, detail, manage, imports, plan, home, insights)
-                if (BuildConfig.DEBUG) {
+                val vms = com.mansaketh.chitta.ui.AppViewModels(root, ledger, quickAdd, detail, manage, imports, plan, home, insights, settings, csvImport)
+                if (locked) {
+                    // While locked nothing from the book is composed, so nothing can be read or heard from behind the lock.
+                    LockScreen(onUnlock = ::askToUnlock)
+                } else if (BuildConfig.DEBUG) {
                     // Component gallery stays reachable from More in debug builds only (Phase 2 decision).
                     com.mansaketh.chitta.ui.AppRoot(vms, hide, { hide = !hide }) { onBack -> ComponentGallery(mode, { mode = it }, hide, { hide = it }) ; androidx.activity.compose.BackHandler(onBack = onBack) }
                 } else {

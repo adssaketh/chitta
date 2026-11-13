@@ -50,5 +50,10 @@ class AppPrefs @Inject constructor(@ApplicationContext context: Context) {
         get() = p.getBoolean("paidOnDue", false)
         set(v) { p.edit().putBoolean("paidOnDue", v).apply() }
 
+    /** Saved CSV column setups (Phase 7a), each encoded by `CsvTemplate.encode`. */
+    var csvTemplates: Set<String>
+        get() = p.getStringSet("csvTemplates", emptySet())?.toSet() ?: emptySet()
+        set(v) { p.edit().putStringSet("csvTemplates", v.toSet()).apply() }
+
     companion object { const val UNDO_IMPORT_DAYS = 30L }
 }
