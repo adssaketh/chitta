@@ -31,8 +31,6 @@ import com.mansaketh.chitta.ui.ValueRow
 
 /** Package names are Android's own ids for apps. Checked from memory, not from the Play Store: if an app does not react, look up its id under Android's App info. */
 private val SUGGESTED = listOf(
-    "Google Messages" to "com.google.android.apps.messaging",
-    "Samsung Messages" to "com.samsung.android.messaging",
     "PhonePe" to "com.phonepe.app",
     "Google Pay" to "com.google.android.apps.nbu.paisa.user",
     "Paytm" to "net.one97.paytm",
@@ -73,7 +71,7 @@ fun AutomationScreen(vm: AutomationViewModel, onBack: () -> Unit) {
                     style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2),
                 )
                 Text(
-                    "Only notices that read like a bank debit or credit are understood. A notice that only says \"Paid ₹250\" is not read yet.",
+                    "Do not tick your SMS app: Ping already reads your bank SMS and sends them here. This is for payment and bank apps. Only notices that read like a bank debit or credit are understood; a notice that only says \"Paid ₹250\" is not read yet.",
                     style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2),
                 )
                 HairlineRule()
