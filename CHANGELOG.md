@@ -91,4 +91,4 @@
 
 - Phase 8a: rules suggest categories on Ping, UPI and CSV import review rows (suggest only). Quick Add has a Split button.
 
-- Phase 8a: Settings > Automation. Notification scanning (opt-in, per app, through the review list) and a background add receiver that needs your secret and offers Undo. Unit tests for both.
+- Phase 8a: Settings > Automation with a background add receiver that needs your secret and offers Undo. Unit tests. Notification scanning is not built (D99).

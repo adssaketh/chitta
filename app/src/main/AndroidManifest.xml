@@ -65,17 +65,6 @@
             android:exported="true"
             android:targetActivity=".intake.ShareReceiverActivity" />
 
-        <!-- Reads the notifications of the apps ticked in Settings > Automation, after the person gives Notification access (D99). -->
-        <service
-            android:name=".automation.ChittaNotificationListener"
-            android:exported="true"
-            android:label="Chitta"
-            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
-            <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
-            </intent-filter>
-        </service>
-
         <!-- Background add: needs the secret set in Settings > Automation, otherwise it ignores everything (D99). -->
         <receiver android:name=".automation.AddReceiver" android:exported="true">
             <intent-filter>
