@@ -26,6 +26,7 @@ import com.mansaketh.chitta.ui.BottomOverlay
 import com.mansaketh.chitta.ui.Choice
 import com.mansaketh.chitta.ui.ChoiceSheet
 import com.mansaketh.chitta.ui.TextSheet
+import com.mansaketh.chitta.ui.TextTabs
 import com.mansaketh.chitta.ui.ValueRow
 import com.mansaketh.chitta.ui.categoryName
 import com.mansaketh.chitta.ui.plan.MultiPickSheet
