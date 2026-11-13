@@ -25,6 +25,8 @@ data class ManageUi(
     val rates: List<ExchangeRateEntity> = emptyList(),
     val overrides: List<RateOverrideEntity> = emptyList(),
     val loading: Boolean = true,
+    /** Card figures for accounts that have both days set (master section 12, credit card). */
+    val cards: Map<String, com.mansaketh.chitta.core.domain.CardFigures> = emptyMap(),
 )
 
 @HiltViewModel
@@ -45,7 +47,9 @@ class ManageViewModel @Inject constructor(
     private val titles = titleRepo.observeAll().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val ui: StateFlow<ManageUi> = combine(accountRepo.observeAll(), categoryRepo.observeAll(), entries, ratesRepo.observeRates(), ratesRepo.observeOverrides()) { a, c, e, r, o ->
-        ManageUi(a, c, Balances.balances(e), r, o, loading = false)
+        val today = java.time.Instant.ofEpochMilli(clock.nowMs()).atZone(clock.zone()).toLocalDate()
+        val cards = a.mapNotNull { acc -> cardSetup(acc)?.let { acc.id to com.mansaketh.chitta.core.domain.Cards.figures(it, e, today, clock.zone()) } }.toMap()
+        ManageUi(a, c, Balances.balances(e), r, o, loading = false, cards = cards)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ManageUi())
 
     // ---- accounts
@@ -58,6 +62,11 @@ class ManageViewModel @Inject constructor(
     fun renameAccount(a: Account, name: String) = viewModelScope.launch {
         val n = name.trim().ifEmpty { return@launch }
         accountRepo.save(a.copy(name = n, modifiedAtMs = clock.nowMs()))
+    }
+
+    /** Saves the card fields of an account. Any of them may be cleared with null; the two days switch the cockpit on. */
+    fun saveCard(a: Account, limit: Long?, statementDay: Int?, dueDay: Int?, minimumDue: Long?, remindDaysBefore: Int?) = viewModelScope.launch {
+        accountRepo.save(a.copy(creditLimit = limit, statementDay = statementDay, dueDay = dueDay, minimumDue = minimumDue, remindDaysBefore = remindDaysBefore, modifiedAtMs = clock.nowMs()))
     }
 
     fun archiveAccount(a: Account, archived: Boolean) = viewModelScope.launch { accountRepo.save(a.copy(archived = archived, modifiedAtMs = clock.nowMs())) }
@@ -123,4 +132,11 @@ class ManageViewModel @Inject constructor(
     }
 
     fun clearOverride(from: String, to: String) = viewModelScope.launch { ratesRepo.removeOverride(from, to) }
+}
+
+/** The card setup of an account, or null until both days are set. */
+internal fun cardSetup(a: Account): com.mansaketh.chitta.core.domain.CardSetup? {
+    val s = a.statementDay ?: return null
+    val d = a.dueDay ?: return null
+    return com.mansaketh.chitta.core.domain.CardSetup(a.id, a.creditLimit?.let { Paise(it) }, s, d, a.minimumDue?.let { Paise(it) }, a.remindDaysBefore ?: 3)
 }

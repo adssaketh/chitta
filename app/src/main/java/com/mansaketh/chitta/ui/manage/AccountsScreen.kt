@@ -26,6 +26,7 @@ private sealed interface AccSheet {
     data class Rename(val a: Account) : AccSheet
     data class Correct(val a: Account) : AccSheet
     data object Rates : AccSheet
+    data class Card(val a: Account) : AccSheet
 }
 
 /** Accounts (PDF p.25): total balance, balances per account, add / rename / archive, transfer, correct balance, exchange rates. */
@@ -59,11 +60,11 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                 }
                 if (ui.loading) item { LoadingPlaceholder() }
                 if (!ui.loading && live.isEmpty()) item { EmptyState("No accounts yet. Add one to start.", "Add an account", { sheet = AccSheet.Add }) }
-                items(live, key = { it.id }) { a -> AccountRow(a, ui.balances[a.id] ?: Paise.ZERO) { sheet = AccSheet.Actions(a) } }
+                items(live, key = { it.id }) { a -> AccountRow(a, ui.balances[a.id] ?: Paise.ZERO, ui.cards[a.id]) { sheet = AccSheet.Actions(a) } }
                 if (archived.isNotEmpty()) item {
                     SectionHeader("Archived", action = if (showArchived) "Hide" else "Show", onAction = { showArchived = !showArchived })
                 }
-                if (showArchived) items(archived, key = { "x-" + it.id }) { a -> AccountRow(a, ui.balances[a.id] ?: Paise.ZERO) { sheet = AccSheet.Actions(a) } }
+                if (showArchived) items(archived, key = { "x-" + it.id }) { a -> AccountRow(a, ui.balances[a.id] ?: Paise.ZERO, null) { sheet = AccSheet.Actions(a) } }
             }
         }
 
@@ -78,17 +79,20 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                 s.a.name,
                 buildList {
                     add(Choice("Rename", "rename")); add(Choice("Correct balance", "correct", "Adds an entry that is not spending or income"))
+                    add(Choice("Credit card details", "card", "Limit, statement and due days, minimum due"))
                     add(Choice(if (s.a.archived) "Bring back" else "Archive", "archive", if (s.a.archived) null else "Hidden from pickers. Entries stay."))
                 },
                 { v ->
                     when (v) {
                         "rename" -> sheet = AccSheet.Rename(s.a)
                         "correct" -> sheet = AccSheet.Correct(s.a)
+                        "card" -> sheet = AccSheet.Card(s.a)
                         else -> { vm.archiveAccount(s.a, !s.a.archived); sheet = AccSheet.None }
                     }
                 },
                 { sheet = AccSheet.None },
             )
+            is AccSheet.Card -> CardSheet(s.a, ui.cards[s.a.id], { l, sd, dd, m, r -> vm.saveCard(s.a, l, sd, dd, m, r); sheet = AccSheet.None }, { sheet = AccSheet.None })
             AccSheet.Rates -> RatesSheet(vm, ui, { notice = it }, { sheet = AccSheet.None })
             AccSheet.None -> Unit
         }
@@ -96,12 +100,13 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
 }
 
 @Composable
-private fun AccountRow(a: Account, balance: Paise, onClick: () -> Unit) {
+private fun AccountRow(a: Account, balance: Paise, card: com.mansaketh.chitta.core.domain.CardFigures?, onClick: () -> Unit) {
     val c = ChittaTheme.colors
     Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(onClick = onClick).padding(vertical = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(a.name, style = ChittaTheme.type.title, color = c.ink)
             if ((a.currency ?: "INR") != "INR") Text(a.currency ?: "", style = ChittaTheme.type.label, color = c.inkMuted)
+            if (card != null) Text("Owes ${IndianFormat.rupees(card.outstanding)} · due in ${card.daysToDue} ${if (card.daysToDue == 1L) "day" else "days"}", style = ChittaTheme.type.label, color = c.inkMuted)
         }
         AmountText(balance, alwaysShowPaise = true, tone = if (balance.value < 0) AmountTone.Expense else AmountTone.Neutral)
     }

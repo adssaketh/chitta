@@ -46,6 +46,8 @@ data class LedgerUi(
     val selected: Set<String> = emptySet(),
     val totalEntries: Int = 0,
     val matching: Int = 0,
+    /** Entries that look like a second copy of another (master section 8). Only a mark; nothing is changed. */
+    val possibleDuplicates: Set<String> = emptySet(),
 )
 
 @HiltViewModel
@@ -74,6 +76,7 @@ class LedgerViewModel @Inject constructor(
             categories = d.categories, accounts = d.accounts, filter = f,
             selected = sel.intersect(d.entries.map { it.id }.toSet()),
             totalEntries = d.entries.size, matching = shown.size,
+            possibleDuplicates = com.mansaketh.chitta.core.domain.Duplicates.flaggedIds(d.entries),
         )
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LedgerUi())
 
