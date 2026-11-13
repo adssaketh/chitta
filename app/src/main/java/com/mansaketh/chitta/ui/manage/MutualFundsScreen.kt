@@ -24,6 +24,9 @@ import com.mansaketh.chitta.core.intake.CasPlan
 import com.mansaketh.chitta.core.intake.CasReading
 import com.mansaketh.chitta.core.intake.CasSummary
 import com.mansaketh.chitta.core.intake.IntakeFormatException
+import com.mansaketh.chitta.core.intake.NpsPlan
+import com.mansaketh.chitta.core.intake.NpsReading
+import com.mansaketh.chitta.core.intake.NpsStatement
 import com.mansaketh.chitta.core.model.MutualFund
 import com.mansaketh.chitta.core.model.NpsAccount
 import com.mansaketh.chitta.core.money.Paise
@@ -55,6 +58,7 @@ private sealed interface CasUi {
     data object Reading : CasUi
     data class NeedPassword(val uri: Uri, val wrong: Boolean) : CasUi
     data class Preview(val plan: CasPlan, val reading: CasReading.Ready) : CasUi
+    data class NpsPreview(val plan: NpsPlan, val reading: NpsReading.Ready) : CasUi
     data class Error(val message: String) : CasUi
 }
 
@@ -104,7 +108,12 @@ fun MutualFundsScreen(vm: ManageViewModel, onBack: () -> Unit) {
         cas = CasUi.Reading
         scope.launch {
             cas = try {
-                when (val r = CasSummary.read(TextReaders.readPdf(context, uri, password))) {
+                val text = TextReaders.readPdf(context, uri, password)
+                // One file picker serves both: an NPS statement is told from a mutual fund summary by its text.
+                if (NpsStatement.looksLike(text)) when (val r = NpsStatement.read(text)) {
+                    is NpsReading.Ready -> CasUi.NpsPreview(vm.planNps(r), r)
+                    is NpsReading.Refused -> CasUi.Error(r.reason)
+                } else when (val r = CasSummary.read(text)) {
                     is CasReading.Ready -> CasUi.Preview(vm.planCas(r), r)
                     is CasReading.Refused -> CasUi.Error(r.reason)
                 }
@@ -124,22 +133,23 @@ fun MutualFundsScreen(vm: ManageViewModel, onBack: () -> Unit) {
                 actions = {
                     IconAction(
                         ChittaIcons.Plus, if (tab == 0) "Add or import holdings" else "Add an NPS account",
-                        onClick = { sheet = if (tab == 0) FundSheet.Import else FundSheet.NpsAccountEdit(null) },
+                        onClick = { sheet = FundSheet.Import },
                     )
                 },
             )
             TextTabs(listOf("Mutual funds", "NPS"), tab, { tab = it }, Modifier.padding(horizontal = Dimens.Margin))
             if (tab == 0) FundsTab(ui, onOpen = { sheet = FundSheet.Detail(it) }, onAdd = { sheet = FundSheet.Import })
             else NpsTab(
-                ui, onAddAccount = { sheet = FundSheet.NpsAccountEdit(null) }, onAccount = { sheet = FundSheet.NpsAccountDetail(it) },
+                ui, onAddAccount = { sheet = FundSheet.Import }, onAccount = { sheet = FundSheet.NpsAccountDetail(it) },
                 onAddScheme = { sheet = FundSheet.SchemeEdit(null, it.id) }, onScheme = { sheet = FundSheet.Detail(it) },
             )
         }
 
         when (val s = sheet) {
             FundSheet.Import -> ImportHoldingsSheet(
+                nps = tab == 1,
                 onStatement = { sheet = FundSheet.None; pickStatement.launch(arrayOf("application/pdf")) },
-                onByHand = { sheet = FundSheet.Edit(null) }, onClose = { sheet = FundSheet.None },
+                onByHand = { sheet = if (tab == 1) FundSheet.NpsAccountEdit(null) else FundSheet.Edit(null) }, onClose = { sheet = FundSheet.None },
             )
             is FundSheet.Detail -> {
                 val cur = (ui.funds + ui.npsSchemes).firstOrNull { it.id == s.f.id } ?: s.f
@@ -176,6 +186,7 @@ fun MutualFundsScreen(vm: ManageViewModel, onBack: () -> Unit) {
                 ChittaButton("Close", { cas = CasUi.None }, style = ButtonStyle.Quiet)
             }
             is CasUi.Preview -> CasPreviewSheet(c.plan, c.reading, onConfirm = { vm.applyCas(c.plan); cas = CasUi.None; tab = 0 }, onClose = { cas = CasUi.None })
+            is CasUi.NpsPreview -> NpsPreviewSheet(c.plan, c.reading, onConfirm = { vm.applyNps(c.plan); cas = CasUi.None; tab = 1 }, onClose = { cas = CasUi.None })
         }
     }
 }
@@ -273,21 +284,26 @@ private fun FundRow(f: MutualFund, nowMs: Long, zone: ZoneId, stamp: Boolean, on
     HairlineRule()
 }
 
-/** PDF p.27. Statement and by hand work; the Zerodha Console file reader waits for a sample file. */
+/** PDF p.27. Statement and by hand work; the Zerodha Console file reader waits for a sample file. The NPS tab offers the NPS statement. */
 @Composable
-private fun ImportHoldingsSheet(onStatement: () -> Unit, onByHand: () -> Unit, onClose: () -> Unit) {
+private fun ImportHoldingsSheet(nps: Boolean, onStatement: () -> Unit, onByHand: () -> Unit, onClose: () -> Unit) {
     val c = ChittaTheme.colors
     BottomOverlay(onClose) {
-        Text("Import holdings", style = ChittaTheme.type.title, color = c.ink)
+        Text(if (nps) "Add NPS" else "Import holdings", style = ChittaTheme.type.title, color = c.ink)
         Text(
             "Importing one source never changes the others. A file and its password are never saved. You see what will change before anything is saved.",
             style = ChittaTheme.type.label, color = c.inkMuted,
         )
         Spacer(Modifier.height(Dimens.Gap2))
         HairlineRule()
-        ValueRow("CAMS, KFintech or MFCentral summary (PDF)", "Choose file", onClick = onStatement)
-        ValueRow("Zerodha Console file", "Not built yet")
-        ValueRow("By hand", "Add a fund", onClick = onByHand)
+        if (nps) {
+            ValueRow("NPS statement (PDF from the CRA)", "Choose file", onClick = onStatement)
+            ValueRow("By hand", "Add an account", onClick = onByHand)
+        } else {
+            ValueRow("CAMS, KFintech or MFCentral summary (PDF)", "Choose file", onClick = onStatement)
+            ValueRow("Zerodha Console file", "Not built yet")
+            ValueRow("By hand", "Add a fund", onClick = onByHand)
+        }
     }
 }
 
@@ -319,6 +335,37 @@ private fun CasPreviewSheet(plan: CasPlan, reading: CasReading.Ready, onConfirm:
         if (reading.exitedRows > 0) Text("${reading.exitedRows} funds with no units left in the file are ignored.", style = ChittaTheme.type.label, color = c.inkMuted)
         Spacer(Modifier.height(Dimens.Gap4))
         ChittaButton("Import", onConfirm, enabled = incoming.isNotEmpty() || plan.remove.isNotEmpty(), confirmHaptic = true)
+        Spacer(Modifier.height(Dimens.Gap2))
+        ChittaButton("Cancel", onClose, style = ButtonStyle.Quiet)
+    }
+}
+
+/** What an NPS statement would change: the account, each scheme's units and price, and what was put in. Nothing is saved before Import. */
+@Composable
+private fun NpsPreviewSheet(plan: NpsPlan, reading: NpsReading.Ready, onConfirm: () -> Unit, onClose: () -> Unit) {
+    val c = ChittaTheme.colors
+    val value = Paise(reading.statedValuePaise)
+    val net = Paise(reading.netContributionsPaise)
+    val gain = value - net
+    BottomOverlay(onClose) {
+        Text(if (plan.accountIsNew) "Add ${plan.account.name}?" else "Update ${plan.account.name}?", style = ChittaTheme.type.title, color = c.ink)
+        Text("Prices as of ${reading.priceDate.format(priceDateFmt)}. Nothing is saved until you tap Import. You can undo for 10 seconds.", style = ChittaTheme.type.label, color = c.inkMuted)
+        Spacer(Modifier.height(Dimens.Gap2))
+        HairlineRule()
+        ValueRow("Value", maskedRupees(value))
+        ValueRow("Put in so far", maskedRupees(net))
+        ValueRow("Gain", (if (gain.value > 0) "+" else "") + maskedRupees(gain))
+        ValueRow("New schemes", plan.add.size.toString())
+        ValueRow("Schemes updated", plan.update.size.toString())
+        ValueRow("Schemes removed", plan.remove.size.toString())
+        (plan.add + plan.update).forEach { f -> Text("${f.name} · ${unitsText(f)} units", style = ChittaTheme.type.label, color = c.inkMuted) }
+        if (plan.remove.isNotEmpty()) Text("Removed because the statement no longer holds them: " + plan.remove.joinToString { it.name }, style = ChittaTheme.type.label, color = c.inkMuted)
+        if (plan.leftOutAsTypedByHand.isNotEmpty()) Text(
+            "Left out, already typed by hand (never counted twice): " + plan.leftOutAsTypedByHand.joinToString { it.name } + ". Delete the hand-typed one to use the statement.",
+            style = ChittaTheme.type.label, color = c.inkMuted,
+        )
+        Spacer(Modifier.height(Dimens.Gap4))
+        ChittaButton("Import", onConfirm, confirmHaptic = true)
         Spacer(Modifier.height(Dimens.Gap2))
         ChittaButton("Cancel", onClose, style = ButtonStyle.Quiet)
     }

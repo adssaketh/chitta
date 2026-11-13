@@ -122,6 +122,22 @@ class ManageViewModel @Inject constructor(
     }
 
     // ---- NPS (Phase 8c)
+    /** What an NPS statement import would do. Nothing is written until [applyNps]. */
+    fun planNps(reading: com.mansaketh.chitta.core.intake.NpsReading.Ready): com.mansaketh.chitta.core.intake.NpsPlan =
+        com.mansaketh.chitta.core.intake.NpsImport.plan(ui.value.nps, ui.value.npsSchemes, reading, clock.nowMs(), clock.zone(), ids::newId)
+
+    /** Creates or updates the NPS account and replaces only statement-sourced schemes. One Undo item restores everything as it was. */
+    fun applyNps(plan: com.mansaketh.chitta.core.intake.NpsPlan) = viewModelScope.launch {
+        val oldAccount = ui.value.nps.firstOrNull { it.id == plan.account.id }
+        val oldUpdated = ui.value.npsSchemes.filter { s -> plan.update.any { it.id == s.id } }
+        assets.saveNps(plan.account)
+        assets.replaceFunds(plan.remove.map { it.id }, plan.add + plan.update)
+        undo.post("NPS statement imported") {
+            assets.replaceFunds(plan.add.map { it.id }, oldUpdated + plan.remove)
+            if (oldAccount == null) assets.deleteNps(plan.account.id) else assets.saveNps(oldAccount)
+        }
+    }
+
     fun saveNps(entered: NpsAccount) = viewModelScope.launch {
         val a = if (entered.id.isEmpty()) entered.copy(id = ids.newId()) else entered
         val old = ui.value.nps.firstOrNull { it.id == a.id }
