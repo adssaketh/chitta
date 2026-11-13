@@ -18,6 +18,19 @@ object Migrations {
         }
     }
 
+    /** Phase 8a: split group on entries, credit-card fields on accounts, the rules table. Nothing is dropped. */
+    val V3_TO_V4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `txn` ADD COLUMN `splitGroupId` TEXT")
+            db.execSQL("ALTER TABLE `account` ADD COLUMN `creditLimitPaise` INTEGER")
+            db.execSQL("ALTER TABLE `account` ADD COLUMN `statementDay` INTEGER")
+            db.execSQL("ALTER TABLE `account` ADD COLUMN `dueDay` INTEGER")
+            db.execSQL("ALTER TABLE `account` ADD COLUMN `minimumDuePaise` INTEGER")
+            db.execSQL("ALTER TABLE `account` ADD COLUMN `remindDaysBefore` INTEGER")
+            db.execSQL("CREATE TABLE IF NOT EXISTS `entry_rule` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `conditionsJson` TEXT NOT NULL, `actionsJson` TEXT NOT NULL, `ruleOrder` INTEGER NOT NULL, `enabled` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+        }
+    }
+
     /** Phase 5: the day of month a monthly or yearly bill belongs on, so a bill on the 31st survives short months. Nothing is dropped. */
     val V2_TO_V3 = object : Migration(2, 3) {
         override fun migrate(db: SupportSQLiteDatabase) {

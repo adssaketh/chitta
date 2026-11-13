@@ -29,6 +29,12 @@ data class AccountEntity(
     val homeWidgetsJson: String?,
     val ownerUid: String?,
     val archived: Boolean = false, // new in Chitta (audit C4)
+    // Added in schema 4 (Phase 8a): credit-card setup.
+    val creditLimitPaise: Long? = null,
+    val statementDay: Int? = null,
+    val dueDay: Int? = null,
+    val minimumDuePaise: Long? = null,
+    val remindDaysBefore: Int? = null,
 )
 
 @Entity(tableName = "category", indices = [Index("mainCategoryId")])
@@ -86,6 +92,8 @@ data class TransactionEntity(
     val exchangeRate: String? = null,
     // Added in schema 3 (Phase 5): the day of month a monthly or yearly bill belongs on (a bill on the 31st).
     val anchorDay: Int? = null,
+    // Added in schema 4 (Phase 8a): lines of one split share this id.
+    val splitGroupId: String? = null,
 )
 
 @Entity(tableName = "budget")
@@ -269,4 +277,15 @@ data class RateOverrideEntity(
     val toCurrency: String,
     val rate: String,
     val setAtMs: Long,
+)
+
+/** A rule for the rules engine (schema 4). Conditions and actions are JSON text, built by [RuleJson]. */
+@Entity(tableName = "entry_rule")
+data class RuleEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val conditionsJson: String,
+    val actionsJson: String,
+    val ruleOrder: Int,
+    val enabled: Boolean,
 )

@@ -37,6 +37,12 @@ data class Account(
     val homeWidgets: List<AccountWidget>?,
     val ownerUid: String?,
     val archived: Boolean = false,
+    /** New in Chitta (schema 4): credit-card setup. All null for an ordinary account. */
+    val creditLimit: Long? = null,
+    val statementDay: Int? = null,
+    val dueDay: Int? = null,
+    val minimumDue: Long? = null,
+    val remindDaysBefore: Int? = null,
 )
 
 data class Category(

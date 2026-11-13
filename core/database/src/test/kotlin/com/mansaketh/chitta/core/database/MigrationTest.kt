@@ -56,7 +56,7 @@ class MigrationTest {
         val file = File(tmp.root, "old.db")
         createVersion(file, 1)
         val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext<Context>(), ChittaDatabase::class.java, file.absolutePath)
-            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3).allowMainThreadQueries().build()
+            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4).allowMainThreadQueries().build()
         try {
             val t = db.transactions().get("t1")!!
             assertEquals(-48_600L, t.amountPaise)
@@ -77,7 +77,7 @@ class MigrationTest {
         val file = File(tmp.root, "v2.db")
         createVersion(file, 2)
         val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext<Context>(), ChittaDatabase::class.java, file.absolutePath)
-            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3).allowMainThreadQueries().build()
+            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4).allowMainThreadQueries().build()
         try {
             val t = db.transactions().get("t1")!!
             assertEquals(-48_600L, t.amountPaise)
@@ -85,6 +85,42 @@ class MigrationTest {
             // The new column can be written and read back.
             db.transactions().upsert(t.copy(id = "t3", anchorDay = 31))
             assertEquals(31, db.transactions().get("t3")!!.anchorDay)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test fun versionThreeGainsSplitCardAndRuleStorageAndKeepsEntries() = runBlocking {
+        val file = File(tmp.root, "v3.db")
+        createVersion(file, 3)
+        val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext<Context>(), ChittaDatabase::class.java, file.absolutePath)
+            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4).allowMainThreadQueries().build()
+        try {
+            val t = db.transactions().get("t1")!!
+            assertEquals(-48_600L, t.amountPaise)
+            assertNull(t.splitGroupId)
+            val a = db.accounts().get("a1")!!
+            assertEquals("HDFC", a.name)
+            assertNull(a.creditLimitPaise)
+            // The new columns can be written and read back.
+            db.transactions().upsert(t.copy(id = "t4", splitGroupId = "g1"))
+            assertEquals("g1", db.transactions().get("t4")!!.splitGroupId)
+            db.accounts().upsert(a.copy(creditLimitPaise = 10_000_000, statementDay = 15, dueDay = 5, minimumDuePaise = 123_450, remindDaysBefore = 3))
+            val card = db.accounts().get("a1")!!
+            assertEquals(10_000_000L, card.creditLimitPaise); assertEquals(15, card.statementDay); assertEquals(5, card.dueDay)
+            assertEquals(123_450L, card.minimumDuePaise); assertEquals(3, card.remindDaysBefore)
+            // Rules survive a round trip through JSON.
+            val repo = RuleRepository(db)
+            val rule = com.mansaketh.chitta.core.domain.Rule(
+                "r1", "Swiggy",
+                listOf(
+                    com.mansaketh.chitta.core.domain.RuleCondition(com.mansaketh.chitta.core.domain.RuleField.Title, com.mansaketh.chitta.core.domain.RuleOp.Contains, "swiggy"),
+                    com.mansaketh.chitta.core.domain.RuleCondition(com.mansaketh.chitta.core.domain.RuleField.Amount, com.mansaketh.chitta.core.domain.RuleOp.AtLeast, amount = com.mansaketh.chitta.core.money.Paise(50_000)),
+                ),
+                com.mansaketh.chitta.core.domain.RuleActions(categoryId = "food", excludeFromBudgetIds = listOf("b1")), 1,
+            )
+            repo.save(rule)
+            assertEquals(listOf(rule), repo.all())
         } finally {
             db.close()
         }

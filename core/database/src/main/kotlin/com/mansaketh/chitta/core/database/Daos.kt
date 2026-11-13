@@ -140,3 +140,11 @@ interface RateDao {
     @Query("DELETE FROM rate_override WHERE fromCurrency = :from AND toCurrency = :to") suspend fun removeOverride(from: String, to: String)
     @Query("SELECT * FROM rate_override") fun observeOverrides(): Flow<List<RateOverrideEntity>>
 }
+
+@Dao
+interface RuleDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(row: RuleEntity)
+    @Query("SELECT * FROM entry_rule ORDER BY ruleOrder, id") fun observeAll(): Flow<List<RuleEntity>>
+    @Query("SELECT * FROM entry_rule ORDER BY ruleOrder, id") suspend fun getAll(): List<RuleEntity>
+    @Query("DELETE FROM entry_rule WHERE id = :id") suspend fun delete(id: String)
+}
