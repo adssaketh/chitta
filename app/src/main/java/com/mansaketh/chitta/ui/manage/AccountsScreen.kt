@@ -14,10 +14,15 @@ import com.mansaketh.chitta.core.design.icons.ChittaIcons
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.tokens.Dimens
 import com.mansaketh.chitta.core.model.Account
+import com.mansaketh.chitta.core.model.FixedDeposit
+import com.mansaketh.chitta.core.domain.CardDues
+import com.mansaketh.chitta.core.domain.FixedDeposits
+import com.mansaketh.chitta.core.domain.AmountExpression
 import com.mansaketh.chitta.core.money.IndianFormat
 import com.mansaketh.chitta.core.money.Paise
 import com.mansaketh.chitta.data.RefreshResult
 import com.mansaketh.chitta.ui.*
+import com.mansaketh.chitta.ui.plan.dateText
 
 private sealed interface AccSheet {
     data object None : AccSheet
@@ -27,6 +32,9 @@ private sealed interface AccSheet {
     data class Correct(val a: Account) : AccSheet
     data object Rates : AccSheet
     data class Card(val a: Account) : AccSheet
+    data class Deposit(val d: FixedDeposit) : AccSheet
+    data class DepositEdit(val d: FixedDeposit?) : AccSheet
+    data class CardOwed(val card: String) : AccSheet
 }
 
 /** Accounts (PDF p.25): total balance, balances per account, add / rename / archive, transfer, correct balance, exchange rates. */
@@ -65,6 +73,37 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                     SectionHeader("Archived", action = if (showArchived) "Hide" else "Show", onAction = { showArchived = !showArchived })
                 }
                 if (showArchived) items(archived, key = { "x-" + it.id }) { a -> AccountRow(a, ui.balances[a.id] ?: Paise.ZERO, null) { sheet = AccSheet.Actions(a) } }
+                item { Spacer(Modifier.height(Dimens.SectionGap)) }
+                // Fixed deposits (Phase 8b). Worth shown is today's value; Net worth counts them only when switched on.
+                item { SectionHeader("Fixed deposits", action = "Add", onAction = { sheet = AccSheet.DepositEdit(null) }) }
+                if (ui.deposits.isEmpty() && !ui.loading) item {
+                    Text("No fixed deposits. Add one, or a bank message can add it.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2))
+                }
+                items(ui.deposits.sortedWith(compareBy({ it.closed }, { it.maturityMs })), key = { "fd-" + it.id }) { d ->
+                    DepositRow(d, ui.nowMs, ui.zone) { sheet = AccSheet.Deposit(d) }
+                }
+                if (ui.deposits.isNotEmpty()) {
+                    val open = ui.deposits.count { !it.closed }
+                    item {
+                        ValueRow("Count deposits in Net worth", if (ui.nwDeposits) "On" else "Off", onClick = { vm.setNetWorthDeposits(!ui.nwDeposits) })
+                        Text(
+                            if (ui.nwDeposits) "$open open at today's value, as of ${dateText(ui.nowMs, ui.zone)}." else "Off, so Net worth leaves them out.",
+                            style = ChittaTheme.type.label, color = c.inkMuted,
+                        )
+                    }
+                }
+                item { ValueRow("Count instalment loans in Net worth", if (ui.nwInstalments) "On" else "Off", onClick = { vm.setNetWorthInstalments(!ui.nwInstalments) }) }
+                // Cards read from bank messages (Phase 8b).
+                val owed = CardDues.owedByCard(ui.dues)
+                if (owed.isNotEmpty()) {
+                    item { Spacer(Modifier.height(Dimens.SectionGap)); SectionHeader("Cards from bank messages") }
+                    items(owed.entries.toList(), key = { "cd-" + it.key }) { (card, v) ->
+                        val matched = live.any { CardDues.forAccount(it, ui.dues.filter { d -> d.card == card }).isNotEmpty() }
+                        ValueRow(card, (if (v < 0) "Credit " else "Owes ") + maskedRupees(Paise(kotlin.math.abs(v))), onClick = { sheet = AccSheet.CardOwed(card) })
+                        if (matched) Text("Counted in that account's card details.", style = ChittaTheme.type.label, color = c.inkMuted)
+                    }
+                    item { Text("Spend, payment and refund messages change what is owed. Payment messages are not saved as entries.", style = ChittaTheme.type.label, color = c.inkMuted) }
+                }
             }
         }
 
@@ -93,6 +132,25 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                 { sheet = AccSheet.None },
             )
             is AccSheet.Card -> CardSheet(s.a, ui.cards[s.a.id], { l, sd, dd, m, r -> vm.saveCard(s.a, l, sd, dd, m, r); sheet = AccSheet.None }, { sheet = AccSheet.None })
+            is AccSheet.Deposit -> {
+                val cur = ui.deposits.firstOrNull { it.id == s.d.id } ?: s.d
+                DepositDetailSheet(
+                    cur, ui.nowMs, ui.zone, onEdit = { sheet = AccSheet.DepositEdit(cur) },
+                    onToggleClosed = { vm.saveDeposit(cur.copy(closed = !cur.closed)); sheet = AccSheet.None },
+                    onDelete = { vm.deleteDeposit(cur.id); sheet = AccSheet.None }, onClose = { sheet = AccSheet.None },
+                )
+            }
+            is AccSheet.DepositEdit -> DepositEditSheet(s.d, ui.nowMs, ui.zone, { vm.saveDeposit(it); sheet = AccSheet.None }, { sheet = AccSheet.None })
+            is AccSheet.CardOwed -> {
+                var problem by remember { mutableStateOf<String?>(null) }
+                val now = CardDues.owedByCard(ui.dues)[s.card] ?: 0L
+                TextSheet(
+                    s.card, problem ?: "What is owed now, from your statement. Messages so far make ${IndianFormat.rupees(Paise(now))}.", "", { text ->
+                        val v = AmountExpression.evaluate(text)?.value
+                        if (v == null) problem = "Enter what is owed as a number." else { vm.setCardOwed(s.card, v); sheet = AccSheet.None }
+                    }, { sheet = AccSheet.None }, numeric = true, saveLabel = "Set",
+                )
+            }
             AccSheet.Rates -> RatesSheet(vm, ui, { notice = it }, { sheet = AccSheet.None })
             AccSheet.None -> Unit
         }
@@ -109,6 +167,20 @@ private fun AccountRow(a: Account, balance: Paise, card: com.mansaketh.chitta.co
             if (card != null) Text("Owes ${IndianFormat.rupees(card.outstanding)} · due in ${card.daysToDue} ${if (card.daysToDue == 1L) "day" else "days"}", style = ChittaTheme.type.label, color = c.inkMuted)
         }
         AmountText(balance, alwaysShowPaise = true, tone = if (balance.value < 0) AmountTone.Expense else AmountTone.Neutral)
+    }
+    HairlineRule()
+}
+
+@Composable
+private fun DepositRow(d: FixedDeposit, nowMs: Long, zone: java.time.ZoneId, onClick: () -> Unit) {
+    val c = ChittaTheme.colors
+    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(onClick = onClick).padding(vertical = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(d.bank + (if (d.fdNumber.isNotEmpty()) " \u00B7 ${d.fdNumber.takeLast(4)}" else ""), style = ChittaTheme.type.title, color = if (d.closed) c.inkMuted else c.ink)
+            Text(depositLine(d, nowMs, zone), style = ChittaTheme.type.label, color = c.inkMuted)
+            if (d.fromSms && !d.closed) Text("From a bank message. Check the details.", style = ChittaTheme.type.label, color = c.inkMuted)
+        }
+        AmountText(FixedDeposits.currentValue(d, nowMs, zone), alwaysShowPaise = true, color = if (d.closed) c.inkMuted else c.ink)
     }
     HairlineRule()
 }

@@ -80,17 +80,22 @@ object Cards {
         return if (!thisMonth.isBefore(today)) thisMonth else clampDay(YearMonth.from(today).plusMonths(1), setup.dueDay)
     }
 
-    fun figures(setup: CardSetup, entries: List<Transaction>, today: LocalDate, zone: ZoneId): CardFigures {
+    /**
+     * [dues] are the card's messages read from SMS (already matched to this account, see [CardDues.flowsFor]); they count like entries.
+     * An empty list gives exactly the figures from entries alone.
+     */
+    fun figures(setup: CardSetup, entries: List<Transaction>, today: LocalDate, zone: ZoneId, dues: List<CardDues.Flow> = emptyList()): CardFigures {
         val mine = entries.filter { it.accountId == setup.accountId && it.paid && !it.skipPaid && it.kind != com.mansaketh.chitta.core.model.TransactionKind.UPCOMING }
         val stmtEnd = lastStatementEnd(setup, today)
-        fun day(t: Transaction) = java.time.Instant.ofEpochMilli(t.dateMs).atZone(zone).toLocalDate()
+        fun day(ms: Long) = java.time.Instant.ofEpochMilli(ms).atZone(zone).toLocalDate()
+        val items = mine.map { day(it.dateMs) to it.amount } + dues.map { day(it.dateMs) to it.signed }
 
-        val upToStatement = mine.filter { !day(it).isAfter(stmtEnd) }.sumOf { it.amount }
+        val upToStatement = items.filter { !it.first.isAfter(stmtEnd) }.sumOf { it.second }
         val statement = Paise(maxOf(0L, -upToStatement))
 
-        val after = mine.filter { day(it).isAfter(stmtEnd) && !day(it).isAfter(today) }
-        val unbilled = Paise(after.filter { it.amount < 0 }.sumOf { -it.amount })
-        val payments = Paise(after.filter { it.amount > 0 }.sumOf { it.amount })
+        val after = items.filter { it.first.isAfter(stmtEnd) && !it.first.isAfter(today) }
+        val unbilled = Paise(after.filter { it.second < 0 }.sumOf { -it.second })
+        val payments = Paise(after.filter { it.second > 0 }.sumOf { it.second })
 
         val raw = statement.value + unbilled.value - payments.value
         val outstanding = Paise(maxOf(0L, raw))

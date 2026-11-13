@@ -1,5 +1,13 @@
 # Changelog
 
+## Phase 8b: fixed deposits, instalment loans in Net worth, card dues from SMS (13 Nov 2026) - on branch `phase-8b-deposits-dues`
+- `:core:domain`: `FixedDeposits` (value today, at maturity, accrued interest, in paise; the bank's stated maturity amount wins), `CardDues` (owed per card, matching a card to an account, no double count with entries), `Cards.figures` now takes card messages, `NetWorth` takes deposits (off by default) and instalment-loan balances (on by default). 29 new tests.
+- `:core:intake`: `FdSms`, the "FD booked" message reader (6 tests, including the Ping contract's FD sample).
+- `:core:database`: `AssetsRepository` and DAO methods for deposits and card dues. No schema change (the tables date from schema 1). 3 new tests.
+- App: Accounts has Fixed deposits (list, detail, add/edit, close, delete with Undo), two Net worth switches, and Cards from bank messages (owed per card, set what is owed). Ping intake adds a fully read FD and updates card dues in one go, under one Undo item; a message that cannot be read in full stays parked and nothing is guessed. The card cockpit and card reminders count the messages. FD maturity reminders 7 days ahead, the day before and on the day.
+- Net worth tab shows the deposits row when counted and says what instalment loans mean.
+- Decisions D100 to D107.
+
 ## Phase 8a, slice 3c: donut chart (13 Nov 2026) - on branch `phase-8a-donut`
 - Optional flat donut on Insights > By category. `Donut` in `:core:domain` with 4 tests. D96. App links (3b) merged to `main`.
 

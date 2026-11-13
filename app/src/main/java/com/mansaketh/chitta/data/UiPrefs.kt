@@ -52,4 +52,14 @@ class UiPrefs @Inject constructor(@ApplicationContext context: Context) {
     private val _firstDay = MutableStateFlow(runCatching { DayOfWeek.valueOf(p.getString("firstDay", "MONDAY")!!) }.getOrDefault(DayOfWeek.MONDAY))
     val firstDay: StateFlow<DayOfWeek> = _firstDay
     fun setFirstDay(v: DayOfWeek) { _firstDay.value = v; p.edit().putString("firstDay", v.name).apply() }
+
+    /** Whether open fixed deposits count in Net worth. Off until switched on (D101). */
+    private val _nwDeposits = MutableStateFlow(p.getBoolean("nwDeposits", false))
+    val netWorthDeposits: StateFlow<Boolean> = _nwDeposits
+    fun setNetWorthDeposits(v: Boolean) { _nwDeposits.value = v; p.edit().putBoolean("nwDeposits", v).apply() }
+
+    /** Whether what is still to pay on instalment loans counts in Net worth. On by default (D102). */
+    private val _nwInstalments = MutableStateFlow(p.getBoolean("nwInstalments", true))
+    val netWorthInstalments: StateFlow<Boolean> = _nwInstalments
+    fun setNetWorthInstalments(v: Boolean) { _nwInstalments.value = v; p.edit().putBoolean("nwInstalments", v).apply() }
 }

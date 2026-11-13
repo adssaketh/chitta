@@ -336,6 +336,7 @@ private fun NetWorthTab(ui: InsightsUi) {
     Spacer(Modifier.height(Dimens.SectionGap))
     HairlineRule()
     TotalRow("Accounts", now.accounts)
+    if (now.depositCount > 0) TotalRow("Fixed deposits", now.deposits)
     TotalRow("Owed to you", now.owedToYou)
     TotalRow("You owe", now.youOwe)
     Spacer(Modifier.height(Dimens.SectionGap))
@@ -361,8 +362,21 @@ private fun NetWorthTab(ui: InsightsUi) {
             style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2),
         )
     }
+    val openDeposits = ui.netExtras.deposits.count { !it.closed }
+    if (!ui.netExtras.includeDeposits && openDeposits > 0) {
+        Text(
+            "$openDeposits fixed ${if (openDeposits == 1) "deposit is" else "deposits are"} not counted. Switch them on under Accounts.",
+            style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2),
+        )
+    }
+    if (ui.netExtras.includeInstalments && ui.netExtras.terms.isNotEmpty()) {
+        Text(
+            "Instalment loans count as what is still to pay by their schedule, interest and GST included.",
+            style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2),
+        )
+    }
     Text(
-        "Not counted yet: fixed deposits, mutual funds, other assets, instalment loans and card dues read from messages. They come in later phases.",
+        "Not counted yet: mutual funds and other assets. Card dues read from messages show on each card, not here, so a purchase is never counted twice.",
         style = ChittaTheme.type.body, color = c.inkMuted,
     )
 }

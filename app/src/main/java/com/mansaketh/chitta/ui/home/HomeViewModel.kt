@@ -26,6 +26,8 @@ import com.mansaketh.chitta.core.domain.LedgerSearch
 import com.mansaketh.chitta.core.domain.LoanProgress
 import com.mansaketh.chitta.core.domain.Loans
 import com.mansaketh.chitta.core.domain.NetWorth
+import com.mansaketh.chitta.core.domain.NetWorthExtras
+import com.mansaketh.chitta.data.NetWorthInputs
 import com.mansaketh.chitta.core.domain.NetWorthFigures
 import com.mansaketh.chitta.core.domain.NetWorthPoint
 import com.mansaketh.chitta.core.domain.Period
@@ -100,12 +102,13 @@ class HomeViewModel @Inject constructor(
     accountRepo: AccountRepository,
     categoryRepo: CategoryRepository,
     val prefs: UiPrefs,
+    netWorthInputs: NetWorthInputs,
     private val clock: Clock,
 ) : ViewModel() {
-    private data class Raw(val entries: List<Transaction>, val budgets: List<Budget>, val objectives: List<Objective>, val categories: List<Category>, val accounts: List<Account>)
+    private data class Raw(val entries: List<Transaction>, val budgets: List<Budget>, val objectives: List<Objective>, val categories: List<Category>, val accounts: List<Account>, val extras: NetWorthExtras = NetWorthExtras.NONE)
     private data class P(val layout: HomeLayout, val cash: Set<String>, val preferCash: Boolean, val heroId: String?, val firstDay: DayOfWeek)
 
-    private val raw = combine(ledger.observeAll(), plan.observeBudgets(), plan.observeObjectives(), categoryRepo.observeAll(), accountRepo.observeAll()) { e, b, o, c, a -> Raw(e, b, o, c, a) }
+    private val raw = combine(combine(ledger.observeAll(), plan.observeBudgets(), plan.observeObjectives(), categoryRepo.observeAll(), accountRepo.observeAll()) { e, b, o, c, a -> Raw(e, b, o, c, a) }, netWorthInputs.extras) { r, x -> r.copy(extras = x) }
     private val choices = combine(prefs.homeLayout, prefs.cashAccounts, prefs.preferCash, prefs.heroBudgetId, prefs.firstDay) { l, c, pc, h, f -> P(l, c, pc, h, f) }
 
     val ui: StateFlow<HomeUi> = combine(raw, choices) { r, p -> compute(r, p) }
@@ -158,7 +161,7 @@ class HomeViewModel @Inject constructor(
                 SectionData.RecentData(LedgerGrouping.group(recent, r.categories, zone).flatMap { it.days })
             }
             HomeSection.NetWorth -> SectionData.NetWorthData(
-                NetWorth.at(now, r.entries, r.accounts, r.objectives), NetWorth.series(r.entries, r.accounts, r.objectives, now, zone, 6),
+                NetWorth.at(now, r.entries, r.accounts, r.objectives, r.extras, zone), NetWorth.series(r.entries, r.accounts, r.objectives, now, zone, 6, r.extras),
             )
             HomeSection.Goals -> SectionData.GoalsData(
                 r.objectives.filter { it.kind == ObjectiveKind.GOAL && !it.archived }.take(3).map { it to Goals.progress(it, r.entries, now, zone) },
