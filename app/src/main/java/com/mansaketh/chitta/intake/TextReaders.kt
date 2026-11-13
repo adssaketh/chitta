@@ -80,15 +80,22 @@ object TextReaders {
         if (zoneAmount != null) best.copy(amountPaise = zoneAmount, amountUnconfirmed = false) else best
     }
 
-    /** All the text of a statement PDF. PDFs with a password and scanned pictures are refused in plain words. */
-    suspend fun readPdf(context: Context, uri: Uri): String = withContext(Dispatchers.IO) {
+    /** The PDF needs a password, or the one given was wrong. The password is used in memory only and never stored. */
+    class PdfPasswordRequired(val wrong: Boolean) : IntakeFormatException(if (wrong) "That password did not open the PDF." else "That PDF has a password.")
+
+    /**
+     * All the text of a statement PDF. A scanned picture is refused in plain words. A PDF with a password is opened with [password] when
+     * given; without one (or with a wrong one) [PdfPasswordRequired] says so, so the screen can ask.
+     */
+    suspend fun readPdf(context: Context, uri: Uri, password: String? = null): String = withContext(Dispatchers.IO) {
         PDFBoxResourceLoader.init(context.applicationContext)
         val bytes = context.contentResolver.openInputStream(uri)?.use { readAll(it) } ?: throw IntakeFormatException("That file could not be opened.")
-        val doc = try { PDDocument.load(bytes) } catch (e: Exception) {
-            throw IntakeFormatException("That PDF could not be opened. If it has a password, save a copy without one and try again.")
+        val doc = try { PDDocument.load(bytes, password ?: "") } catch (e: Exception) {
+            // An encrypted file that will not open with this password: ask for one. Anything else is a broken or unsupported file.
+            if (String(bytes, Charsets.ISO_8859_1).contains("/Encrypt")) throw PdfPasswordRequired(wrong = !password.isNullOrEmpty())
+            throw IntakeFormatException("That PDF could not be opened.")
         }
         doc.use {
-            if (it.isEncrypted) throw IntakeFormatException("That PDF has a password. Save a copy without one and try again.")
             val text = PDFTextStripper().apply { endPage = 300 }.getText(it)
             if (text.isBlank()) throw IntakeFormatException("No text was found in that PDF (it may be a scanned picture). Try the CSV or share a screenshot of each payment.")
             text

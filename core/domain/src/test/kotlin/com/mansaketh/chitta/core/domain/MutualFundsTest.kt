@@ -103,3 +103,37 @@ class MutualFundsTest {
         assertFalse(MutualFunds.isIsinShape("12F846K01DP8"))
     }
 }
+
+class NpsTest {
+    private fun scheme(id: String, units: String, nav: String?, date: String? = "2026-10-31") =
+        MutualFund(id, "Sample Pension Scheme $id", "", "", units, null, MutualFund.SOURCE_MANUAL, 0, nav, date, "", null, "", "acc")
+    private val account = com.mansaketh.chitta.core.model.NpsAccount("acc", "NPS Tier I", 1_000_000, 0, "", null)
+
+    @Test fun valueIsTheSumOfSchemeValuesAndGainIsAgainstNetContributions() {
+        // 10 x 50.0000 = 500.00; 20 x 25.5000 = 510.00; 100.5 x 2.0000 = 201.00 -> 1,211.00 rupees = 121,100 paise
+        val s = listOf(scheme("e", "10", "50.0000"), scheme("c", "20", "25.5000"), scheme("g", "100.5", "2.0000"))
+        val t = Nps.totals(account, s)
+        assertEquals(Paise(121_100), t.value)
+        // contributions 1,000,000 paise = 10,000.00 rupees, so the gain is 121,100 - 1,000,000
+        assertEquals(Paise(121_100 - 1_000_000), t.gain)
+        assertEquals(3, t.priced)
+    }
+
+    @Test fun noGainWhileAnySchemeHasNoPrice() {
+        val s = listOf(scheme("e", "10", "50.0000"), scheme("c", "20", null, null))
+        val t = Nps.totals(account, s)
+        assertEquals(Paise(50_000), t.value)
+        assertNull(t.gain)
+        assertEquals(1, t.priced)
+    }
+
+    @Test fun noGainWithoutContributionsOrSchemes() {
+        assertNull(Nps.totals(account.copy(netContributionsPaise = null), listOf(scheme("e", "10", "50"))).gain)
+        assertNull(Nps.totals(account, emptyList()).gain)
+    }
+
+    @Test fun priceDateIsTheOldest() {
+        val s = listOf(scheme("e", "10", "50", "2026-10-31"), scheme("c", "10", "50", "2026-10-29"))
+        assertEquals("2026-10-29", Nps.totals(account, s).priceDate)
+    }
+}

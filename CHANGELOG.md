@@ -1,11 +1,14 @@
 # Changelog
 
 ## Phase 8c: Mutual funds screen (13 Nov 2026) - on branch `phase-8c-mutual-funds`
-- Scope agreed: the screen first. Price fetch (AMFI), the Zerodha Console reader, the CAS reader, SIP estimates and the Net worth line wait for the sample files and the next step.
+- Scope: the screen first, then (files arrived) the statement import and an NPS tab. Still not built: AMFI price fetch, Zerodha Console reader, SIP estimates, the Net worth line.
 - `:core:model`: `MutualFund`. `:core:domain`: `MutualFunds` (value = units x price, gain, totals, STALE after 35 days, ISIN shape) with 12 tests on hand-worked figures.
-- Database schema 5 with tested migration from 4: `mutual_fund` table. `AssetsRepository` gets save, observe, delete with Undo.
+- Database schema 5 with tested migration from 4: `mutual_fund` (with folio and NPS group) and `nps_account` tables. `AssetsRepository` gets save, observe, delete with Undo.
+- `:core:intake`: `CasSummary` reads a CAMS / KFintech / MFCentral "Consolidated Account Summary" PDF's text (holdings, cost, units, price, value; refused if the rows do not add to the statement's Total) and `CasImport` plans the import (only statement-sourced funds change; a same-named hand-typed fund is never counted twice). 7 tests on invented text.
+- NPS: own tab on the Mutual funds screen, never added into mutual funds. `NpsAccount`, `Nps` totals (gain for the whole account: value minus net contributions), 4 tests.
+- App: PDF password asked only when needed, used once, never stored. Statement preview shows what changes before anything is saved, with Undo.
 - App: Accounts > Mutual funds (PDF p.26: value, price date, gain with how many funds it covers, one row per fund with its source and STALE), fund detail, add or edit by hand, delete with Undo, Import holdings sheet (PDF p.27; only "By hand" works).
-- Decisions D108 to D112.
+- Decisions D108 to D116.
 - Written without a local build (no Android SDK here); CI compiles and runs every test.
 
 ## Phase 8b: fixed deposits, instalment loans in Net worth, card dues from SMS (13 Nov 2026) - on branch `phase-8b-deposits-dues`

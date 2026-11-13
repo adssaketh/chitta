@@ -307,4 +307,17 @@ data class MutualFundEntity(
     val navDate: String?,
     val note: String,
     val updatedAtMs: Long?,
+    val folio: String,
+    val groupId: String,
+)
+
+/** An NPS account. Its schemes are mutual_fund rows with groupId = id. */
+@Entity(tableName = "nps_account")
+data class NpsAccountEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val netContributionsPaise: Long?,
+    val asOfMs: Long,
+    val note: String,
+    val updatedAtMs: Long?,
 )

@@ -3,6 +3,7 @@ package com.mansaketh.chitta.core.database
 import com.mansaketh.chitta.core.model.CardDue
 import com.mansaketh.chitta.core.model.FixedDeposit
 import com.mansaketh.chitta.core.model.MutualFund
+import com.mansaketh.chitta.core.model.NpsAccount
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -49,5 +50,25 @@ class AssetsRepository(private val db: ChittaDatabase) {
         val old = db.misc().getFunds().firstOrNull { it.id == id }?.toModel() ?: return null
         db.misc().deleteFund(id)
         return old
+    }
+
+    /** Applies a statement import in one go: removes [removeIds], then saves [save]. Returns nothing; Undo is the caller's old copies. */
+    suspend fun replaceFunds(removeIds: List<String>, save: List<MutualFund>) {
+        if (removeIds.isNotEmpty()) db.misc().deleteFunds(removeIds)
+        if (save.isNotEmpty()) db.misc().upsertFunds(save.map { it.toEntity() })
+    }
+
+    // ---- NPS (Phase 8c). Own tab; never added into mutual funds.
+    fun observeNps(): Flow<List<NpsAccount>> = db.misc().observeNps().map { rows -> rows.map { it.toModel() } }
+    suspend fun nps(): List<NpsAccount> = db.misc().getNps().map { it.toModel() }
+    suspend fun saveNps(a: NpsAccount) = db.misc().upsertNps(a.toEntity())
+
+    /** Deletes the account and its schemes; returns both so Undo can put them back. */
+    suspend fun deleteNps(id: String): Pair<NpsAccount, List<MutualFund>>? {
+        val acc = db.misc().getNps().firstOrNull { it.id == id }?.toModel() ?: return null
+        val schemes = db.misc().getFunds().filter { it.groupId == id }.map { it.toModel() }
+        db.misc().deleteFunds(schemes.map { it.id })
+        db.misc().deleteNps(id)
+        return acc to schemes
     }
 }

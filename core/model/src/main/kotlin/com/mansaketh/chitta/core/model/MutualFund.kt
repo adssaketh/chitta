@@ -21,10 +21,30 @@ data class MutualFund(
     val navDate: String?,
     val note: String,
     val updatedAtMs: Long?,
+    /** The folio number from a statement; empty when typed by hand. With the name it tells one statement row from another. */
+    val folio: String = "",
+    /** Empty for a mutual fund. For an NPS scheme, the id of its [NpsAccount]. NPS is shown on its own tab and never added to mutual funds. */
+    val groupId: String = "",
 ) {
+    val isNps: Boolean get() = groupId.isNotEmpty()
+
     companion object {
         const val SOURCE_MANUAL = "manual"
         const val SOURCE_CONSOLE = "console"
         const val SOURCE_CAS = "cas"
     }
 }
+
+/**
+ * An NPS account (Tier I or II). Its schemes are [MutualFund] rows whose groupId is [id] (units and a price from the statement, no price file
+ * exists for NPS here). [netContributionsPaise] is what was paid in minus what was withdrawn, as the statement states it: the statement gives
+ * no cost per scheme, so the gain is worked out for the whole account only. The PRAN is never stored.
+ */
+data class NpsAccount(
+    val id: String,
+    val name: String,
+    val netContributionsPaise: Long?,
+    val asOfMs: Long,
+    val note: String,
+    val updatedAtMs: Long?,
+)

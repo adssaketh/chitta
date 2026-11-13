@@ -10,7 +10,7 @@ import androidx.room.RoomDatabase
         AccountEntity::class, CategoryEntity::class, TransactionEntity::class, BudgetEntity::class,
         CategoryLimitEntity::class, ObjectiveEntity::class, TitleMemoryEntity::class, ScanTemplateEntity::class,
         ActivityLogEntity::class, SettingEntity::class, LoanTermsEntity::class, FixedDepositEntity::class, CardDueEntity::class,
-        PinnedEntryEntity::class, EntryVersionEntity::class, ExchangeRateEntity::class, RateOverrideEntity::class, RuleEntity::class, MutualFundEntity::class,
+        PinnedEntryEntity::class, EntryVersionEntity::class, ExchangeRateEntity::class, RateOverrideEntity::class, RuleEntity::class, MutualFundEntity::class, NpsAccountEntity::class,
     ],
     version = ChittaDatabase.VERSION,
     exportSchema = true,

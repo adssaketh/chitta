@@ -76,4 +76,26 @@ class AssetsRepositoryTest {
         repo.saveFund(gone!!)
         assertEquals(1, repo.funds().size)
     }
+
+    @Test fun npsAccountDeletesWithItsSchemesAndComesBackTogether() = runBlocking {
+        val acc = com.mansaketh.chitta.core.model.NpsAccount("acc", "NPS Tier I", 1_367_700, 5_000L, "", null)
+        val scheme = com.mansaketh.chitta.core.model.MutualFund("s1", "Sample Pension Scheme E", "", "", "19.1467", null, "manual", 5_000L, "70.1151", "2026-10-31", "", null, "", "acc")
+        val fund = com.mansaketh.chitta.core.model.MutualFund("m1", "Sample", "", "", "1", null, "manual", 5_000L, null, null, "", null, "", "")
+        repo.saveNps(acc); repo.replaceFunds(emptyList(), listOf(scheme, fund))
+        val (gone, schemes) = repo.deleteNps("acc")!!
+        assertEquals(acc, gone); assertEquals(listOf(scheme), schemes)
+        assertEquals(listOf("m1"), repo.funds().map { it.id })   // the mutual fund is untouched
+        assertTrue(repo.nps().isEmpty())
+        repo.saveNps(gone); repo.replaceFunds(emptyList(), schemes)
+        assertEquals(listOf(acc), repo.nps())
+        assertEquals(setOf("m1", "s1"), repo.funds().map { it.id }.toSet())
+    }
+
+    @Test fun replaceFundsRemovesAndSavesInOneGo() = runBlocking {
+        fun f(id: String) = com.mansaketh.chitta.core.model.MutualFund(id, "F$id", "", "", "1", null, "cas", 1L, null, null, "", null, "1", "")
+        repo.replaceFunds(emptyList(), listOf(f("a"), f("b")))
+        repo.replaceFunds(listOf("a"), listOf(f("c").copy(units = "2")))
+        assertEquals(listOf("b", "c"), repo.funds().map { it.id })
+        assertEquals("2", repo.funds().first { it.id == "c" }.units)
+    }
 }

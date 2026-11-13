@@ -32,6 +32,9 @@ data class ManageUi(
     val dues: List<CardDue> = emptyList(),
     /** Phase 8c: mutual fund holdings. */
     val funds: List<MutualFund> = emptyList(),
+    /** NPS is its own tab: accounts and their schemes, never mixed into [funds]. */
+    val nps: List<NpsAccount> = emptyList(),
+    val npsSchemes: List<MutualFund> = emptyList(),
     val nwDeposits: Boolean = false,
     val nwInstalments: Boolean = true,
     val nowMs: Long = 0L,
@@ -61,9 +64,9 @@ class ManageViewModel @Inject constructor(
 
     private val base = combine(accountRepo.observeAll(), categoryRepo.observeAll(), entries, ratesRepo.observeRates(), ratesRepo.observeOverrides()) { a, c, e, r, o -> Base(a, c, e, r, o) }
 
-    private data class Assets(val deposits: List<FixedDeposit>, val dues: List<CardDue>, val funds: List<MutualFund>)
+    private data class Assets(val deposits: List<FixedDeposit>, val dues: List<CardDue>, val funds: List<MutualFund>, val nps: List<NpsAccount>)
 
-    private val assetsFlow = combine(assets.observeDeposits(), assets.observeCardDues(), assets.observeFunds()) { d, du, f -> Assets(d, du, f) }
+    private val assetsFlow = combine(assets.observeDeposits(), assets.observeCardDues(), assets.observeFunds(), assets.observeNps()) { d, du, f, n -> Assets(d, du, f, n) }
 
     val ui: StateFlow<ManageUi> = combine(base, assetsFlow, prefs.netWorthDeposits, prefs.netWorthInstalments) { b, a, nd, ni ->
         val d = a.deposits; val du = a.dues
@@ -73,7 +76,7 @@ class ManageViewModel @Inject constructor(
         val cards = b.accounts.mapNotNull { acc ->
             cardSetup(acc)?.let { acc.id to com.mansaketh.chitta.core.domain.Cards.figures(it, b.entries, today, clock.zone(), CardDues.flowsFor(acc, du, b.entries)) }
         }.toMap()
-        ManageUi(b.accounts, b.categories, Balances.balances(b.entries), b.rates, b.overrides, loading = false, cards = cards, deposits = d, dues = du, funds = a.funds, nwDeposits = nd, nwInstalments = ni, nowMs = now, zone = clock.zone())
+        ManageUi(b.accounts, b.categories, Balances.balances(b.entries), b.rates, b.overrides, loading = false, cards = cards, deposits = d, dues = du, funds = a.funds.filter { !it.isNps }, nps = a.nps, npsSchemes = a.funds.filter { it.isNps }, nwDeposits = nd, nwInstalments = ni, nowMs = now, zone = clock.zone())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ManageUi())
 
     // ---- fixed deposits (Phase 8b)
@@ -105,6 +108,31 @@ class ManageViewModel @Inject constructor(
     fun deleteFund(id: String) = viewModelScope.launch {
         val old = assets.deleteFund(id) ?: return@launch
         undo.post("Mutual fund deleted") { assets.saveFund(old) }
+    }
+
+    /** What a statement import would do. Nothing is written until [applyCas]. */
+    fun planCas(reading: com.mansaketh.chitta.core.intake.CasReading.Ready): com.mansaketh.chitta.core.intake.CasPlan =
+        com.mansaketh.chitta.core.intake.CasImport.plan(ui.value.funds + ui.value.npsSchemes, reading.holdings, clock.nowMs(), ids::newId)
+
+    /** Applies the plan: only statement-sourced funds change. One Undo item puts every old copy back and removes what was added. */
+    fun applyCas(plan: com.mansaketh.chitta.core.intake.CasPlan) = viewModelScope.launch {
+        val oldUpdated = ui.value.funds.filter { f -> plan.update.any { it.id == f.id } }
+        assets.replaceFunds(plan.remove.map { it.id }, plan.add + plan.update)
+        undo.post("Statement imported") { assets.replaceFunds(plan.add.map { it.id }, oldUpdated + plan.remove) }
+    }
+
+    // ---- NPS (Phase 8c)
+    fun saveNps(entered: NpsAccount) = viewModelScope.launch {
+        val a = if (entered.id.isEmpty()) entered.copy(id = ids.newId()) else entered
+        val old = ui.value.nps.firstOrNull { it.id == a.id }
+        assets.saveNps(a.copy(updatedAtMs = clock.nowMs()))
+        undo.post(if (old == null) "NPS account added" else "NPS account saved") { if (old == null) assets.deleteNps(a.id) else assets.saveNps(old) }
+    }
+
+    /** Deletes the account with its schemes; Undo puts all of them back. */
+    fun deleteNps(id: String) = viewModelScope.launch {
+        val (acc, schemes) = assets.deleteNps(id) ?: return@launch
+        undo.post("NPS account deleted") { assets.saveNps(acc); assets.replaceFunds(emptyList(), schemes) }
     }
 
     // ---- card messages (Phase 8b)

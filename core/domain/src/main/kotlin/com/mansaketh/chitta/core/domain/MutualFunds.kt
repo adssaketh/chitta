@@ -77,3 +77,32 @@ object MutualFunds {
         )
     }
 }
+
+/** What the NPS tab adds up for one account. [gain] is for the whole account (the statement gives no cost per scheme). */
+data class NpsTotals(
+    val schemes: Int,
+    val priced: Int,
+    val value: Paise,
+    val netContributions: Paise?,
+    val gain: Paise?,
+    val priceDate: String?,
+)
+
+/**
+ * NPS figures. Each scheme is units x its statement price, like a fund. The gain is value minus net contributions (paid in minus withdrawn,
+ * as the statement states them), and only when every scheme has a price and the contributions are known: a partial value would make a
+ * false gain. NPS is never added into the mutual fund totals.
+ */
+object Nps {
+    fun totals(account: com.mansaketh.chitta.core.model.NpsAccount, schemes: List<MutualFund>): NpsTotals {
+        val priced = schemes.filter { MutualFunds.value(it) != null }
+        val value = priced.fold(Paise.ZERO) { a, f -> a + MutualFunds.value(f)!! }
+        val net = account.netContributionsPaise?.let { Paise(it) }
+        val allPriced = schemes.isNotEmpty() && priced.size == schemes.size
+        return NpsTotals(
+            schemes = schemes.size, priced = priced.size, value = value, netContributions = net,
+            gain = if (allPriced && net != null) value - net else null,
+            priceDate = priced.mapNotNull { it.navDate }.minOrNull(),
+        )
+    }
+}

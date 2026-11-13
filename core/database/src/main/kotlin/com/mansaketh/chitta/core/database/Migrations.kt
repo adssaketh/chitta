@@ -31,10 +31,11 @@ object Migrations {
         }
     }
 
-    /** Phase 8c: the mutual fund holdings table. Nothing is dropped. */
+    /** Phase 8c: the mutual fund holdings table and NPS accounts. Nothing is dropped. */
     val V4_TO_V5 = object : Migration(4, 5) {
         override fun migrate(db: SupportSQLiteDatabase) {
-            db.execSQL("CREATE TABLE IF NOT EXISTS `mutual_fund` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `isin` TEXT NOT NULL, `schemeCode` TEXT NOT NULL, `units` TEXT NOT NULL, `investedPaise` INTEGER, `source` TEXT NOT NULL, `unitsAsOfMs` INTEGER NOT NULL, `navText` TEXT, `navDate` TEXT, `note` TEXT NOT NULL, `updatedAtMs` INTEGER, PRIMARY KEY(`id`))")
+            db.execSQL("CREATE TABLE IF NOT EXISTS `mutual_fund` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `isin` TEXT NOT NULL, `schemeCode` TEXT NOT NULL, `units` TEXT NOT NULL, `investedPaise` INTEGER, `source` TEXT NOT NULL, `unitsAsOfMs` INTEGER NOT NULL, `navText` TEXT, `navDate` TEXT, `note` TEXT NOT NULL, `updatedAtMs` INTEGER, `folio` TEXT NOT NULL, `groupId` TEXT NOT NULL, PRIMARY KEY(`id`))")
+            db.execSQL("CREATE TABLE IF NOT EXISTS `nps_account` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `netContributionsPaise` INTEGER, `asOfMs` INTEGER NOT NULL, `note` TEXT NOT NULL, `updatedAtMs` INTEGER, PRIMARY KEY(`id`))")
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_mutual_fund_isin` ON `mutual_fund` (`isin`)")
         }
     }

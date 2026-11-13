@@ -91,4 +91,4 @@ class KnownAccounts(private val byKey: Map<String, KnownAccount>) {
 }
 
 /** A file or message that is not what it should be. The text is plain and safe to show. */
-class IntakeFormatException(message: String) : Exception(message)
+open class IntakeFormatException(message: String) : Exception(message)
