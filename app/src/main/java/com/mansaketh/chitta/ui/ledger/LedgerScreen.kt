@@ -166,7 +166,7 @@ private fun bulkNotice(changed: Int, skipped: Int) =
 
 private fun monthLabel(m: YearMonth) = m.month.getDisplayName(TextStyle.FULL, Locale.ENGLISH) + " " + m.year
 
-private fun Transaction.toRow(ui: LedgerUi, muted: androidx.compose.ui.graphics.Color, tint: (String) -> androidx.compose.ui.graphics.Color): LedgerEntry {
+internal fun Transaction.toRow(ui: LedgerUi, muted: androidx.compose.ui.graphics.Color, tint: (String) -> androidx.compose.ui.graphics.Color): LedgerEntry {
     val neutral = Totals.isNeutral(this)
     val mutedColor = muted
     val tintFor: (String) -> androidx.compose.ui.graphics.Color = tint

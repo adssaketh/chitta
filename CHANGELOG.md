@@ -1,5 +1,14 @@
 # Changelog
 
+## Phase 6: insights and home (13 Nov 2026) - 0.6.0-phase6 - on `main`
+- Home: Safe to spend (or the cash check when it is lower, or when you force it), budget ring, per-day, range, spent with a pace stamp, month rule, "How this is worked out" sheet, Coming up. Optional sections: Budgets, Balances, Recent entries, Net worth, Goals, Loans, Spending, Heatmap. Only Budgets and Recent are on to start.
+- Insights: Current (range, accounts, Spent and Saved against the period before, totals, cash flow, category bars with drill-down, biggest changes), History (days, weeks, months, years; per period or running total; average of finished periods) and Net worth over 12 months.
+- Customise: Home sections (on/off, order, accounts, days), four swappable bottom tabs plus "Opens first", More shortcut order, accounts for spending, always-show cash check, first day of the week. Press and hold the tab bar to open it.
+- Device settings live in `UiPrefs` (D57). No database change.
+- `:core:money` gains HeroFigures and CashCheck; `:core:domain` gains Insights, History, Heatmap, NetWorth, HomeFigures and Layouts. 170 pure tests pass locally; the Android code is checked by CI.
+- Decisions D56 to D66.
+- Not in this phase: interactive pie (D61), Month in review (Phase 8), fixed deposits, funds and other assets in net worth (Phase 8), card dues (Phase 7).
+
 ## Phase 5: planning (13 Nov 2026) - 0.5.0-phase5 - branch `phase-5-planning`
 - Plan tab with five views: Budgets, Goals, Loans, Bills (upcoming and subscriptions) and Calendar.
 - Budgets: pace graph, even-pace line, forecast from day 7, category goals (press and hold to edit), breakdown, earlier periods, create/edit with accounts, left-out categories and lent/borrowed switch.

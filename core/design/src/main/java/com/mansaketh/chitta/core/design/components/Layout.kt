@@ -23,11 +23,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.size
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
@@ -155,6 +157,9 @@ enum class NavDestination(val label: String, val icon: () -> ImageVector) {
     More("More", { ChittaIcons.More }),
 }
 
+/** One tab of the bottom bar. [key] is what the app uses to tell tabs apart. */
+data class NavItem(val key: String, val label: String, val icon: ImageVector)
+
 /**
  * Bottom navigation. The selected tab is marked by ink and a 2 dp rule above it, not a pill:
  * a pill behind every label is one of the banned patterns.
@@ -165,25 +170,47 @@ fun ChittaBottomNav(
     onSelect: (NavDestination) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    ChittaBottomNav(
+        items = NavDestination.entries.map { NavItem(it.name, it.label, it.icon()) },
+        selectedKey = selected.name,
+        onSelect = { key -> onSelect(NavDestination.valueOf(key)) },
+        modifier = modifier,
+    )
+}
+
+/**
+ * The bar with any tabs: the app swaps tabs by long-pressing it (master section 6), so the items are a list.
+ * [onLongPress] fires on a long press of any tab.
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+fun ChittaBottomNav(
+    items: List<NavItem>,
+    selectedKey: String?,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    onLongPress: (() -> Unit)? = null,
+) {
     val c = ChittaTheme.colors
     Column(modifier.fillMaxWidth().background(c.background)) {
         HairlineRule()
         Row(Modifier.fillMaxWidth()) {
-            NavDestination.entries.forEach { dest ->
-                val isSelected = dest == selected
+            items.forEach { item ->
+                val isSelected = item.key == selectedKey
                 val tint = if (isSelected) c.ink else c.inkMuted
                 Column(
                     Modifier
                         .weight(1f)
                         .heightIn(min = 64.dp)
-                        .selectable(selected = isSelected, role = Role.Tab, onClick = { onSelect(dest) }),
+                        .semantics { selected = isSelected }
+                        .combinedClickable(role = Role.Tab, onClick = { onSelect(item.key) }, onLongClick = onLongPress),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Box(Modifier.width(24.dp).height(2.dp).background(if (isSelected) c.ink else c.background))
                     Box(Modifier.height(Dimens.Gap2))
-                    Icon(dest.icon(), contentDescription = null, tint = tint, modifier = Modifier.size(Dimens.IconSize))
+                    Icon(item.icon, contentDescription = null, tint = tint, modifier = Modifier.size(Dimens.IconSize))
                     Box(Modifier.height(Dimens.Gap1))
-                    Text(dest.label, style = if (isSelected) ChittaTheme.type.labelMedium else ChittaTheme.type.label, color = tint, textAlign = TextAlign.Center)
+                    Text(item.label, style = if (isSelected) ChittaTheme.type.labelMedium else ChittaTheme.type.label, color = tint, textAlign = TextAlign.Center)
                     Box(Modifier.height(Dimens.Gap2))
                 }
             }

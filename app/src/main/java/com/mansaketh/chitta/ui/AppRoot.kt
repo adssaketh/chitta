@@ -15,6 +15,13 @@ import com.mansaketh.chitta.core.design.icons.ChittaIcons
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.tokens.Dimens
 import com.mansaketh.chitta.core.domain.EntryType
+import com.mansaketh.chitta.core.domain.MoreItem
+import com.mansaketh.chitta.core.domain.TabKey
+import com.mansaketh.chitta.ui.home.CustomiseScreen
+import com.mansaketh.chitta.ui.home.HomeScreen
+import com.mansaketh.chitta.ui.home.HomeViewModel
+import com.mansaketh.chitta.ui.insights.InsightsScreen
+import com.mansaketh.chitta.ui.insights.InsightsViewModel
 import com.mansaketh.chitta.ui.add.QuickAddSheet
 import com.mansaketh.chitta.ui.add.QuickAddViewModel
 import com.mansaketh.chitta.ui.detail.EntryDetailScreen
@@ -33,6 +40,7 @@ import com.mansaketh.chitta.core.model.Objective
 class AppViewModels(
     val root: RootViewModel, val ledger: LedgerViewModel, val quickAdd: QuickAddViewModel,
     val detail: EntryDetailViewModel, val manage: ManageViewModel, val imports: ImportViewModel, val plan: PlanViewModel,
+    val home: HomeViewModel, val insights: InsightsViewModel,
 )
 
 /**
@@ -40,14 +48,14 @@ class AppViewModels(
  * Compose, but this app has seven screens and no deep links yet, so a stack is simpler to read and test (DECISIONS D37).
  */
 @Composable
-fun AppRoot(vms: AppViewModels, extra: (@Composable (onBack: () -> Unit) -> Unit)? = null) {
+fun AppRoot(vms: AppViewModels, hidden: Boolean = false, onToggleHide: () -> Unit = {}, extra: (@Composable (onBack: () -> Unit) -> Unit)? = null) {
     val first by vms.root.needsFirstRun.collectAsState()
     val c = ChittaTheme.colors
     Box(Modifier.fillMaxSize().background(c.background).statusBarsPadding()) {
         when (first) {
             null -> Unit
             true -> FirstRun(vms)
-            false -> Main(vms, extra)
+            false -> Main(vms, hidden, onToggleHide, extra)
         }
         val undo by vms.root.undo.current.collectAsState()
         undo?.let { item ->
@@ -80,8 +88,12 @@ private fun FirstRun(vms: AppViewModels) {
 }
 
 @Composable
-private fun Main(vms: AppViewModels, extra: (@Composable (onBack: () -> Unit) -> Unit)?) {
-    var tab by rememberSaveable { mutableStateOf(NavDestination.Ledger.name) }
+private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, extra: (@Composable (onBack: () -> Unit) -> Unit)?) {
+    // A tab is the key of a TabKey, or "more". Blank means "the first tab the person chose" (design: swappable tabs).
+    var tabChoice by rememberSaveable { mutableStateOf("") }
+    val tabLayout by vms.home.prefs.tabLayout.collectAsState()
+    val moreOrder by vms.home.prefs.moreOrder.collectAsState()
+    val tab = tabChoice.takeIf { it == MORE || tabLayout.slots.any { s -> s.key == it } } ?: tabLayout.first.key
     var stack by rememberSaveable { mutableStateOf(listOf<String>()) }
     var adding by rememberSaveable { mutableStateOf(false) }
     var addMenu by remember { mutableStateOf(false) }
@@ -100,27 +112,46 @@ private fun Main(vms: AppViewModels, extra: (@Composable (onBack: () -> Unit) ->
         Column(Modifier.fillMaxSize()) {
             Box(Modifier.weight(1f)) {
                 when {
-                    top == null -> when (NavDestination.valueOf(tab)) {
-                        NavDestination.Ledger -> LedgerScreen(vms.ledger, onOpen = { push("detail:$it") }, onAdd = { openAdd() })
-                        NavDestination.More -> MoreScreen(onAccounts = { push("accounts") }, onCategories = { push("categories") }, onImport = { push("import") }, onGallery = if (extra != null) ({ push("gallery") }) else null)
-                        NavDestination.Plan -> PlanScreen(vms.plan, planTab, { planTab = it }, { push(it) }, { planSheet = it })
-                        else -> NotBuilt(NavDestination.valueOf(tab).label)
+                    top == null -> when (tab) {
+                        TabKey.Home.key -> HomeScreen(
+                            vms.home, hidden, onToggleHide,
+                            onOpenEntry = { push("detail:$it") }, onOpenBudget = { push("budget:$it") }, onOpenGoal = { push("goal:$it") }, onOpenLoan = { push("loan:$it") },
+                            onOpenPlan = { tabChoice = TabKey.Plan.key; planTab = 3 }, onOpenLedger = { tabChoice = TabKey.Ledger.key }, onCustomise = { push("customise") },
+                        )
+                        TabKey.Ledger.key -> LedgerScreen(vms.ledger, onOpen = { push("detail:$it") }, onAdd = { openAdd() })
+                        TabKey.Insights.key -> InsightsScreen(vms.insights, onOpenEntry = { push("detail:$it") })
+                        TabKey.Accounts.key -> AccountsScreen(vms.manage, onBack = { tabChoice = "" }, onTransfer = { openAdd(EntryType.Transfer) })
+                        TabKey.Plan.key -> PlanScreen(vms.plan, planTab, { planTab = it }, { push(it) }, { planSheet = it })
+                        TabKey.Budgets.key -> PlanScreen(vms.plan, 0, { tabChoice = TabKey.Plan.key; planTab = it }, { push(it) }, { planSheet = it })
+                        TabKey.Goals.key -> PlanScreen(vms.plan, 1, { tabChoice = TabKey.Plan.key; planTab = it }, { push(it) }, { planSheet = it })
+                        TabKey.Loans.key -> PlanScreen(vms.plan, 2, { tabChoice = TabKey.Plan.key; planTab = it }, { push(it) }, { planSheet = it })
+                        TabKey.Bills.key -> PlanScreen(vms.plan, 3, { tabChoice = TabKey.Plan.key; planTab = it }, { push(it) }, { planSheet = it })
+                        else -> MoreScreen(
+                            moreOrder,
+                            open = { item -> push(item.key) },
+                            onGallery = if (extra != null) ({ push("gallery") }) else null,
+                        )
                     }
                     top.startsWith("detail:") -> EntryDetailScreen(vms.detail, top.removePrefix("detail:"), onBack = ::pop, onHistory = { push("history:" + top.removePrefix("detail:")) }, plan = vms.plan)
                     top.startsWith("budget:") -> BudgetDetailScreen(vms.plan, top.removePrefix("budget:"), ::pop, { planSheet = "edit-budget:" + top.removePrefix("budget:") })
                     top.startsWith("goal:") -> GoalDetailScreen(vms.plan, top.removePrefix("goal:"), ::pop, { planSheet = "edit-goal:" + top.removePrefix("goal:") }, { push("detail:$it") })
                     top.startsWith("loan:") -> LoanDetailScreen(vms.plan, top.removePrefix("loan:"), ::pop, { planSheet = "edit-loan:" + top.removePrefix("loan:") }, { push("detail:$it") })
                     top.startsWith("history:") -> EntryHistoryScreen(vms.detail, top.removePrefix("history:"), onBack = ::pop)
+                    top == "customise" -> CustomiseScreen(vms.home, onBack = ::pop)
                     top == "accounts" -> AccountsScreen(vms.manage, onBack = ::pop, onTransfer = { openAdd(EntryType.Transfer) })
                     top == "categories" -> CategoriesScreen(vms.manage, onBack = ::pop)
                     top == "import" -> ImportScreen(vms.imports, onBack = { vms.imports.reset(); pop() }, onFinished = { vms.imports.reset(); stack = emptyList() })
                     top == "gallery" -> extra?.invoke(::pop)
                 }
-                if (top == null && tab != NavDestination.More.name) {
+                if (top == null && tab != MORE && tab != TabKey.Accounts.key) {
                     AddButton(onClick = { openAdd() }, onLongClick = { addMenu = true }, modifier = Modifier.align(Alignment.BottomEnd).padding(Dimens.Margin))
                 }
             }
-            ChittaBottomNav(NavDestination.valueOf(tab), { tab = it.name; stack = emptyList() }, Modifier.navigationBarsPadding())
+            ChittaBottomNav(
+                items = tabLayout.slots.map { NavItem(it.key, it.label, tabIcon(it)) } + NavItem(MORE, "More", ChittaIcons.More),
+                selectedKey = tab, onSelect = { tabChoice = it; stack = emptyList() }, modifier = Modifier.navigationBarsPadding(),
+                onLongPress = { push("customise") },
+            )
         }
         if (addMenu) ChoiceSheet(
             "Add",
@@ -135,7 +166,7 @@ private fun Main(vms: AppViewModels, extra: (@Composable (onBack: () -> Unit) ->
                     v == "expense" -> openAdd(EntryType.Expense)
                     v == "income" -> openAdd(EntryType.Income)
                     v == "transfer" -> openAdd(EntryType.Transfer)
-                    v.startsWith("new-") -> { tab = NavDestination.Plan.name; stack = emptyList(); planTab = when (v) { "new-budget" -> 0; "new-goal" -> 1; "new-loan" -> 2; else -> 3 }; planSheet = v }
+                    v.startsWith("new-") -> { tabChoice = TabKey.Plan.key; stack = emptyList(); planTab = when (v) { "new-budget" -> 0; "new-goal" -> 1; "new-loan" -> 2; else -> 3 }; planSheet = v }
                     v.startsWith("pin:") -> pinned.pinned.firstOrNull { it.id == v.removePrefix("pin:") }?.let { openAdd(pin = it) }
                 }
             },
@@ -155,13 +186,25 @@ private fun NotBuilt(name: String) {
     }
 }
 
+private const val MORE = "more"
+
+private fun tabIcon(k: TabKey) = when (k) {
+    TabKey.Home -> ChittaIcons.Home
+    TabKey.Ledger -> ChittaIcons.Ledger
+    TabKey.Plan -> ChittaIcons.Plan
+    TabKey.Insights -> ChittaIcons.Insights
+    TabKey.Accounts -> ChittaIcons.Bank
+    TabKey.Budgets -> ChittaIcons.Wallet
+    TabKey.Goals -> ChittaIcons.Check
+    TabKey.Loans -> ChittaIcons.Users
+    TabKey.Bills -> ChittaIcons.Receipt
+}
+
 @Composable
-private fun MoreScreen(onAccounts: () -> Unit, onCategories: () -> Unit, onImport: () -> Unit, onGallery: (() -> Unit)?) {
+private fun MoreScreen(order: List<MoreItem>, open: (MoreItem) -> Unit, onGallery: (() -> Unit)?) {
     Column(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin)) {
         Text("More", style = ChittaTheme.type.headline, color = ChittaTheme.colors.ink, modifier = Modifier.padding(vertical = Dimens.Gap3))
-        ValueRow("Accounts", "", onClick = onAccounts)
-        ValueRow("Categories", "", onClick = onCategories)
-        ValueRow("Bring over your book", "", onClick = onImport)
+        order.forEach { ValueRow(it.label, "", onClick = { open(it) }) }
         if (onGallery != null) ValueRow("Design gallery", "Debug builds only", onClick = onGallery)
     }
 }

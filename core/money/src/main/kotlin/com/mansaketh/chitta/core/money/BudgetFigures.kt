@@ -72,3 +72,27 @@ object BudgetFigures {
         return if (d <= daysInPeriod) d.toInt() else null
     }
 }
+
+/** Which number leads on Home. A setting can force the cash check; [Hero.CashCheck] is also used when no budget is set (master section 12). */
+enum class Hero { SafeToSpend, CashCheck }
+
+/** The cash check (master section 12): what the "for spending" accounts hold, less every bill due this period and this month's goal savings. */
+data class CashCheck(val balances: Paise, val bills: Paise, val goalSavings: Paise) {
+    val value: Paise get() = balances - bills - goalSavings
+}
+
+object HeroFigures {
+    /**
+     * The figure Home leads with. With a budget the hero is Safe to spend, unless [preferCash] is on or there is no budget (then the cash check leads).
+     * If the cash check is lower than Safe to spend, it wins and [warn] is true: the budget says there is room but the bank balances do not.
+     */
+    data class Choice(val hero: Hero, val value: Paise, val warn: Boolean)
+
+    fun choose(safe: Paise?, cash: CashCheck?, preferCash: Boolean): Choice? {
+        if (safe == null && cash == null) return null
+        if (safe == null) return Choice(Hero.CashCheck, cash!!.value, warn = false)
+        if (cash == null) return Choice(Hero.SafeToSpend, safe, warn = false)
+        if (preferCash) return Choice(Hero.CashCheck, cash.value, warn = false)
+        return if (cash.value < safe) Choice(Hero.CashCheck, cash.value, warn = true) else Choice(Hero.SafeToSpend, safe, warn = false)
+    }
+}
