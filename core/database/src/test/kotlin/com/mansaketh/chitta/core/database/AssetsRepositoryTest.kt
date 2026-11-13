@@ -63,4 +63,17 @@ class AssetsRepositoryTest {
         repo.deleteCardDues(again.map { it.id })
         assertEquals(listOf("cd-1", "cd-2"), repo.observeCardDues().first().map { it.id })
     }
+
+    @Test fun fundsSaveReadAndDeleteWithUndo() = runBlocking {
+        val f = com.mansaketh.chitta.core.model.MutualFund("m1", "Sample", "INF000A00000", "", "100.500", null, "manual", 1_000L, "52.3456", "2026-11-12", "", null)
+        repo.saveFund(f)
+        assertEquals(listOf("m1"), repo.observeFunds().first().map { it.id })
+        assertEquals(f, repo.funds().single())
+        val gone = repo.deleteFund("m1")
+        assertEquals(f, gone)
+        assertTrue(repo.funds().isEmpty())
+        assertNull(repo.deleteFund("m1"))
+        repo.saveFund(gone!!)
+        assertEquals(1, repo.funds().size)
+    }
 }

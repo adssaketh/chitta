@@ -10,6 +10,7 @@ import com.mansaketh.chitta.core.model.CardDue
 import com.mansaketh.chitta.core.model.Category
 import com.mansaketh.chitta.core.model.CategoryLimit
 import com.mansaketh.chitta.core.model.FixedDeposit
+import com.mansaketh.chitta.core.model.MutualFund
 import com.mansaketh.chitta.core.model.LoanTerms
 import com.mansaketh.chitta.core.model.MethodAdded
 import com.mansaketh.chitta.core.model.Objective
@@ -89,3 +90,6 @@ fun FixedDepositEntity.toModel() = FixedDeposit(id, bank, fdNumber, principalPai
 
 fun CardDue.toEntity() = CardDueEntity(id, card, kind, amount, dateMs, note, updatedAtMs)
 fun CardDueEntity.toModel() = CardDue(id, card, kind, amountPaise, dateMs, note, updatedAtMs)
+
+fun MutualFund.toEntity() = MutualFundEntity(id, name, isin, schemeCode, units, investedPaise, source, unitsAsOfMs, navText, navDate, note, updatedAtMs)
+fun MutualFundEntity.toModel() = MutualFund(id, name, isin, schemeCode, units, investedPaise, source, unitsAsOfMs, navText, navDate, note, updatedAtMs)

@@ -120,6 +120,10 @@ interface MiscDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insertCardDuesIfNew(rows: List<CardDueEntity>): List<Long>
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertCardDue(row: CardDueEntity)
     @Query("DELETE FROM card_due WHERE id IN (:ids)") suspend fun deleteCardDues(ids: List<String>)
+    @Query("SELECT * FROM mutual_fund ORDER BY name, id") fun observeFunds(): Flow<List<MutualFundEntity>>
+    @Query("SELECT * FROM mutual_fund ORDER BY name, id") suspend fun getFunds(): List<MutualFundEntity>
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertFund(row: MutualFundEntity)
+    @Query("DELETE FROM mutual_fund WHERE id = :id") suspend fun deleteFund(id: String)
 }
 
 @Dao

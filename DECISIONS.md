@@ -127,3 +127,13 @@ Master section 7 lists both. Decided with the user on 13 Nov 2026: Ping already 
 | D106 | FD interest uses actual days over 365. Compound growth is a Double power applied to the exact principal and rounded half-even to the paisa; simple interest is exact decimal. The bank's stated maturity amount wins; accrued interest is then spread evenly over the days. | Fractional powers cannot be exact decimals; error is far below a paisa. | decided |
 | D107 | Not in 8b: sharing loans and deposits with household members (Phase 9 with the household); FD messages parked by Phase 7b are not re-read; FD reminders use the due-bills switch. | Scope. | decided |
 
+## Phase 8c decisions (13 Nov 2026)
+
+| # | Decision | Why | Status |
+|---|---|---|---|
+| D108 | 8c starts with the screen only. Funds are stored and shown, but no price is fetched yet, so every fund reads "No price yet" and the header says so. No made-up price. | You asked for the screen first; section 12: never show a made-up number. | decided |
+| D109 | Units and prices are decimal text, not Double and not paise: units have up to 3 places and an AMFI price up to 4. Value = units x price, rounded half-even to the paisa. What was put in is kept in paise; you type an average price per unit and it is multiplied and rounded the same way. | Section 2.4 (money is exact); paise cannot hold a 4-place price. | decided |
+| D110 | The header price date is the oldest price date among priced funds, so it never claims fresher prices than the stalest one. The gain adds only funds with both a price and an average price and says how many it covers. | Master section 8: say how many funds the gain covers. | decided |
+| D111 | STALE after more than 35 days without a units update. Section 3 allows two stamps a screen, so only the first two stale funds carry the stamp; the rest say "units N days old" in words. The detail sheet has its own stamp. | Section 3 and the PDF p.26 both apply; this keeps both. | decided |
+| D112 | Not in this step: Net worth line, SIP estimates, AMFI fetch, Console and CAS readers (waiting for your sample files), household sharing. A fund you edit keeps its source tag. Its units are replaced only by that source's next import. | Scope. | decided |
+

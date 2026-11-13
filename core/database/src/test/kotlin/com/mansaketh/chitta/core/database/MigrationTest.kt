@@ -56,7 +56,7 @@ class MigrationTest {
         val file = File(tmp.root, "old.db")
         createVersion(file, 1)
         val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext<Context>(), ChittaDatabase::class.java, file.absolutePath)
-            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4).allowMainThreadQueries().build()
+            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5).allowMainThreadQueries().build()
         try {
             val t = db.transactions().get("t1")!!
             assertEquals(-48_600L, t.amountPaise)
@@ -77,7 +77,7 @@ class MigrationTest {
         val file = File(tmp.root, "v2.db")
         createVersion(file, 2)
         val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext<Context>(), ChittaDatabase::class.java, file.absolutePath)
-            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4).allowMainThreadQueries().build()
+            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5).allowMainThreadQueries().build()
         try {
             val t = db.transactions().get("t1")!!
             assertEquals(-48_600L, t.amountPaise)
@@ -94,7 +94,7 @@ class MigrationTest {
         val file = File(tmp.root, "v3.db")
         createVersion(file, 3)
         val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext<Context>(), ChittaDatabase::class.java, file.absolutePath)
-            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4).allowMainThreadQueries().build()
+            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5).allowMainThreadQueries().build()
         try {
             val t = db.transactions().get("t1")!!
             assertEquals(-48_600L, t.amountPaise)
@@ -121,6 +121,21 @@ class MigrationTest {
             )
             repo.save(rule)
             assertEquals(listOf(rule), repo.all())
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test fun versionFourGainsMutualFundStorageAndKeepsEntries() = runBlocking {
+        val file = File(tmp.root, "v4.db")
+        createVersion(file, 4)
+        val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext<Context>(), ChittaDatabase::class.java, file.absolutePath)
+            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5).allowMainThreadQueries().build()
+        try {
+            assertTrue(db.misc().getFunds().isEmpty())
+            val f = com.mansaketh.chitta.core.model.MutualFund("m1", "Sample", "INF000A00000", "", "100.500", 4_000_000L, "manual", 1_000L, null, null, "", null)
+            AssetsRepository(db).saveFund(f)
+            assertEquals(f, AssetsRepository(db).funds().single())
         } finally {
             db.close()
         }

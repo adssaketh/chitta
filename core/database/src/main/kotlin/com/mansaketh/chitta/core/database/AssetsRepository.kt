@@ -2,6 +2,7 @@ package com.mansaketh.chitta.core.database
 
 import com.mansaketh.chitta.core.model.CardDue
 import com.mansaketh.chitta.core.model.FixedDeposit
+import com.mansaketh.chitta.core.model.MutualFund
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -37,4 +38,16 @@ class AssetsRepository(private val db: ChittaDatabase) {
     }
 
     suspend fun deleteCardDues(ids: List<String>) { if (ids.isNotEmpty()) db.misc().deleteCardDues(ids) }
+
+    // ---- mutual funds (Phase 8c). A record only: no account balance moves.
+    fun observeFunds(): Flow<List<MutualFund>> = db.misc().observeFunds().map { rows -> rows.map { it.toModel() } }
+    suspend fun funds(): List<MutualFund> = db.misc().getFunds().map { it.toModel() }
+    suspend fun saveFund(f: MutualFund) = db.misc().upsertFund(f.toEntity())
+
+    /** Deletes the fund and returns it, so Undo can put it back. */
+    suspend fun deleteFund(id: String): MutualFund? {
+        val old = db.misc().getFunds().firstOrNull { it.id == id }?.toModel() ?: return null
+        db.misc().deleteFund(id)
+        return old
+    }
 }

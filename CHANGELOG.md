@@ -1,5 +1,13 @@
 # Changelog
 
+## Phase 8c: Mutual funds screen (13 Nov 2026) - on branch `phase-8c-mutual-funds`
+- Scope agreed: the screen first. Price fetch (AMFI), the Zerodha Console reader, the CAS reader, SIP estimates and the Net worth line wait for the sample files and the next step.
+- `:core:model`: `MutualFund`. `:core:domain`: `MutualFunds` (value = units x price, gain, totals, STALE after 35 days, ISIN shape) with 12 tests on hand-worked figures.
+- Database schema 5 with tested migration from 4: `mutual_fund` table. `AssetsRepository` gets save, observe, delete with Undo.
+- App: Accounts > Mutual funds (PDF p.26: value, price date, gain with how many funds it covers, one row per fund with its source and STALE), fund detail, add or edit by hand, delete with Undo, Import holdings sheet (PDF p.27; only "By hand" works).
+- Decisions D108 to D112.
+- Written without a local build (no Android SDK here); CI compiles and runs every test.
+
 ## Phase 8b: fixed deposits, instalment loans in Net worth, card dues from SMS (13 Nov 2026) - on branch `phase-8b-deposits-dues`
 - `:core:domain`: `FixedDeposits` (value today, at maturity, accrued interest, in paise; the bank's stated maturity amount wins), `CardDues` (owed per card, matching a card to an account, no double count with entries), `Cards.figures` now takes card messages, `NetWorth` takes deposits (off by default) and instalment-loan balances (on by default). 29 new tests.
 - `:core:intake`: `FdSms`, the "FD booked" message reader (6 tests, including the Ping contract's FD sample).

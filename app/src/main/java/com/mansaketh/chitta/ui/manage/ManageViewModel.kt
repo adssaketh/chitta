@@ -30,6 +30,8 @@ data class ManageUi(
     /** Phase 8b: fixed deposits, card messages read from SMS, and the two Net worth switches. */
     val deposits: List<FixedDeposit> = emptyList(),
     val dues: List<CardDue> = emptyList(),
+    /** Phase 8c: mutual fund holdings. */
+    val funds: List<MutualFund> = emptyList(),
     val nwDeposits: Boolean = false,
     val nwInstalments: Boolean = true,
     val nowMs: Long = 0L,
@@ -59,14 +61,19 @@ class ManageViewModel @Inject constructor(
 
     private val base = combine(accountRepo.observeAll(), categoryRepo.observeAll(), entries, ratesRepo.observeRates(), ratesRepo.observeOverrides()) { a, c, e, r, o -> Base(a, c, e, r, o) }
 
-    val ui: StateFlow<ManageUi> = combine(base, assets.observeDeposits(), assets.observeCardDues(), prefs.netWorthDeposits, prefs.netWorthInstalments) { b, d, du, nd, ni ->
+    private data class Assets(val deposits: List<FixedDeposit>, val dues: List<CardDue>, val funds: List<MutualFund>)
+
+    private val assetsFlow = combine(assets.observeDeposits(), assets.observeCardDues(), assets.observeFunds()) { d, du, f -> Assets(d, du, f) }
+
+    val ui: StateFlow<ManageUi> = combine(base, assetsFlow, prefs.netWorthDeposits, prefs.netWorthInstalments) { b, a, nd, ni ->
+        val d = a.deposits; val du = a.dues
         val now = clock.nowMs()
         val today = java.time.Instant.ofEpochMilli(now).atZone(clock.zone()).toLocalDate()
         // Card messages feed the cockpit, minus the ones an entry on the card already covers (CardDues.flowsFor).
         val cards = b.accounts.mapNotNull { acc ->
             cardSetup(acc)?.let { acc.id to com.mansaketh.chitta.core.domain.Cards.figures(it, b.entries, today, clock.zone(), CardDues.flowsFor(acc, du, b.entries)) }
         }.toMap()
-        ManageUi(b.accounts, b.categories, Balances.balances(b.entries), b.rates, b.overrides, loading = false, cards = cards, deposits = d, dues = du, nwDeposits = nd, nwInstalments = ni, nowMs = now, zone = clock.zone())
+        ManageUi(b.accounts, b.categories, Balances.balances(b.entries), b.rates, b.overrides, loading = false, cards = cards, deposits = d, dues = du, funds = a.funds, nwDeposits = nd, nwInstalments = ni, nowMs = now, zone = clock.zone())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ManageUi())
 
     // ---- fixed deposits (Phase 8b)
@@ -85,6 +92,20 @@ class ManageViewModel @Inject constructor(
 
     fun setNetWorthDeposits(v: Boolean) = prefs.setNetWorthDeposits(v)
     fun setNetWorthInstalments(v: Boolean) = prefs.setNetWorthInstalments(v)
+
+    // ---- mutual funds (Phase 8c)
+    /** Saves a new or edited fund; Undo puts the old one back (or removes the new one). */
+    fun saveFund(entered: MutualFund) = viewModelScope.launch {
+        val f = if (entered.id.isEmpty()) entered.copy(id = ids.newId()) else entered
+        val old = ui.value.funds.firstOrNull { it.id == f.id }
+        assets.saveFund(f.copy(updatedAtMs = clock.nowMs()))
+        undo.post(if (old == null) "Mutual fund added" else "Mutual fund saved") { if (old == null) assets.deleteFund(f.id) else assets.saveFund(old) }
+    }
+
+    fun deleteFund(id: String) = viewModelScope.launch {
+        val old = assets.deleteFund(id) ?: return@launch
+        undo.post("Mutual fund deleted") { assets.saveFund(old) }
+    }
 
     // ---- card messages (Phase 8b)
     /** Makes [card] show [targetOwed] by adding a hand-made "opening" row for the difference. Undo removes it. Returns false when nothing needed changing. */
