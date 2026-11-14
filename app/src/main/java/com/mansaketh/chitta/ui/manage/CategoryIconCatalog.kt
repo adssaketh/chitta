@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
 import com.mansaketh.chitta.core.domain.IconChoice
 import com.mansaketh.chitta.core.domain.IconSearch
+import com.mansaketh.chitta.core.domain.LegacyCategoryIcons
 
 /** The icons a category can wear, with plain words to search by. Kept in step with CATEGORY_ICONS in tools/gen_icons.py. */
 object CategoryIconCatalog {
@@ -61,5 +62,15 @@ object CategoryIconCatalog {
         IconChoice("handshake", "Freelance", listOf("client", "deal", "income", "payment")),
     )
 
-    fun imageFor(iconName: String?): ImageVector? = IconSearch.keyOf(iconName)?.let { ChittaIcons.byPhosphorName[it] }
+    /** The first dozens by hand, then the ones added so imported categories keep a picture (CategoryIconCatalogMore). */
+    val allChoices: List<IconChoice> get() = choices + CategoryIconCatalogMore.choices
+
+    /**
+     * The icon a category wears: its own pick ("ph:<name>"), else the stand-in for its old Paddhu picture, else a guess from its name
+     * ("Dining" gets the fork and knife). Null only when nothing fits, and the screen then draws the plain tag.
+     */
+    fun imageFor(iconName: String?, categoryName: String? = null): ImageVector? {
+        val key = IconSearch.keyOf(iconName) ?: LegacyCategoryIcons.keyForPicture(iconName) ?: LegacyCategoryIcons.keyForName(categoryName)
+        return key?.let { ChittaIcons.byPhosphorName[it] }
+    }
 }

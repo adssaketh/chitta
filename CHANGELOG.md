@@ -1,5 +1,8 @@
 # Changelog
 
+## Category icons (14 Nov 2026) - on `main`, 6.0.2
+- Imported categories now show an icon that fits (270 old picture names mapped to 169 new line icons, or a guess from the category name), instead of one tag for all. The icon picker lists them all and searches by the old names too (D188).
+
 ## Home fix (14 Nov 2026) - on `main`
 - With the cash check leading, Home keeps the budget ring, per day, range and month rule under it, headed with the budget name (D187). "1 day" instead of "1 days".
 

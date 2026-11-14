@@ -39,7 +39,7 @@ import com.mansaketh.chitta.ui.BottomOverlay
 fun IconPickerSheet(category: Category, onPick: (String?) -> Unit, onDismiss: () -> Unit) {
     val c = ChittaTheme.colors
     var query by remember { mutableStateOf("") }
-    val found = IconSearch.search(query, CategoryIconCatalog.choices)
+    val found = IconSearch.search(query, CategoryIconCatalog.allChoices)
     val current = IconSearch.keyOf(category.iconName)
     BottomOverlay(onDismiss) {
         Text("Icon for ${category.name}", style = ChittaTheme.type.title, color = c.ink)
