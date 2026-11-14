@@ -20,6 +20,12 @@ class IntakeSignals @Inject constructor() {
     fun requestLink(params: Map<String, String>) { _link.value = params }
     fun consumeLink() { _link.value = null }
 
+    private val _tab = MutableStateFlow<String?>(null)
+    /** A `chitta://open?tab=ledger` link (launcher shortcut): the bottom tab to show. Cleared by [consumeTab]. */
+    val tab: StateFlow<String?> = _tab
+    fun requestTab(key: String) { _tab.value = key }
+    fun consumeTab() { _tab.value = null }
+
     private val _refresh = MutableStateFlow(0)
     /** Goes up each time something new may be in the inbox. */
     val refresh: StateFlow<Int> = _refresh

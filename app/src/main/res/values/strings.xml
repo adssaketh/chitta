@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_quick_add_label">Quick add</string>
+    <string name="widget_quick_add_description">Two buttons that open a new expense or income entry.</string>
+    <string name="widget_spend_label">Safe to spend</string>
+    <string name="widget_spend_description">What is safe to spend and what was spent today. Masked when amounts are hidden or the app is locked.</string>
+    <string name="tile_add_expense">Add expense</string>
+</resources>

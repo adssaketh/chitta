@@ -9,10 +9,12 @@ import com.mansaketh.chitta.core.model.SinkingFund
 import com.mansaketh.chitta.core.model.Transaction
 import com.mansaketh.chitta.core.money.BudgetFigures
 import com.mansaketh.chitta.core.money.CashCheck
+import com.mansaketh.chitta.core.money.HeroFigures
 import com.mansaketh.chitta.core.money.Paise
 import com.mansaketh.chitta.core.money.RangeResult
 import com.mansaketh.chitta.core.money.RingTicks
 import com.mansaketh.chitta.core.money.Segments
+import java.time.YearMonth
 import java.time.ZoneId
 
 /**
@@ -35,6 +37,16 @@ data class HeroData(
     val ring: RingTicks?,
 )
 
+/** What the top of Home (and the spend widget) is built from: the budget's hero, the period it covers, the cash check and which one leads. */
+data class TopFigures(
+    val hero: HeroData?,
+    val period: Period,
+    val cash: CashCheck?,
+    /** True when an account the cash check counts has had no entry for [HomeFigures.STALE_DAYS] days (the figure is an ESTIMATE). */
+    val cashStale: Boolean,
+    val choice: HeroFigures.Choice?,
+)
+
 object HomeFigures {
     /** A cash-check balance is an ESTIMATE when no entry has touched the account for this many days (master section 12). */
     const val STALE_DAYS = 7
@@ -47,6 +59,31 @@ object HomeFigures {
         val live = budgets.filter { !it.archived && !it.income && nowMs in Budgets.periodAt(it, nowMs, zone) }
         return live.firstOrNull { it.id == preferredId }
             ?: live.sortedWith(compareByDescending<Budget> { it.pinned }.thenBy { it.sortOrder }.thenBy { it.name }).firstOrNull()
+    }
+
+
+    /** The calendar month that holds [nowMs]: the period Home uses when no budget runs today. */
+    fun monthPeriod(nowMs: Long, zone: ZoneId): Period {
+        val ym = YearMonth.from(Periods.date(nowMs, zone))
+        return Period(Periods.startOfDay(ym.atDay(1), zone), Periods.startOfDay(ym.plusMonths(1).atDay(1), zone))
+    }
+
+    /**
+     * The figures at the top of Home, in one place so the Home screen and the home-screen widget cannot disagree (Phase 8j, DECISIONS D165).
+     * Same steps Home always took: pick the budget, work out its hero, take the period from it (or the calendar month), then the cash check, then which leads.
+     */
+    fun top(
+        entries: List<Transaction>, budgets: List<Budget>, objectives: List<Objective>, categories: List<Category>, accounts: List<Account>,
+        sinkingFunds: List<SinkingFund>, cashAccounts: Set<String>, preferCash: Boolean, heroBudgetId: String?, nowMs: Long, zone: ZoneId,
+    ): TopFigures {
+        val budget = currentBudget(budgets, nowMs, zone, heroBudgetId)
+        val hero = budget?.let { hero(it, entries, categories, nowMs, zone, sinkingFunds) }
+        val period = hero?.summary?.period ?: monthPeriod(nowMs, zone)
+        val goalSavings = goalSavings(objectives, entries, nowMs, zone)
+        val sinkingReserve = SinkingFunds.effect(sinkingFunds, period, entries, categories, zone).reserved
+        val cash = cashCheck(entries, accounts, cashAccounts, period, goalSavings, sinkingReserve)
+        val stale = cash != null && staleSpendingAccounts(entries, accounts, cashAccounts, nowMs, zone).isNotEmpty()
+        return TopFigures(hero, period, cash, stale, HeroFigures.choose(hero?.safe, cash, preferCash))
     }
 
     /** Budgets that can be picked in the top bar, in the same order [currentBudget] prefers. */

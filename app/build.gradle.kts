@@ -73,6 +73,8 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.work.runtime)
+    // Home-screen widgets (Phase 8j). Glance 1.2.0 is the latest stable; 1.3.0 is still alpha.
+    implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.biometric)
     // Reads text in payment screenshots on the phone (bundled model, nothing leaves the phone) and text in statement PDFs.
     implementation(libs.mlkit.text.recognition)

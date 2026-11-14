@@ -25,4 +25,12 @@ class SecurityPrefs @Inject constructor(@ApplicationContext context: Context) {
     private val _hideInRecents = MutableStateFlow(p.getBoolean("hideInRecents", false))
     val hideInRecents: StateFlow<Boolean> = _hideInRecents
     fun setHideInRecents(v: Boolean) { _hideInRecents.value = v; p.edit().putBoolean("hideInRecents", v).apply() }
+
+    /**
+     * Hide-amounts mode, kept across restarts so the home-screen widgets can mask too (Phase 8j, DECISIONS D166). Widgets also mask
+     * whenever the lock is on, so a locked book never shows figures on the home screen.
+     */
+    private val _hideAmounts = MutableStateFlow(p.getBoolean("hideAmounts", false))
+    val hideAmounts: StateFlow<Boolean> = _hideAmounts
+    fun setHideAmounts(v: Boolean) { _hideAmounts.value = v; p.edit().putBoolean("hideAmounts", v).apply() }
 }

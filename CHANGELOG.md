@@ -1,5 +1,13 @@
 # Changelog
 
+## Phase 8j: widgets, Quick Settings tile and shortcuts (14 Nov 2026) - on branch `phase-8j-widgets`
+
+- Two home-screen widgets (Glance 1.2.0, latest stable): **Quick add** (Expense and Income buttons, open the add sheet through the existing `chitta://add?type=` link; nothing is saved) and **Safe to spend** (the figure Home leads with, per day and days left, and spent today).
+- The spend widget masks every amount when hide-amounts is on or the lock is on. Hide-amounts is now remembered across restarts so the widget can read it (D166).
+- Quick Settings tile "Add expense". Launcher shortcuts: Add expense, Add income, Ledger (`chitta://open?tab=ledger`, ignored if the Ledger tab was swapped out of the bar).
+- `:core:domain`: `HomeFigures.top` (the top-of-Home steps, now shared by Home and the widget), `WidgetFigures` and `WidgetLines` (the widget's numbers and words, masked or not). 12 new tests worked by hand.
+- Decisions D165 to D170. Nothing has run on a phone.
+
 ## Phase 8i: gold, EPF and PPF (14 Nov 2026) - on branch `phase-8i-assets`
 - Accounts > "Gold, EPF and PPF": add assets by name and type what each is worth with a date. Every update is kept as history; Update value, History, Rename or edit note, Delete (10-second Undo each).
 - Net worth: Gold, EPF and PPF lines, each with its own switch (on by default); the 12-month chart counts the value you had typed by each month. STALE after 35 days (EPF, PPF) or 60 days (gold).

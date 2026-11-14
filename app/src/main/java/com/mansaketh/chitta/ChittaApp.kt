@@ -8,6 +8,8 @@ import com.mansaketh.chitta.di.Clock
 import com.mansaketh.chitta.reminders.ReminderNotifications
 import com.mansaketh.chitta.reminders.ReminderScheduler
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -18,6 +20,7 @@ class ChittaApp : Application() {
     @Inject lateinit var uiPrefs: com.mansaketh.chitta.data.UiPrefs
     @Inject lateinit var receipts: com.mansaketh.chitta.receipts.ReceiptStore
     @Inject lateinit var ledger: com.mansaketh.chitta.core.database.LedgerRepository
+    @Inject lateinit var security: com.mansaketh.chitta.data.SecurityPrefs
 
     /** A restore staged by Settings is swapped in here, before anything can open the book (DECISIONS D69). */
     override fun attachBaseContext(base: Context) {
@@ -25,11 +28,22 @@ class ChittaApp : Application() {
         DatabaseFiles.applyPending(base)
     }
 
+    @OptIn(kotlinx.coroutines.FlowPreview::class)
     override fun onCreate() {
         super.onCreate()
         ReminderNotifications.createChannels(this)
         ReminderScheduler.scheduleNext(this, prefs.reminders, clock.nowMs(), clock.zone())
         com.mansaketh.chitta.data.FundPriceScheduler.sync(this, uiPrefs.fundPricesAuto.value)
+        com.mansaketh.chitta.widgets.Shortcuts.publish(this)
+        // The spend widget is redrawn whenever the book changes, or hide-amounts or the lock is switched, while the app is running.
+        // Between runs it refreshes every 30 minutes (the shortest period Android allows), so the day's total can lag after midnight.
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default).launch {
+            kotlinx.coroutines.flow.merge(
+                ledger.observeAll().map { }.debounce(1_500),
+                security.hideAmounts.map { },
+                security.lockEnabled.map { },
+            ).collect { com.mansaketh.chitta.widgets.WidgetRefresh.spend(this@ChittaApp) }
+        }
         // Receipt photos whose entry is gone for over 30 days are removed (DECISIONS D155). A failure here is not worth showing.
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO).launch {
             runCatching { receipts.cleanOrphans(ledger.observeAllOnce().map { it.id }.toSet(), clock.nowMs()) }

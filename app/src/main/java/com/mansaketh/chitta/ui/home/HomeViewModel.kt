@@ -124,14 +124,12 @@ class HomeViewModel @Inject constructor(
     private fun compute(r: Raw, p: P): HomeUi {
         val now = clock.nowMs()
         val zone = clock.zone()
-        val budget = HomeFigures.currentBudget(r.budgets, now, zone, p.heroId)
-        val hero = budget?.let { HomeFigures.hero(it, r.entries, r.categories, now, zone, r.sinking) }
-        val period = hero?.summary?.period ?: monthPeriod(now, zone)
-        val goalSavings = HomeFigures.goalSavings(r.objectives, r.entries, now, zone)
-        val sinkingReserve = SinkingFunds.effect(r.sinking, period, r.entries, r.categories, zone).reserved
-        val cash = HomeFigures.cashCheck(r.entries, r.accounts, p.cash, period, goalSavings, sinkingReserve)
-        val stale = cash != null && HomeFigures.staleSpendingAccounts(r.entries, r.accounts, p.cash, now, zone).isNotEmpty()
-        val choice = HeroFigures.choose(hero?.safe, cash, p.preferCash)
+        val top = HomeFigures.top(r.entries, r.budgets, r.objectives, r.categories, r.accounts, r.sinking, p.cash, p.preferCash, p.heroId, now, zone)
+        val hero = top.hero
+        val period = top.period
+        val cash = top.cash
+        val stale = top.cashStale
+        val choice = top.choice
         val sections = p.layout.shown.associate { cfg -> cfg.section to section(cfg, r, now, zone, p.firstDay) }
         return HomeUi(
             loading = false, nowMs = now, zone = zone, categories = r.categories, accounts = r.accounts, hero = hero,
@@ -140,11 +138,6 @@ class HomeViewModel @Inject constructor(
             layout = p.layout, sections = sections, hasEntries = r.entries.isNotEmpty(), preferCash = p.preferCash,
             reviewMonth = com.mansaketh.chitta.core.domain.MonthReviews.homeMonth(r.entries, now, zone),
         )
-    }
-
-    private fun monthPeriod(now: Long, zone: ZoneId): Period {
-        val ym = YearMonth.from(Periods.date(now, zone))
-        return Period(Periods.startOfDay(ym.atDay(1), zone), Periods.startOfDay(ym.plusMonths(1).atDay(1), zone))
     }
 
     private fun section(cfg: SectionConfig, r: Raw, now: Long, zone: ZoneId, firstDay: DayOfWeek): SectionData {

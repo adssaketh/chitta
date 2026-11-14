@@ -30,7 +30,35 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="chitta" android:host="add" />
             </intent-filter>
+            <!-- chitta://open?tab=ledger: what the launcher shortcut "Ledger" uses. Only shows a tab. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="chitta" android:host="open" />
+            </intent-filter>
         </activity>
+
+
+        <!-- Home-screen widgets (Phase 8j). Neither saves anything; Quick add only opens the add sheet through chitta://add. -->
+        <receiver android:name=".widgets.QuickAddWidgetReceiver" android:exported="true" android:label="@string/widget_quick_add_label">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/quick_add_widget_info" />
+        </receiver>
+        <receiver android:name=".widgets.SpendWidgetReceiver" android:exported="true" android:label="@string/widget_spend_label">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/spend_widget_info" />
+        </receiver>
+
+        <!-- Quick Settings tile: opens Quick Add as an expense. -->
+        <service
+            android:name=".widgets.QuickAddTileService"
+            android:exported="true"
+            android:label="@string/tile_add_expense"
+            android:icon="@drawable/ic_tile_add"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
+        </service>
 
         <!-- A payment screenshot, statement PDF/CSV or Ping file shared to Chitta. Has no screen: it keeps a copy and opens the review list. -->
         <activity

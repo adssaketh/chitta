@@ -119,6 +119,13 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
         vms.intake.signals.consumeLink()
         vms.quickAdd.applyLink(params) { adding = true }
     }
+    // A launcher shortcut (chitta://open?tab=ledger) shows a bottom tab. Ignored when the person has swapped that tab out of the bar.
+    val tabRequest by vms.intake.signals.tab.collectAsState()
+    LaunchedEffect(tabRequest) {
+        val key = tabRequest ?: return@LaunchedEffect
+        vms.intake.signals.consumeTab()
+        if (tabLayout.slots.any { it.key == key }) { stack = emptyList(); adding = false; tabChoice = key }
+    }
     BackHandler(enabled = adding) { adding = false }
     BackHandler(enabled = !adding && stack.isNotEmpty()) { pop() }
     fun openAdd(type: EntryType = EntryType.Expense, pin: com.mansaketh.chitta.core.model.PinnedEntry? = null) { vms.quickAdd.reset(type, pin); adding = true }

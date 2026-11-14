@@ -1,0 +1,4 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <!-- Ruled lines with a margin line: a ledger page. -->
+    <path android:pathData="M8,5 L8,19 M12,8 L19,8 M12,12 L19,12 M12,16 L19,16" android:strokeColor="#D9381E" android:strokeWidth="1.5" android:strokeLineCap="round" />
+</vector>

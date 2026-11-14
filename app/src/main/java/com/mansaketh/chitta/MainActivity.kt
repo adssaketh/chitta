@@ -74,12 +74,17 @@ class MainActivity : FragmentActivity() {
         signals.refreshNow()
     }
 
-    /** A `chitta://add?...` link: keep its query for the Quick Add sheet. Only plain text values are taken; nothing is saved. */
+    /**
+     * A `chitta://add?...` link: keep its query for the Quick Add sheet (only plain text values are taken; nothing is saved).
+     * A `chitta://open?tab=ledger` link (launcher shortcut) only asks for a bottom tab. Both wait behind the lock screen.
+     */
     private fun takeLink(i: android.content.Intent?) {
         val uri = i?.data ?: return
-        if (i.action != android.content.Intent.ACTION_VIEW || uri.scheme != "chitta" || uri.host != "add") return
-        i.data = null
-        signals.requestLink(uri.queryParameterNames.associateWith { uri.getQueryParameter(it).orEmpty().take(500) })
+        if (i.action != android.content.Intent.ACTION_VIEW || uri.scheme != "chitta") return
+        when (uri.host) {
+            "add" -> { i.data = null; signals.requestLink(uri.queryParameterNames.associateWith { uri.getQueryParameter(it).orEmpty().take(500) }) }
+            "open" -> { i.data = null; uri.getQueryParameter("tab")?.take(20)?.let { signals.requestTab(it) } }
+        }
     }
 
     override fun onNewIntent(intent: android.content.Intent) {
@@ -95,7 +100,9 @@ class MainActivity : FragmentActivity() {
         enableEdgeToEdge()
         setContent {
             var mode by rememberSaveable { mutableStateOf(ThemeMode.System) }
-            var hide by rememberSaveable { mutableStateOf(false) }
+            var hide by rememberSaveable { mutableStateOf(security.hideAmounts.value) }
+            // Kept on the phone so the home-screen widgets can mask too.
+            val toggleHide = { hide = !hide; security.setHideAmounts(hide) }
             val locked by appLock.locked.collectAsState()
             val hideInRecents by security.hideInRecents.collectAsState()
             // Bank messages Ping handed over while Chitta was closed are read when it opens (and again when something arrives).
@@ -113,9 +120,9 @@ class MainActivity : FragmentActivity() {
                     LockScreen(onUnlock = ::askToUnlock)
                 } else if (BuildConfig.DEBUG) {
                     // Component gallery stays reachable from More in debug builds only (Phase 2 decision).
-                    com.mansaketh.chitta.ui.AppRoot(vms, hide, { hide = !hide }) { onBack -> ComponentGallery(mode, { mode = it }, hide, { hide = it }) ; androidx.activity.compose.BackHandler(onBack = onBack) }
+                    com.mansaketh.chitta.ui.AppRoot(vms, hide, toggleHide) { onBack -> ComponentGallery(mode, { mode = it }, hide, { hide = it }) ; androidx.activity.compose.BackHandler(onBack = onBack) }
                 } else {
-                    com.mansaketh.chitta.ui.AppRoot(vms, hide, { hide = !hide })
+                    com.mansaketh.chitta.ui.AppRoot(vms, hide, toggleHide)
                 }
             }
         }
