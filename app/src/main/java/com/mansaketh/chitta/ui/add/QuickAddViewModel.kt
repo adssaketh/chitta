@@ -127,6 +127,7 @@ class QuickAddViewModel @Inject constructor(
             com.mansaketh.chitta.core.design.components.KeypadKey.Dot -> AmountExpression.dot(d.amountRaw)
             is com.mansaketh.chitta.core.design.components.KeypadKey.Operator -> AmountExpression.operator(d.amountRaw, k.symbol)
             com.mansaketh.chitta.core.design.components.KeypadKey.Backspace -> AmountExpression.backspace(d.amountRaw)
+            com.mansaketh.chitta.core.design.components.KeypadKey.Equals -> AmountExpression.settle(d.amountRaw)
         }
         d.copy(amountRaw = raw)
     }

@@ -39,6 +39,21 @@ private fun tx(
 class AmountExpressionTest {
     private fun ev(s: String) = AmountExpression.evaluate(s)?.value
 
+    @Test fun equalsKeyReplacesTheSumWithItsResult() {
+        assertEquals("1550.5", AmountExpression.settle("1200+350.5"))
+        assertEquals("2.5", AmountExpression.settle("10÷4"))
+        assertEquals("3.33", AmountExpression.settle("10÷3"))
+        assertEquals("165", AmountExpression.settle("120+45"))
+        assertEquals("100.05", AmountExpression.settle("100+0.05"))
+    }
+
+    @Test fun equalsKeyLeavesWhatItCannotWorkOut() {
+        assertEquals("5−9", AmountExpression.settle("5−9"))
+        assertEquals("5÷0", AmountExpression.settle("5÷0"))
+        assertEquals("250", AmountExpression.settle("250"))
+        assertEquals("", AmountExpression.settle(""))
+    }
+
     @Test fun plainNumbersAndDecimals() {
         assertEquals(48_600L, ev("486"))
         assertEquals(61_334L, ev("613.34"))

@@ -91,7 +91,7 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
                 )
                 LaunchedEffect(Unit) { amountFocus.requestFocus() }
             } else {
-                Keypad(vm::key)
+                Keypad(vm::key, showEquals = com.mansaketh.chitta.core.domain.AmountExpression.isCalculation(d.amountRaw))
             }
             Text(
                 if (useKeyboard) "Use the keypad" else "Use the phone keyboard",

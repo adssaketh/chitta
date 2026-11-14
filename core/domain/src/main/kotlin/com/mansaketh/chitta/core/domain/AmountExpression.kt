@@ -91,5 +91,18 @@ object AmountExpression {
 
     fun backspace(raw: String): String = raw.dropLast(1)
 
+    /**
+     * The "=" key: replaces a sum with its result as plain keypad text ("1200+350.5" becomes "1550.5").
+     * Text that cannot be worked out (empty, negative, divides by zero, too long) is returned unchanged.
+     */
+    fun settle(raw: String): String {
+        if (!isCalculation(raw)) return raw
+        val paise = evaluate(raw)?.value ?: return raw
+        val whole = paise / 100
+        val cents = (paise % 100).toInt()
+        val text = if (cents == 0) "$whole" else "$whole." + "%02d".format(cents).trimEnd('0')
+        return if (text.filter { it.isDigit() }.length > MAX_DIGITS + 2) raw else text
+    }
+
     private fun lastNumber(raw: String): String = raw.takeLastWhile { it !in OPERATORS }
 }

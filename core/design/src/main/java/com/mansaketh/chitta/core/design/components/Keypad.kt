@@ -36,6 +36,8 @@ sealed interface KeypadKey {
     data object Dot : KeypadKey
     data class Operator(val symbol: Char) : KeypadKey
     data object Backspace : KeypadKey
+    /** The "=" key: work the sum out now. */
+    data object Equals : KeypadKey
 }
 
 private val OPERATOR_NAMES = mapOf('+' to "plus", '−' to "minus", '×' to "times", '÷' to "divided by")
@@ -50,6 +52,8 @@ fun Keypad(
     onKey: (KeypadKey) -> Unit,
     modifier: Modifier = Modifier,
     haptics: Boolean = true,
+    /** Show the "=" row. Quick Add turns it on once the amount holds a sum. */
+    showEquals: Boolean = false,
 ) {
     val feedback = LocalHapticFeedback.current
     val send: (KeypadKey) -> Unit = {
@@ -73,6 +77,9 @@ fun Keypad(
             Key("0", "0") { send(KeypadKey.Digit('0')) }
             IconKey("Delete last character") { send(KeypadKey.Backspace) }
             Key("+", OPERATOR_NAMES.getValue('+'), muted = true) { send(KeypadKey.Operator('+')) }
+        }
+        if (showEquals) {
+            Row(Modifier.fillMaxWidth()) { Key("=", "equals, show the total", muted = true) { send(KeypadKey.Equals) } }
         }
     }
 }

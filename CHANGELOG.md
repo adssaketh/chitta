@@ -1,5 +1,8 @@
 # Changelog
 
+## Keypad "=" key (14 Nov 2026) - on branch `phase-ui-polish`
+- An "=" key appears under the keypad once the amount holds a sum (120+45); tapping it replaces the sum with the total (165). It stays hidden for a plain amount. Rounds the same way as Save (to whole paise, half-even). Unit-tested.
+
 ## Quick Add: phone keyboard option (14 Nov 2026) - on branch `phase-ui-polish`
 - A link under the keypad, "Use the phone keyboard", swaps the on-screen keypad for the normal keyboard (type 120+45 and it still adds up; - * / work as signs). "Use the keypad" swaps back. The keypad is unchanged and stays the default. Keypad keys no longer buzz twice.
 

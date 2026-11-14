@@ -242,6 +242,7 @@ fun GalleryKeypad() = GallerySection("Keypad") {
                 KeypadKey.Dot -> "$raw."
                 is KeypadKey.Operator -> raw + it.symbol
                 KeypadKey.Backspace -> raw.dropLast(1)
+                KeypadKey.Equals -> raw
             }
         })
     }
