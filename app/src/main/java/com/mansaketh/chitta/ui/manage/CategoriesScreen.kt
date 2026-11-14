@@ -45,7 +45,7 @@ fun CategoriesScreen(vm: ManageViewModel, onBack: () -> Unit) {
             HairlineRule()
             notice?.let { Text(it, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(horizontal = Dimens.Margin, vertical = Dimens.Gap2)) }
             if (!ui.loading && mains.isEmpty()) EmptyState("No categories here yet.", "Add a category", { sheet = CatSheet.Add }, Modifier.padding(horizontal = Dimens.Margin))
-            LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = 140.dp)) {
+            LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
                 mains.forEach { main ->
                     item(key = main.id) { CategoryRow(main, 0, vm.entriesIn(main)) { sheet = CatSheet.Actions(main) } }
                     items(ui.categories.filter { it.mainCategoryId == main.id }.sortedBy { it.sortOrder }, key = { it.id }) { sub -> CategoryRow(sub, 1, vm.entriesIn(sub)) { sheet = CatSheet.Actions(sub) } }

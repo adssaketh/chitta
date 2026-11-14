@@ -110,7 +110,7 @@ private fun HomeStep(vm: IntakeViewModel, s: IntakeStage.Home) {
     val ping = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let(vm::pickPingFile) }
     val known2 = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let(vm::importKnownAccounts) }
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = 120.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
         s.message?.let { Text(it, style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(vertical = Dimens.Gap3)) }
         SectionHeader("Waiting for your look")
         HairlineRule()

@@ -76,7 +76,7 @@ fun CloudBackupScreen(vm: CloudBackupViewModel, onBack: () -> Unit, onPaddhuFile
 
     Column(Modifier.fillMaxSize()) {
         ChittaTopBar("Google Drive backup", onBack = onBack)
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = 160.dp)) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
             if (ui.notice != null) {
                 Text(ui.notice!!, style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(vertical = Dimens.Gap2))
                 ChittaButton("Dismiss", { vm.dismissNotice() }, style = ButtonStyle.Quiet)

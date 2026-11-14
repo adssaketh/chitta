@@ -1,6 +1,7 @@
 package com.mansaketh.chitta.ui.insights
 
 import androidx.compose.foundation.background
+import com.mansaketh.chitta.ui.sheetMax
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -119,7 +120,7 @@ fun InsightsScreen(vm: InsightsViewModel, onOpenEntry: (String) -> Unit) {
                 AmountText(d.total, style = ChittaTheme.type.amountSmall)
             }
             Spacer(Modifier.height(Dimens.Gap2))
-            LazyColumn(Modifier.heightIn(max = 460.dp)) {
+            LazyColumn(Modifier.heightIn(max = sheetMax(0.55f))) {
                 if (d.parts.size > 1) {
                     val top = d.parts.maxOf { it.amount.value }.coerceAtLeast(1L)
                     items(d.parts, key = { "p-" + it.categoryId }) { part ->

@@ -108,7 +108,7 @@ private fun MappingStep(vm: CsvImportViewModel, s: CsvStage.Mapping) {
         Triple("account", "Account", m.account), Triple("note", "Note", m.note), Triple("type", "Type (income or expense)", m.type),
     )
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = 160.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
         Text("${s.fileName} · ${s.rows.size - (if (m.hasHeader) 1 else 0)} rows", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2))
         if (s.notice != null) Text(s.notice, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2))
         SectionHeader("Which column is which")

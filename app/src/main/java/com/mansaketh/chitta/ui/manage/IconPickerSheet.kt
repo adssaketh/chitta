@@ -1,6 +1,7 @@
 package com.mansaketh.chitta.ui.manage
 
 import androidx.compose.foundation.clickable
+import com.mansaketh.chitta.ui.sheetMax
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -48,7 +49,7 @@ fun IconPickerSheet(category: Category, onPick: (String?) -> Unit, onDismiss: ()
         if (found.isEmpty()) {
             Text("No icon matches \"$query\". Try another word.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap4))
         } else {
-            LazyColumn(Modifier.heightIn(max = 340.dp)) {
+            LazyColumn(Modifier.heightIn(max = sheetMax(0.42f))) {
                 items(found, key = { it.key }) { ch ->
                     Row(
                         Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(role = Role.Button, onClickLabel = "Use ${ch.label}") { onPick(ch.key) }.padding(vertical = Dimens.Gap2),

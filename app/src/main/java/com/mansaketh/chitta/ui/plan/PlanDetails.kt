@@ -63,7 +63,7 @@ fun BudgetDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit
         val lines = remember(b, ui.entries, ui.categories, ui.limits, ui.nowMs) { Budgets.breakdown(b, period, ui.entries, ui.categories, ui.limits) }
         val history = remember(b, ui.entries, ui.categories, ui.nowMs) { Budgets.history(b, ui.entries, ui.categories, ui.nowMs, ui.zone) }
         val verb = if (b.income) "saved" else "spent"
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = 120.dp)) {
+        Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.FabInset)) {
             Text(b.name, style = ChittaTheme.type.headline, color = c.ink)
             Text(periodText(period, ui.zone), style = ChittaTheme.type.label, color = c.inkMuted)
             Spacer(Modifier.height(Dimens.Gap3))
@@ -144,7 +144,7 @@ fun GoalDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit: 
         if (o == null) { if (!ui.loading) Gone("goal"); return@Column }
         val p = remember(o, ui.entries, ui.nowMs) { Goals.progress(o, ui.entries, ui.nowMs, ui.zone) }
         val linked = ui.entries.filter { it.objectiveId == o.id }.sortedByDescending { it.dateMs }
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = 120.dp)) {
+        Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.FabInset)) {
             Text(o.name, style = ChittaTheme.type.headline, color = c.ink)
             Text(if (o.income) "Saving up" else "Spending on", style = ChittaTheme.type.label, color = c.inkMuted)
             Spacer(Modifier.height(Dimens.Gap3))
@@ -185,7 +185,7 @@ fun LoanDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit: 
         ChittaTopBar("Loan", onBack = onBack, actions = { IconAction(com.mansaketh.chitta.core.design.icons.ChittaIcons.Pencil, "Edit loan", onEdit) })
         if (o == null) { if (!ui.loading) Gone("loan"); return@Column }
         val linked = ui.entries.filter { it.objectiveLoanId == o.id }.sortedByDescending { it.dateMs }
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = 120.dp)) {
+        Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.FabInset)) {
             Text(o.name, style = ChittaTheme.type.headline, color = c.ink)
             Row(Modifier.padding(vertical = Dimens.Gap2)) { Stamp(if (o.income) "Lent" else "Borrowed") }
             if (terms == null) {

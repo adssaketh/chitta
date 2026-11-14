@@ -83,7 +83,7 @@ fun AppRoot(vms: AppViewModels, hidden: Boolean = false, onToggleHide: () -> Uni
         }
         val undo by vms.root.undo.current.collectAsState()
         undo?.let { item ->
-            Box(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal = Dimens.Margin).padding(bottom = if (first == false) 72.dp else Dimens.Gap4)) {
+            Box(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal = Dimens.Margin).padding(bottom = if (first == false) Dimens.NavBarMin + Dimens.InlineGap else Dimens.Gap4)) {
                 UndoBar(item.message, onUndo = { vms.root.undo.undo() })
             }
         }

@@ -32,7 +32,7 @@ fun ImportScreen(vm: ImportViewModel, onBack: () -> Unit, onFinished: () -> Unit
 
     Column(Modifier.fillMaxSize()) {
         ChittaTopBar(if (firstRun) "Bring over your book" else "Bring over your book", onBack = onBack)
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = 140.dp), verticalArrangement = Arrangement.spacedBy(Dimens.Gap3)) {
+        Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset), verticalArrangement = Arrangement.spacedBy(Dimens.Gap3)) {
             when (val s = state) {
                 ImportState.Idle -> {
                     Text("Pick the backup file from the old Paddhu Pusthakam app. This app reads a copy and shows you what it found. Nothing is saved until you confirm.", style = ChittaTheme.type.body, color = c.ink)

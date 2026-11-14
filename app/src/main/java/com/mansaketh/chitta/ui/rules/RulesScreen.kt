@@ -61,7 +61,7 @@ fun RulesScreen(vm: RulesViewModel, onBack: () -> Unit) {
 
     Column(Modifier.fillMaxSize()) {
         ChittaTopBar("Rules", onBack = onBack)
-        LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = 140.dp)) {
+        LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
             item {
                 Text("If a new entry matches, a rule fills in the category or account. The first rule that sets something wins. Transfers are never changed.", style = ChittaTheme.type.label, color = c.inkMuted)
                 Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2), modifier = Modifier.padding(vertical = Dimens.Gap3)) {

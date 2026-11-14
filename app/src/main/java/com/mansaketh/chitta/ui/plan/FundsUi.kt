@@ -83,7 +83,7 @@ fun FundSheet(
             Text("Which category pays this bill?", style = ChittaTheme.type.title, color = c.ink)
             Text("Entries in it take money out of the fund automatically.", style = ChittaTheme.type.label, color = c.inkMuted)
             Spacer(Modifier.height(Dimens.Gap2))
-            Column(Modifier.heightIn(max = 380.dp).verticalScroll(rememberScrollState())) {
+            Column(Modifier.heightIn(max = sheetMax(0.45f)).verticalScroll(rememberScrollState())) {
                 ValueRow("None", if (categoryId == null) "Chosen" else "", onClick = { categoryId = null; step = FStep.Form })
                 ui.categories.filter { it.mainCategoryId == null && !it.archived && !it.income }.sortedBy { it.sortOrder }.forEach { cat ->
                     ValueRow(cat.name, if (categoryId == cat.id) "Chosen" else "", onClick = { categoryId = cat.id; step = FStep.Form })
@@ -91,7 +91,7 @@ fun FundSheet(
             }
         }
         FStep.Form -> BottomOverlay(onDismiss) {
-            Column(Modifier.heightIn(max = 560.dp).verticalScroll(rememberScrollState())) {
+            Column(Modifier.heightIn(max = sheetMax(0.7f)).verticalScroll(rememberScrollState())) {
                 Text(if (existing == null) "New sinking fund" else "Edit sinking fund", style = ChittaTheme.type.title, color = c.ink)
                 Spacer(Modifier.height(Dimens.Gap4))
                 ChittaField(name, { name = it; problem = null }, "Name, for example Insurance")

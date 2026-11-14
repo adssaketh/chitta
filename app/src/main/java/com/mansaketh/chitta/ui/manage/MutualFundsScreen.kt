@@ -209,7 +209,7 @@ private fun FundsTab(
     val c = ChittaTheme.colors
     val totals = MutualFunds.totals(ui.funds)
     val stampedIds = ui.funds.filter { MutualFunds.isStale(it, ui.nowMs, ui.zone) }.take(2).map { it.id }.toSet()
-    LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = 140.dp)) {
+    LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
         if (ui.loading) item { LoadingPlaceholder() }
         else if (ui.funds.isEmpty()) item {
             EmptyState("No mutual funds yet. Add one by hand, or import your statement.", "Add holdings", onAdd)
@@ -255,7 +255,7 @@ private fun FundsTab(
 @Composable
 private fun NpsTab(ui: ManageUi, onToggleNetWorth: (Boolean) -> Unit, onAddAccount: () -> Unit, onAccount: (NpsAccount) -> Unit, onAddScheme: (NpsAccount) -> Unit, onScheme: (MutualFund) -> Unit) {
     val c = ChittaTheme.colors
-    LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = 140.dp)) {
+    LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
         if (ui.loading) item { LoadingPlaceholder() }
         else if (ui.nps.isEmpty()) item {
             EmptyState("No NPS account yet. Add one from your NPS statement.", "Add NPS account", onAddAccount)

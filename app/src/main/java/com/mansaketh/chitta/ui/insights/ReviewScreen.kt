@@ -40,7 +40,7 @@ fun MonthReviewScreen(vm: InsightsViewModel, onBack: () -> Unit) {
         ChittaTopBar("Month in review", onBack = onBack)
         HairlineRule()
         if (ui.loading) LoadingPlaceholder(Modifier.padding(Dimens.Margin))
-        else Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = 160.dp)) {
+        else Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
             MonthReviewContent(ui, onMonth = vm::setReviewMonth)
         }
     }

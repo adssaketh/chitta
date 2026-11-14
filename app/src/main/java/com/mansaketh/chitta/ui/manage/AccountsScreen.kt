@@ -54,7 +54,7 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
             ChittaTopBar("Accounts", onBack = onBack, actions = { IconAction(ChittaIcons.Plus, "Add an account", onClick = { sheet = AccSheet.Add }) })
-            LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = 140.dp)) {
+            LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
                 item {
                     Text("Total balance", style = ChittaTheme.type.label, color = c.inkMuted)
                     AmountText(total, style = ChittaTheme.type.amountHero, alwaysShowPaise = true)

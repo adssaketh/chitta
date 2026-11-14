@@ -51,7 +51,7 @@ fun AssetsScreen(vm: AssetsViewModel, onBack: () -> Unit) {
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
             ChittaTopBar("Gold, EPF and PPF", onBack = onBack)
-            LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = 140.dp)) {
+            LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
                 item {
                     Text(
                         "Type what each is worth and the date. Each update is kept as history. Nothing here moves money in your accounts.",

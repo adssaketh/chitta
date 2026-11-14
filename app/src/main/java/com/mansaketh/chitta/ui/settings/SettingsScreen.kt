@@ -87,7 +87,7 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
 
     Column(Modifier.fillMaxSize()) {
         ChittaTopBar("Settings", onBack = onBack)
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = 160.dp)) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
             if (ui.notice != null) {
                 Text(ui.notice!!, style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(vertical = Dimens.Gap2))
                 ChittaButton("Dismiss", { vm.dismissNotice() }, style = ButtonStyle.Quiet)
@@ -188,7 +188,7 @@ fun RestorePointsScreen(vm: SettingsViewModel, onBack: () -> Unit) {
         if (ui.points.isEmpty()) {
             Text("No restore points yet. One is made each day you open Paddhu Pusthakam, or make one in Settings.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(Dimens.Margin))
         } else {
-            LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 160.dp)) {
+            LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = Dimens.EndInset)) {
                 items(ui.points, key = { it.fileName }) { p ->
                     ValueRow(dayAndTime(p.createdAtMs, zone), p.kind.label + " · " + sizeText(p.sizeBytes), onClick = { picked = p })
                 }

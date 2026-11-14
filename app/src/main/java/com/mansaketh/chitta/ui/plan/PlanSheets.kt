@@ -63,7 +63,7 @@ fun BudgetSheet(existing: Budget?, ui: PlanUi, onSave: (BudgetForm) -> Unit, onD
         BStep.Accounts -> MultiPickSheet("Accounts", ui.accounts.filter { !it.archived }.map { it.id to it.name }, accounts, "All accounts", { accounts = it; step = BStep.Form }, { step = BStep.Form })
         BStep.Categories -> MultiPickSheet("Categories it leaves out", ui.categories.filter { it.mainCategoryId == null && !it.archived && it.income == savings }.map { it.id to it.name }, excluded, "None left out", { excluded = it; step = BStep.Form }, { step = BStep.Form })
         BStep.Form -> BottomOverlay(onDismiss) {
-            Column(Modifier.heightIn(max = 560.dp).verticalScroll(rememberScrollState())) {
+            Column(Modifier.heightIn(max = sheetMax(0.7f)).verticalScroll(rememberScrollState())) {
                 Text(if (existing == null) "New budget" else "Edit budget", style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
                 Spacer(Modifier.height(Dimens.Gap4))
                 ChittaField(name, { name = it; problem = null }, "Name")
@@ -167,7 +167,7 @@ fun LoanSheet(existing: Objective?, ui: PlanUi, onAdd: (name: String, lent: Bool
     var firstMs by remember { mutableStateOf(ui.nowMs) }
     var problem by remember { mutableStateOf<String?>(null) }
     BottomOverlay(onDismiss) {
-        Column(Modifier.heightIn(max = 560.dp).verticalScroll(rememberScrollState())) {
+        Column(Modifier.heightIn(max = sheetMax(0.7f)).verticalScroll(rememberScrollState())) {
             Text(if (existing == null) "New loan" else "Edit loan", style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
             Spacer(Modifier.height(Dimens.Gap4))
             ChittaField(name, { name = it; problem = null }, problem ?: "Name")
@@ -262,7 +262,7 @@ fun BillSheet(existing: Transaction?, ui: PlanUi, onSave: (title: String, amount
         PStep.Category -> ChoiceSheet("Category", categories.map { Choice(it.name, it.id, selected = it.id == categoryId) }, { categoryId = it; step = PStep.Form }, { step = PStep.Form })
         PStep.Account -> ChoiceSheet("Account", ui.accounts.filter { !it.archived }.map { Choice(it.name, it.id, selected = it.id == accountId) }, { accountId = it; step = PStep.Form }, { step = PStep.Form })
         PStep.Form -> BottomOverlay(onDismiss) {
-            Column(Modifier.heightIn(max = 560.dp).verticalScroll(rememberScrollState())) {
+            Column(Modifier.heightIn(max = sheetMax(0.7f)).verticalScroll(rememberScrollState())) {
                 Text(if (existing == null) "New bill" else "Edit bill", style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
                 Spacer(Modifier.height(Dimens.Gap4))
                 ChittaField(title, { title = it; problem = null }, problem ?: "What is it")
@@ -322,7 +322,7 @@ fun ReminderSheet(s: ReminderSettings, autoPay: Boolean, paidOnDue: Boolean, ask
     fun clock(h: Int, m: Int) = (if (h % 12 == 0) 12 else h % 12).toString() + ":" + m.toString().padStart(2, '0') + if (h < 12) " am" else " pm"
     fun wantsOn() { if (!allowed && android.os.Build.VERSION.SDK_INT >= 33 && !askedBefore) ask.launch(android.Manifest.permission.POST_NOTIFICATIONS) }
     BottomOverlay(onDismiss) {
-        Column(Modifier.heightIn(max = 560.dp).verticalScroll(rememberScrollState())) {
+        Column(Modifier.heightIn(max = sheetMax(0.7f)).verticalScroll(rememberScrollState())) {
             Text("Bills and reminders", style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
             Spacer(Modifier.height(Dimens.Gap3))
             if (!allowed && (s.dueBills || s.logReminder)) {

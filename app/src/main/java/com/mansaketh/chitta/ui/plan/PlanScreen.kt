@@ -246,7 +246,7 @@ private fun BillsTab(vm: PlanViewModel, ui: PlanUi, onSheet: (String) -> Unit, o
         Text("Possible subscriptions", style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
         Text("Charges that came back on a steady rhythm. Tap one to add it or set it aside.", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted)
         Spacer(Modifier.height(Dimens.Gap2))
-        LazyColumn(Modifier.heightIn(max = 420.dp)) {
+        LazyColumn(Modifier.heightIn(max = sheetMax(0.5f))) {
             items(suggestions, key = { it.key }) { s ->
                 PlanRow(
                     s.name, s.amount,
@@ -338,7 +338,7 @@ private fun CalendarTab(vm: PlanViewModel, ui: PlanUi) {
         BottomOverlay({ day = null }) {
             Text(friendlyDay(Periods.startOfDay(d.date, ui.zone), ui.nowMs, ui.zone), style = ChittaTheme.type.title, color = c.ink)
             Spacer(Modifier.height(Dimens.Gap2))
-            Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
+            Column(Modifier.heightIn(max = sheetMax(0.5f)).verticalScroll(rememberScrollState())) {
                 d.items.forEach { item ->
                     val t = ui.entries.firstOrNull { it.id == item.entryId }
                     Column(Modifier.fillMaxWidth().padding(vertical = Dimens.Gap2)) {

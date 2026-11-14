@@ -39,7 +39,7 @@ fun AutomationScreen(vm: AutomationViewModel, onBack: () -> Unit) {
 
     Column(Modifier.fillMaxSize()) {
         ChittaTopBar("Automation", onBack = onBack)
-        LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = 140.dp)) {
+        LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.EndInset)) {
             item {
                 SectionHeader("Add from another app")
                 HairlineRule()

@@ -55,7 +55,7 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
                 else -> {
                     val neutral = Totals.isNeutral(e)
                     val transfer = Totals.isTransfer(e)
-                    Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = 120.dp)) {
+                    Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.FabInset)) {
                         Text(e.name.ifBlank { categoryName(e.categoryId, ui.categories) }, style = ChittaTheme.type.headline, color = c.ink)
                         Spacer(Modifier.height(Dimens.Gap2))
                         AmountText(Paise(Math.abs(e.amount)), style = ChittaTheme.type.amountHero, tone = if (neutral) AmountTone.Neutral else if (e.amount > 0) AmountTone.Income else AmountTone.Expense, alwaysShowPaise = true)
@@ -170,7 +170,7 @@ fun EntryHistoryScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> 
     Column(Modifier.fillMaxSize()) {
         ChittaTopBar("History", onBack = onBack)
         if (ui.history.isEmpty()) Text("No history yet.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(Dimens.Margin))
-        LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = 120.dp)) {
+        LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
             val versions = ui.history.sortedByDescending { it.id }
             items(versions.size) { i ->
                 val v = versions[i]

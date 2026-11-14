@@ -1,6 +1,7 @@
 package com.mansaketh.chitta.ui.plan
 
 import android.app.DatePickerDialog
+import com.mansaketh.chitta.ui.sheetMax
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -66,7 +67,7 @@ fun AmountAccountSheet(
         Spacer(Modifier.height(Dimens.Gap3))
         Text("Account", style = ChittaTheme.type.labelMedium, color = ChittaTheme.colors.inkMuted)
         Spacer(Modifier.height(Dimens.Gap2))
-        LazyColumn(Modifier.heightIn(max = 160.dp)) {
+        LazyColumn(Modifier.heightIn(max = sheetMax(0.2f))) {
             items(active) { a -> ChoiceChip(a.name, selected = a.id == account, onClick = { account = a.id }, modifier = Modifier.padding(bottom = Dimens.Gap1)) }
         }
         Spacer(Modifier.height(Dimens.Gap4))
@@ -82,7 +83,7 @@ fun MultiPickSheet(title: String, options: List<Pair<String, String>>, selected:
         Text(title, style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
         Text(if (picked.isEmpty()) allLabel else "${picked.size} chosen", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted)
         Spacer(Modifier.height(Dimens.Gap2))
-        LazyColumn(Modifier.heightIn(max = 360.dp)) {
+        LazyColumn(Modifier.heightIn(max = sheetMax(0.45f))) {
             items(options) { (id, label) ->
                 com.mansaketh.chitta.ui.ValueRow(label, if (id in picked) "Chosen" else "", onClick = { picked = if (id in picked) picked - id else picked + id })
             }

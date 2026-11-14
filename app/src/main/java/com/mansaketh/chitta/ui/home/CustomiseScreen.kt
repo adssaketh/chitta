@@ -44,7 +44,7 @@ fun CustomiseScreen(vm: HomeViewModel, onBack: () -> Unit) {
 
     Column(Modifier.fillMaxSize()) {
         ChittaTopBar("Customise", onBack = onBack)
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = 160.dp)) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
             SectionHeader("Home sections")
             Text("Budgets and Recent entries are on to start. Add what you want to see.", style = ChittaTheme.type.label, color = c.inkMuted)
             HairlineRule()

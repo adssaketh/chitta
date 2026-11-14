@@ -65,6 +65,11 @@ fun categoryName(id: String, categories: List<Category>): String =
 
 fun accountName(id: String, accounts: List<Account>): String = accounts.firstOrNull { it.id == id }?.name ?: "Unknown account"
 
+/** A share of the screen's height, for a list or form inside a sheet. Fixed dp heights cut off on short phones and big text. */
+@Composable
+fun sheetMax(fraction: Float): androidx.compose.ui.unit.Dp =
+    (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * fraction).dp
+
 /** A dimmed backdrop with [content] sitting at the bottom as a sheet. Tapping the backdrop dismisses. */
 @Composable
 fun BottomOverlay(onDismiss: () -> Unit, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
@@ -87,7 +92,7 @@ fun <T> ChoiceSheet(title: String, choices: List<Choice<T>>, onPick: (T) -> Unit
         if (choices.isEmpty()) {
             Text(emptyText, style = ChittaTheme.type.body, color = ChittaTheme.colors.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap4))
         } else {
-            LazyColumn(Modifier.heightIn(max = 420.dp)) {
+            LazyColumn(Modifier.heightIn(max = sheetMax(0.5f))) {
                 items(choices) { c ->
                     Row(
                         Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(role = Role.Button) { onPick(c.value) }.padding(vertical = Dimens.Gap2),

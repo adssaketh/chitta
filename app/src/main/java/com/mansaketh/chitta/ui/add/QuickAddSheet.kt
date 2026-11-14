@@ -43,7 +43,7 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
     val types = EntryType.entries
 
     BottomOverlay(onClose) {
-        Column(Modifier.heightIn(max = 640.dp).verticalScroll(rememberScrollState())) {
+        Column(Modifier.heightIn(max = sheetMax(0.8f)).verticalScroll(rememberScrollState())) {
             TextTabs(listOf("Expense", "Income", "Transfer"), types.indexOf(d.type), { vm.setType(types[it]) })
             Spacer(Modifier.height(Dimens.Gap3))
             AmountEntryText(d.amountRaw)
