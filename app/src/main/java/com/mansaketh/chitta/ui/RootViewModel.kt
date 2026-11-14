@@ -15,9 +15,15 @@ import javax.inject.Inject
 
 /** Decides whether to show the first-run chooser: an empty book that nobody has chosen what to do with yet. null = still loading. */
 @HiltViewModel
-class RootViewModel @Inject constructor(accounts: AccountRepository, private val prefs: AppPrefs, val undo: UndoCenter, restore: RestoreManager) : ViewModel() {
+class RootViewModel @Inject constructor(
+    accounts: AccountRepository, private val prefs: AppPrefs, val undo: UndoCenter, restore: RestoreManager,
+    fundPrices: com.mansaketh.chitta.data.FundPriceService,
+) : ViewModel() {
     // Today's automatic restore point (Data Recovery), made quietly when the app opens.
     init { viewModelScope.launch { restore.autoIfDue() } }
+
+    // Fund prices (Phase 8d): a quiet refresh when the app opens, only if the last good one is over 12 hours old.
+    init { viewModelScope.launch { fundPrices.refreshIfDue() } }
 
     val needsFirstRun: StateFlow<Boolean?> = accounts.observeAll().map { it.isEmpty() && !prefs.firstRunDone }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 }

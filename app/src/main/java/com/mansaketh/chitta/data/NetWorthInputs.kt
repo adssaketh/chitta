@@ -8,10 +8,17 @@ import kotlinx.coroutines.flow.combine
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** Loan terms, fixed deposits and the two switches, as the one input Net worth needs beyond entries (Phase 8b). */
+/** Loan terms, fixed deposits, mutual funds, NPS and their switches, as the one input Net worth needs beyond entries (Phases 8b and 8d). */
 @Singleton
 class NetWorthInputs @Inject constructor(plan: PlanRepository, assets: AssetsRepository, prefs: UiPrefs) {
-    val extras: Flow<NetWorthExtras> = combine(plan.observeLoanTerms(), assets.observeDeposits(), prefs.netWorthDeposits, prefs.netWorthInstalments) { t, d, deposits, instalments ->
-        NetWorthExtras(terms = t, deposits = d, includeDeposits = deposits, includeInstalments = instalments)
+    private data class Switches(val deposits: Boolean, val instalments: Boolean, val funds: Boolean, val nps: Boolean)
+
+    private val switches = combine(prefs.netWorthDeposits, prefs.netWorthInstalments, prefs.netWorthFunds, prefs.netWorthNps) { d, i, f, n -> Switches(d, i, f, n) }
+
+    val extras: Flow<NetWorthExtras> = combine(plan.observeLoanTerms(), assets.observeDeposits(), assets.observeFunds(), switches) { t, d, funds, sw ->
+        NetWorthExtras(
+            terms = t, deposits = d, includeDeposits = sw.deposits, includeInstalments = sw.instalments,
+            funds = funds.filter { !it.isNps }, npsSchemes = funds.filter { it.isNps }, includeFunds = sw.funds, includeNps = sw.nps,
+        )
     }
 }

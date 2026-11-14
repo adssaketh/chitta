@@ -1,5 +1,15 @@
 # Changelog
 
+## Phase 8d: fund prices, SIP estimates, Net worth lines (14 Nov 2026) - on branch `phase-8d-prices`
+- `:core:intake`: `AmfiNav` reads AMFI's NAV file by column name (refused if a column is missing or under 1,000 schemes); `FundMatchIndex` and `FundPrices` match funds to schemes by code, ISIN, then name, and offer a pick list when unsure. A trimmed real copy of the file is a test resource. 13 new tests.
+- `:core:domain`: `Sip` (instalment dates, units, crediting, reset); fund value and gain now include the SIP estimate; `NetWorth` gains Mutual funds and NPS lines (today only, each with a switch). 11 new tests.
+- Schema 6 with tested migration: SIP columns on `mutual_fund`. Fetched prices and SIP estimates are written by their own queries.
+- App: `FundPriceService` (fetch, match, price, credit SIP, saved copy of the file), a daily WorkManager job and a refresh when the app opens; Mutual funds screen gets Refresh prices, Update prices daily, Count in Net worth, a scheme picker, SIP fields in the edit sheet, and "estimated" labels; NPS tab gets its Net worth switch; Net worth tab shows the two lines with their price dates.
+- A statement import keeps the SIP and the scheme link and restarts the estimate; it then links and prices the new funds.
+- Fix: Undo after editing an NPS scheme restored nothing and deleted the scheme.
+- Decisions D118 to D123.
+- Written without a local Android build (no Android SDK here); the plain-Kotlin modules were run locally (316 domain and 78 intake tests pass); CI compiles and tests the rest.
+
 ## Phase 8c: Mutual funds screen (13 Nov 2026) - on branch `phase-8c-mutual-funds`
 - Scope: the screen first, then (files arrived) the statement import and an NPS tab. Still not built: AMFI price fetch, Zerodha Console reader, SIP estimates, the Net worth line.
 - `:core:model`: `MutualFund`. `:core:domain`: `MutualFunds` (value = units x price, gain, totals, STALE after 35 days, ISIN shape) with 12 tests on hand-worked figures.

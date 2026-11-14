@@ -126,6 +126,12 @@ interface MiscDao {
     @Query("DELETE FROM mutual_fund WHERE id = :id") suspend fun deleteFund(id: String)
     @Query("DELETE FROM mutual_fund WHERE id IN (:ids)") suspend fun deleteFunds(ids: List<String>)
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertFunds(rows: List<MutualFundEntity>)
+    /** Phase 8d: a fetched price, written on its own so it never touches units, cost or the SIP estimate. The ISIN is filled only if empty. */
+    @Query("UPDATE mutual_fund SET navText = :nav, navDate = :date, schemeCode = :code, isin = CASE WHEN isin = '' THEN :isin ELSE isin END WHERE id = :id")
+    suspend fun setFundPrice(id: String, nav: String, date: String, code: String, isin: String)
+    /** The SIP estimate of one fund. */
+    @Query("UPDATE mutual_fund SET sipUnits = :units, sipInvestedPaise = :invested, sipCount = :count, sipThrough = :through WHERE id = :id")
+    suspend fun setFundSipEstimate(id: String, units: String, invested: Long, count: Int, through: String)
     @Query("SELECT * FROM nps_account ORDER BY name, id") fun observeNps(): Flow<List<NpsAccountEntity>>
     @Query("SELECT * FROM nps_account ORDER BY name, id") suspend fun getNps(): List<NpsAccountEntity>
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertNps(row: NpsAccountEntity)

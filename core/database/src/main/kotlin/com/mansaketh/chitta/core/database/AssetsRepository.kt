@@ -52,6 +52,12 @@ class AssetsRepository(private val db: ChittaDatabase) {
         return old
     }
 
+    /** Writes a fetched price and the matched scheme code (and ISIN if the fund has none). Touches nothing else. */
+    suspend fun setFundPrice(id: String, nav: String, date: String, schemeCode: String, isin: String) = db.misc().setFundPrice(id, nav, date, schemeCode, isin)
+
+    /** Writes a fund's SIP estimate. Touches nothing else. */
+    suspend fun setFundSipEstimate(id: String, units: String, investedPaise: Long, count: Int, through: String) = db.misc().setFundSipEstimate(id, units, investedPaise, count, through)
+
     /** Applies a statement import in one go: removes [removeIds], then saves [save]. Returns nothing; Undo is the caller's old copies. */
     suspend fun replaceFunds(removeIds: List<String>, save: List<MutualFund>) {
         if (removeIds.isNotEmpty()) db.misc().deleteFunds(removeIds)

@@ -337,8 +337,12 @@ private fun NetWorthTab(ui: InsightsUi) {
     HairlineRule()
     TotalRow("Accounts", now.accounts)
     if (now.depositCount > 0) TotalRow("Fixed deposits", now.deposits)
+    if (now.fundCount > 0) TotalRow("Mutual funds", now.funds)
+    if (now.npsCount > 0) TotalRow("NPS", now.nps)
     TotalRow("Owed to you", now.owedToYou)
     TotalRow("You owe", now.youOwe)
+    now.fundsPriceDate?.let { Text("Mutual funds at their price of ${priceDay(it)}.", style = ChittaTheme.type.label, color = c.inkMuted) }
+    now.npsPriceDate?.let { Text("NPS at its statement price of ${priceDay(it)}.", style = ChittaTheme.type.label, color = c.inkMuted) }
     Spacer(Modifier.height(Dimens.SectionGap))
     SectionHeader("Last 12 months")
     if (ui.netSeries.size >= 2) {
@@ -351,7 +355,8 @@ private fun NetWorthTab(ui: InsightsUi) {
             Text(ui.netSeries.last().month.format(monthYear), style = ChittaTheme.type.label, color = c.inkMuted)
         }
         Text(
-            "Each point is the book as it stood at the end of that month.",
+            "Each point is the book as it stood at the end of that month." +
+                if (now.fundCount + now.npsCount > 0) " Funds and NPS have no price history, so only today's point counts them." else "",
             style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2),
         )
     }
@@ -375,13 +380,38 @@ private fun NetWorthTab(ui: InsightsUi) {
             style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2),
         )
     }
+    val fundRows = ui.netExtras.funds.size
+    if (!ui.netExtras.includeFunds && fundRows > 0) {
+        Text(
+            "$fundRows mutual ${if (fundRows == 1) "fund is" else "funds are"} not counted. Switch them on under Accounts > Mutual funds.",
+            style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2),
+        )
+    }
+    val unpriced = ui.netExtras.funds.count { com.mansaketh.chitta.core.domain.MutualFunds.value(it) == null }
+    if (ui.netExtras.includeFunds && unpriced > 0) {
+        Text(
+            "$unpriced mutual ${if (unpriced == 1) "fund has" else "funds have"} no price yet and ${if (unpriced == 1) "is" else "are"} left out.",
+            style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2),
+        )
+    }
+    val npsOff = ui.netExtras.npsSchemes.isNotEmpty() && !ui.netExtras.includeNps
+    if (npsOff) {
+        Text(
+            "NPS is not counted. Switch it on under Accounts > Mutual funds > NPS.",
+            style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2),
+        )
+    }
     Text(
-        "Not counted yet: mutual funds and other assets. Card dues read from messages show on each card, not here, so a purchase is never counted twice.",
+        "Not counted: other assets. Card dues read from messages show on each card, not here, so a purchase is never counted twice.",
         style = ChittaTheme.type.body, color = c.inkMuted,
     )
 }
 
 // ---------------------------------------------------------------------------------------------------- helpers
+
+/** "12 Nov 2026" from a yyyy-MM-dd price date, or the text itself if it does not parse. */
+private fun priceDay(text: String): String =
+    runCatching { LocalDate.parse(text).format(java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy", java.util.Locale.ENGLISH)) }.getOrDefault(text)
 
 @Composable
 private fun DatesSheet(zone: ZoneId, onShow: (LocalDate, LocalDate?) -> Unit, onDismiss: () -> Unit) {

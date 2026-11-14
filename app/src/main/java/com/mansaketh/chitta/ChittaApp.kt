@@ -14,6 +14,7 @@ import javax.inject.Inject
 class ChittaApp : Application() {
     @Inject lateinit var prefs: AppPrefs
     @Inject lateinit var clock: Clock
+    @Inject lateinit var uiPrefs: com.mansaketh.chitta.data.UiPrefs
 
     /** A restore staged by Settings is swapped in here, before anything can open the book (DECISIONS D69). */
     override fun attachBaseContext(base: Context) {
@@ -25,5 +26,6 @@ class ChittaApp : Application() {
         super.onCreate()
         ReminderNotifications.createChannels(this)
         ReminderScheduler.scheduleNext(this, prefs.reminders, clock.nowMs(), clock.zone())
+        com.mansaketh.chitta.data.FundPriceScheduler.sync(this, uiPrefs.fundPricesAuto.value)
     }
 }

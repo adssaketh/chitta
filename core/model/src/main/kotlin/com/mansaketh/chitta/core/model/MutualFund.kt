@@ -25,6 +25,17 @@ data class MutualFund(
     val folio: String = "",
     /** Empty for a mutual fund. For an NPS scheme, the id of its [NpsAccount]. NPS is shown on its own tab and never added to mutual funds. */
     val groupId: String = "",
+    /** Optional monthly SIP (Phase 8d): the amount in paise and the day of the month it is taken. Both set, or both null. */
+    val sipAmountPaise: Long? = null,
+    val sipDay: Int? = null,
+    /** Estimated units added by the SIP since the units were last typed or imported (decimal text). Labelled "estimated"; an import or an edit of the units resets it to zero. */
+    val sipUnits: String = "0",
+    /** What those estimated instalments put in, in paise, so the gain does not count estimated units as free. */
+    val sipInvestedPaise: Long = 0,
+    /** How many instalments the estimate covers. */
+    val sipCount: Int = 0,
+    /** yyyy-MM-dd: instalments dated up to and including this day are already in the units or in the estimate. Empty until a SIP is set. */
+    val sipThrough: String = "",
 ) {
     val isNps: Boolean get() = groupId.isNotEmpty()
 

@@ -20,6 +20,8 @@ import com.mansaketh.chitta.core.design.tokens.Dimens
 import com.mansaketh.chitta.core.domain.MutualFunds
 import com.mansaketh.chitta.core.domain.Nps
 import com.mansaketh.chitta.core.domain.Periods
+import com.mansaketh.chitta.core.domain.Sip
+import com.mansaketh.chitta.core.intake.AmfiScheme
 import com.mansaketh.chitta.core.intake.CasPlan
 import com.mansaketh.chitta.core.intake.CasReading
 import com.mansaketh.chitta.core.intake.CasSummary
@@ -45,6 +47,7 @@ private sealed interface FundSheet {
     data object None : FundSheet
     data object Import : FundSheet
     data class Detail(val f: MutualFund) : FundSheet
+    data class Pick(val f: MutualFund) : FundSheet
     data class Edit(val f: MutualFund?) : FundSheet
     data class NpsAccountEdit(val a: NpsAccount?) : FundSheet
     data class NpsAccountDetail(val a: NpsAccount) : FundSheet
@@ -138,9 +141,12 @@ fun MutualFundsScreen(vm: ManageViewModel, onBack: () -> Unit) {
                 },
             )
             TextTabs(listOf("Mutual funds", "NPS"), tab, { tab = it }, Modifier.padding(horizontal = Dimens.Margin))
-            if (tab == 0) FundsTab(ui, onOpen = { sheet = FundSheet.Detail(it) }, onAdd = { sheet = FundSheet.Import })
+            if (tab == 0) FundsTab(
+                ui, onOpen = { sheet = FundSheet.Detail(it) }, onAdd = { sheet = FundSheet.Import },
+                onRefresh = vm::refreshPrices, onToggleAuto = vm::setFundPricesAuto, onToggleNetWorth = vm::setNetWorthFunds,
+            )
             else NpsTab(
-                ui, onAddAccount = { sheet = FundSheet.Import }, onAccount = { sheet = FundSheet.NpsAccountDetail(it) },
+                ui, onToggleNetWorth = vm::setNetWorthNps, onAddAccount = { sheet = FundSheet.Import }, onAccount = { sheet = FundSheet.NpsAccountDetail(it) },
                 onAddScheme = { sheet = FundSheet.SchemeEdit(null, it.id) }, onScheme = { sheet = FundSheet.Detail(it) },
             )
         }
@@ -156,9 +162,14 @@ fun MutualFundsScreen(vm: ManageViewModel, onBack: () -> Unit) {
                 FundDetailSheet(
                     cur, ui.nowMs, ui.zone,
                     onEdit = { sheet = if (cur.isNps) FundSheet.SchemeEdit(cur, cur.groupId) else FundSheet.Edit(cur) },
+                    onLink = { sheet = FundSheet.Pick(cur) },
                     onDelete = { vm.deleteFund(cur.id); sheet = FundSheet.None }, onClose = { sheet = FundSheet.None },
                 )
             }
+            is FundSheet.Pick -> FundPickSheet(
+                s.f, load = vm::priceCandidates,
+                onPick = { scheme -> vm.linkFund(s.f, scheme); sheet = FundSheet.None }, onClose = { sheet = FundSheet.Detail(s.f) },
+            )
             is FundSheet.Edit -> FundEditSheet(s.f, ui.nowMs, ui.zone, { vm.saveFund(it); sheet = FundSheet.None }, { sheet = FundSheet.None })
             is FundSheet.SchemeEdit -> SchemeEditSheet(s.f, s.groupId, ui.nowMs, ui.zone, { vm.saveFund(it); sheet = FundSheet.None }, { sheet = FundSheet.None })
             is FundSheet.NpsAccountEdit -> NpsAccountEditSheet(s.a, ui.nowMs, ui.zone, { vm.saveNps(it); sheet = FundSheet.None }, { sheet = FundSheet.None })
@@ -192,7 +203,9 @@ fun MutualFundsScreen(vm: ManageViewModel, onBack: () -> Unit) {
 }
 
 @Composable
-private fun FundsTab(ui: ManageUi, onOpen: (MutualFund) -> Unit, onAdd: () -> Unit) {
+private fun FundsTab(
+    ui: ManageUi, onOpen: (MutualFund) -> Unit, onAdd: () -> Unit, onRefresh: () -> Unit, onToggleAuto: (Boolean) -> Unit, onToggleNetWorth: (Boolean) -> Unit,
+) {
     val c = ChittaTheme.colors
     val totals = MutualFunds.totals(ui.funds)
     val stampedIds = ui.funds.filter { MutualFunds.isStale(it, ui.nowMs, ui.zone) }.take(2).map { it.id }.toSet()
@@ -207,7 +220,13 @@ private fun FundsTab(ui: ManageUi, onOpen: (MutualFund) -> Unit, onAdd: () -> Un
                 if (totals.priced > 0) AmountText(totals.value, style = ChittaTheme.type.amountHero, alwaysShowPaise = true)
                 else Text("No price yet", style = ChittaTheme.type.title, color = c.inkMuted)
                 Text(
-                    totals.priceDate?.let { "Price as of ${priceDateText(it)}" } ?: "Import your statement for prices. The daily price fetch is not built yet.",
+                    totals.priceDate?.let { "Price as of ${priceDateText(it)}" } ?: "No price yet. Refresh prices, or import your statement.",
+                    style = ChittaTheme.type.label, color = c.inkMuted,
+                )
+                ui.priceStatus.note?.let { Text(it, style = ChittaTheme.type.label, color = c.inkMuted) }
+                val unlinked = ui.funds.count { it.schemeCode.isBlank() }
+                if (ui.priceStatus.okMs > 0 && unlinked > 0) Text(
+                    "$unlinked ${if (unlinked == 1) "fund is" else "funds are"} not linked to a price scheme and ${if (unlinked == 1) "keeps" else "keep"} the statement price. Open one to choose its scheme.",
                     style = ChittaTheme.type.label, color = c.inkMuted,
                 )
                 if (totals.priced in 1 until totals.count) Text("${totals.unpriced} of ${totals.count} funds have no price and are left out.", style = ChittaTheme.type.label, color = c.inkMuted)
@@ -221,6 +240,11 @@ private fun FundsTab(ui: ManageUi, onOpen: (MutualFund) -> Unit, onAdd: () -> Un
                     )
                 } else if (totals.priced > 0) Text("No gain to show: no fund with a price has an average price.", style = ChittaTheme.type.label, color = c.inkMuted)
                 Spacer(Modifier.height(Dimens.Gap3))
+                ChittaButton(if (ui.pricesRunning) "Fetching prices…" else "Refresh prices", onRefresh, style = ButtonStyle.Quiet, enabled = !ui.pricesRunning)
+                ValueRow("Update prices daily", if (ui.pricesAuto) "On" else "Off", onClick = { onToggleAuto(!ui.pricesAuto) })
+                ValueRow("Count in Net worth", if (ui.nwFunds) "On" else "Off", onClick = { onToggleNetWorth(!ui.nwFunds) })
+                Text("Prices come from AMFI's public file once a day. Nothing about you is sent.", style = ChittaTheme.type.label, color = c.inkMuted)
+                Spacer(Modifier.height(Dimens.Gap3))
                 HairlineRule()
             }
             items(ui.funds, key = { it.id }) { f -> FundRow(f, ui.nowMs, ui.zone, f.id in stampedIds) { onOpen(f) } }
@@ -229,7 +253,7 @@ private fun FundsTab(ui: ManageUi, onOpen: (MutualFund) -> Unit, onAdd: () -> Un
 }
 
 @Composable
-private fun NpsTab(ui: ManageUi, onAddAccount: () -> Unit, onAccount: (NpsAccount) -> Unit, onAddScheme: (NpsAccount) -> Unit, onScheme: (MutualFund) -> Unit) {
+private fun NpsTab(ui: ManageUi, onToggleNetWorth: (Boolean) -> Unit, onAddAccount: () -> Unit, onAccount: (NpsAccount) -> Unit, onAddScheme: (NpsAccount) -> Unit, onScheme: (MutualFund) -> Unit) {
     val c = ChittaTheme.colors
     LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = 140.dp)) {
         if (ui.loading) item { LoadingPlaceholder() }
@@ -263,7 +287,14 @@ private fun NpsTab(ui: ManageUi, onAddAccount: () -> Unit, onAccount: (NpsAccoun
                 Text("No schemes yet. Add one.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2))
             }
             items(schemes, key = { it.id }) { f -> FundRow(f, ui.nowMs, ui.zone, stamp = false) { onScheme(f) } }
-            item(key = "nps-gap-" + acc.id) { Spacer(Modifier.height(Dimens.SectionGap)) }
+            item(key = "nps-gap-" + acc.id) {
+                Spacer(Modifier.height(Dimens.SectionGap))
+                if (acc.id == ui.nps.last().id) {
+                    ValueRow("Count in Net worth", if (ui.nwNps) "On" else "Off", onClick = { onToggleNetWorth(!ui.nwNps) })
+                    Text("NPS is its own line in Net worth, never added into mutual funds. Its price comes from your statement.", style = ChittaTheme.type.label, color = c.inkMuted)
+                    Spacer(Modifier.height(Dimens.SectionGap))
+                }
+            }
         }
     }
 }
@@ -277,6 +308,7 @@ private fun FundRow(f: MutualFund, nowMs: Long, zone: ZoneId, stamp: Boolean, on
             Text(f.name, style = ChittaTheme.type.title, color = c.ink)
             Text(if (f.isNps) schemeLine(f) else fundLine(f, nowMs, zone), style = ChittaTheme.type.label, color = c.inkMuted)
             if (!f.isNps && f.investedPaise == null) Text("No average price", style = ChittaTheme.type.label, color = c.inkMuted)
+            if (MutualFunds.hasEstimate(f)) Text("Includes ${plainDecimal(MutualFunds.sipUnits(f))} SIP units, estimated", style = ChittaTheme.type.label, color = c.inkMuted)
             if (stamp) Stamp("Stale")
         }
         if (value != null) AmountText(value, alwaysShowPaise = true) else Text("No price yet", style = ChittaTheme.type.label, color = c.inkMuted)
@@ -372,7 +404,7 @@ private fun NpsPreviewSheet(plan: NpsPlan, reading: NpsReading.Ready, onConfirm:
 }
 
 @Composable
-private fun FundDetailSheet(f: MutualFund, nowMs: Long, zone: ZoneId, onEdit: () -> Unit, onDelete: () -> Unit, onClose: () -> Unit) {
+private fun FundDetailSheet(f: MutualFund, nowMs: Long, zone: ZoneId, onEdit: () -> Unit, onLink: () -> Unit, onDelete: () -> Unit, onClose: () -> Unit) {
     val c = ChittaTheme.colors
     var confirmDelete by remember { mutableStateOf(false) }
     val value = MutualFunds.value(f)
@@ -389,14 +421,26 @@ private fun FundDetailSheet(f: MutualFund, nowMs: Long, zone: ZoneId, onEdit: ()
             ValueRow("Put in", f.investedPaise?.let { maskedRupees(Paise(it)) } ?: "No average price")
             ValueRow("Gain", gain?.let { (if (it.value > 0) "+" else "") + maskedRupees(it) } ?: if (value == null) "Needs a price" else "Needs an average price")
             ValueRow("Units from", sourceName(f.source))
+            ValueRow("Price from", if (f.schemeCode.isNotBlank()) "AMFI scheme ${f.schemeCode}" else "Not linked: statement or typed price")
+            val sipAmount = f.sipAmountPaise; val sipDay = f.sipDay
+            if (sipAmount != null && sipDay != null) ValueRow("Monthly SIP", "${maskedRupees(Paise(sipAmount))} on day $sipDay")
+            if (MutualFunds.hasEstimate(f)) ValueRow("Estimated SIP units", "${plainDecimal(MutualFunds.sipUnits(f))} from ${f.sipCount} ${if (f.sipCount == 1) "instalment" else "instalments"}")
         }
         ValueRow("Units as of", dateText(f.unitsAsOfMs, zone))
         if (f.folio.isNotBlank()) ValueRow("Folio", f.folio)
         if (f.isin.isNotBlank()) ValueRow("ISIN", f.isin)
         if (f.note.isNotBlank()) ValueRow("Note", f.note)
-        Text("Value is units times the latest price. Units change only when you type or import them.", style = ChittaTheme.type.label, color = c.inkMuted)
+        Text(
+            if (f.isNps) "Value is units times the latest price. Units change only when you type or import them."
+            else "Value is units times the latest price. Units change only when you type or import them; SIP instalments are estimated until your next statement.",
+            style = ChittaTheme.type.label, color = c.inkMuted,
+        )
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton("Edit", onEdit)
+        if (!f.isNps && f.schemeCode.isBlank()) {
+            ChittaButton("Choose the matching scheme", onLink)
+            Spacer(Modifier.height(Dimens.Gap2))
+        }
+        ChittaButton("Edit", onEdit, style = if (!f.isNps && f.schemeCode.isBlank()) ButtonStyle.Quiet else ButtonStyle.Primary)
         Spacer(Modifier.height(Dimens.Gap2))
         ChittaButton("Delete", { confirmDelete = true }, style = ButtonStyle.Quiet)
     }
@@ -406,7 +450,7 @@ private fun FundDetailSheet(f: MutualFund, nowMs: Long, zone: ZoneId, onEdit: ()
     )
 }
 
-private enum class FundField { Name, Isin, Units, Average, Price, Note }
+private enum class FundField { Name, Isin, Units, Average, Price, Note, SipAmount, SipDay }
 
 private fun plainDecimal(d: BigDecimal): String = d.stripTrailingZeros().toPlainString()
 
@@ -430,6 +474,9 @@ private fun FundEditSheet(existing: MutualFund?, nowMs: Long, zone: ZoneId, onSa
     }
     var asOf by remember { mutableStateOf(existing?.unitsAsOfMs ?: today) }
     var note by remember { mutableStateOf(existing?.note ?: "") }
+    // Optional monthly SIP (Phase 8d): the amount is typed in rupees and kept in paise.
+    var sipAmount by remember { mutableStateOf(existing?.sipAmountPaise?.let { plainDecimal(BigDecimal(it).movePointLeft(2)) } ?: "") }
+    var sipDay by remember { mutableStateOf(existing?.sipDay?.toString() ?: "") }
     var editing by remember { mutableStateOf<FundField?>(null) }
     var problem by remember { mutableStateOf<String?>(null) }
 
@@ -442,28 +489,41 @@ private fun FundEditSheet(existing: MutualFund?, nowMs: Long, zone: ZoneId, onSa
         ValueRow("Units", units.ifBlank { "not set" }, onClick = { editing = FundField.Units })
         ValueRow("Average price per unit", average.ifBlank { "none" }, onClick = { editing = FundField.Average })
         ValueRow("Units as of", dateText(asOf, zone), onClick = { pickDate(context, asOf, zone, { asOf = Periods.startOfDay(Periods.date(it, zone), zone) }) })
+        ValueRow("Monthly SIP amount", sipAmount.ifBlank { "none" }, onClick = { editing = FundField.SipAmount })
+        ValueRow("SIP day of the month", sipDay.ifBlank { "none" }, onClick = { editing = FundField.SipDay })
         ValueRow("Note", note.ifBlank { "none" }, onClick = { editing = FundField.Note })
-        Text("The ISIN lets the price match later. It is on your statement, in 12 characters.", style = ChittaTheme.type.label, color = c.inkMuted)
+        Text("The ISIN lets the price match. It is on your statement, in 12 characters. A SIP adds estimated units, labelled estimated, until the next statement replaces them.", style = ChittaTheme.type.label, color = c.inkMuted)
         problem?.let { Text(it, style = ChittaTheme.type.label, color = c.warningText) }
         Spacer(Modifier.height(Dimens.Gap4))
         ChittaButton("Save", {
             val u = units.trim().toBigDecimalOrNull()
             val avg = if (average.isBlank()) null else average.trim().toBigDecimalOrNull()
             val code = isin.trim().uppercase()
+            val sipRupees = if (sipAmount.isBlank()) null else sipAmount.trim().toBigDecimalOrNull()
+            val sipDayNumber = if (sipDay.isBlank()) null else sipDay.trim().toIntOrNull()
             problem = when {
                 name.isBlank() -> "Enter the fund's name."
+                (sipAmount.isBlank()) != (sipDay.isBlank()) -> "Enter both the SIP amount and its day, or leave both empty."
+                sipAmount.isNotBlank() && (sipRupees == null || sipRupees.signum() <= 0 || sipRupees.scale() > 2) -> "Enter the SIP amount in rupees, above zero, up to 2 decimal places."
+                sipDay.isNotBlank() && (sipDayNumber == null || !Sip.isValidDay(sipDayNumber)) -> "Enter the SIP day as a number from 1 to 31."
                 u == null || u.signum() <= 0 || u.scale() > 3 -> "Enter the units as a number above zero, up to 3 decimal places."
                 average.isNotBlank() && (avg == null || avg.signum() <= 0) -> "Enter the average price as a number above zero, or leave it empty."
                 code.isNotEmpty() && !MutualFunds.isIsinShape(code) -> "An ISIN has 12 characters, such as INF846K01DP8. Leave it empty if you do not have it."
                 else -> null
             }
-            if (problem == null) onSave(
-                MutualFund(
-                    existing?.id ?: "", name.trim(), code, existing?.schemeCode ?: "", plainDecimal(u!!),
-                    avg?.let { MutualFunds.investedFrom(u, it) }, existing?.source ?: MutualFund.SOURCE_MANUAL, asOf, existing?.navText, existing?.navDate, note.trim(), null,
-                    existing?.folio ?: "", "",
-                ),
-            )
+            if (problem == null) {
+                val base = existing ?: MutualFund(
+                    id = "", name = "", isin = "", schemeCode = "", units = "0", investedPaise = null, source = MutualFund.SOURCE_MANUAL,
+                    unitsAsOfMs = asOf, navText = null, navDate = null, note = "", updatedAtMs = null,
+                )
+                onSave(
+                    base.copy(
+                        name = name.trim(), isin = code, units = plainDecimal(u!!), investedPaise = avg?.let { MutualFunds.investedFrom(u, it) },
+                        unitsAsOfMs = asOf, note = note.trim(),
+                        sipAmountPaise = sipRupees?.movePointRight(2)?.longValueExact(), sipDay = sipDayNumber,
+                    ),
+                )
+            }
         }, confirmHaptic = true)
         Spacer(Modifier.height(Dimens.Gap2))
         ChittaButton("Close", onClose, style = ButtonStyle.Quiet)
@@ -475,7 +535,48 @@ private fun FundEditSheet(existing: MutualFund?, nowMs: Long, zone: ZoneId, onSa
         FundField.Units -> TextSheet("Units", "Units held, for example 125.432", units, { units = it; problem = null; editing = null }, { editing = null }, numeric = true)
         FundField.Average -> TextSheet("Average price per unit", "Rupees per unit (empty if you do not know)", average, { average = it; problem = null; editing = null }, { editing = null }, numeric = true)
         FundField.Note -> TextSheet("Note", "Anything to remember (empty to clear)", note, { note = it; editing = null }, { editing = null }, singleLine = false)
+        FundField.SipAmount -> TextSheet("Monthly SIP amount", "Rupees taken each month (empty for no SIP)", sipAmount, { sipAmount = it; problem = null; editing = null }, { editing = null }, numeric = true)
+        FundField.SipDay -> TextSheet("SIP day of the month", "1 to 31 (a month without that day uses its last day)", sipDay, { sipDay = it; problem = null; editing = null }, { editing = null }, numeric = true)
         FundField.Price, null -> Unit
+    }
+}
+
+/**
+ * Choose which AMFI scheme a fund is (Phase 8d). Offered when the name left more than one scheme, or none was sure. Nothing is guessed: the
+ * list comes from the saved price file, the choice is saved on the fund as its scheme code, and the fund is not asked about again.
+ */
+@Composable
+private fun FundPickSheet(fund: MutualFund, load: suspend (MutualFund) -> List<AmfiScheme>, onPick: (AmfiScheme) -> Unit, onClose: () -> Unit) {
+    val c = ChittaTheme.colors
+    var list by remember { mutableStateOf<List<AmfiScheme>?>(null) }
+    LaunchedEffect(fund.id) { list = load(fund) }
+    BottomOverlay(onClose) {
+        Text("Which scheme is this?", style = ChittaTheme.type.title, color = c.ink)
+        Text(fund.name, style = ChittaTheme.type.label, color = c.inkMuted)
+        Spacer(Modifier.height(Dimens.Gap2))
+        HairlineRule()
+        val l = list
+        when {
+            l == null -> Text("Looking…", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap3))
+            l.isEmpty() -> Text(
+                "Nothing in the price file looks like this fund yet. Refresh prices first, or type its ISIN when you edit the fund.",
+                style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap3),
+            )
+            else -> l.forEach { s ->
+                Column(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(onClick = { onPick(s) }).padding(vertical = Dimens.Gap2)) {
+                    Text(s.name, style = ChittaTheme.type.body, color = c.ink)
+                    Text(
+                        listOf(s.plan, s.option).filter { it.isNotBlank() }.joinToString(" · ") + " · ₹${s.nav.stripTrailingZeros().toPlainString()} on ${priceDateText(s.date.toString())}",
+                        style = ChittaTheme.type.label, color = c.inkMuted,
+                    )
+                    if (s.isins.isNotEmpty()) Text("ISIN ${s.isins.first()} · code ${s.code}", style = ChittaTheme.type.label, color = c.inkMuted)
+                }
+                HairlineRule()
+            }
+        }
+        Text("Your choice is saved on the fund, so you are not asked again.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
+        Spacer(Modifier.height(Dimens.Gap3))
+        ChittaButton("Close", onClose, style = ButtonStyle.Quiet)
     }
 }
 

@@ -309,6 +309,12 @@ data class MutualFundEntity(
     val updatedAtMs: Long?,
     val folio: String,
     val groupId: String,
+    val sipAmountPaise: Long?,
+    val sipDay: Int?,
+    val sipUnits: String,
+    val sipInvestedPaise: Long,
+    val sipCount: Int,
+    val sipThrough: String,
 )
 
 /** An NPS account. Its schemes are mutual_fund rows with groupId = id. */
