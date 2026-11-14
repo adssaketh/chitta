@@ -1,5 +1,8 @@
 # Changelog
 
+## Home fix (14 Nov 2026) - on `main`
+- With the cash check leading, Home keeps the budget ring, per day, range and month rule under it, headed with the budget name (D187). "1 day" instead of "1 days".
+
 ## Release rename to Paddhu Pusthakam 6.0.0 (14 Nov 2026) - on `main`
 - The app is now Paddhu Pusthakam: application ID `com.mansaketh.paddhupusthakam` (the old Flutter app's ID), label, launcher name, lock screen title, messages and backup file names. Version name 6.0.0, version code 600 (old app: 5.4.15, code 449). The release is signed with the Paddhu keystore, so it installs over the old app as an update.
 - Old launcher icon files (adaptive and monochrome) copied from the Paddhu repo.

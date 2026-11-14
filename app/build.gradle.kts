@@ -14,8 +14,8 @@ android {
         applicationId = "com.mansaketh.paddhupusthakam"
         minSdk = 26
         targetSdk = 36
-        versionCode = 600
-        versionName = "6.0.0"
+        versionCode = 601
+        versionName = "6.0.1"
         // arm64 only (master section 8). There is no native code yet, so this is a guard for later.
         ndk { abiFilters += "arm64-v8a" }
         // The web client of Firebase project cashew-saketh (type 3 in the old google-services.json). A public id, not a secret.

@@ -105,7 +105,13 @@ fun HomeScreen(
                     modifier = Modifier.heightIn(min = Dimens.TouchTarget).clickable(role = Role.Button) { sheet = "explain" }.wrapContentHeight(Alignment.CenterVertically),
                 )
 
-                if (hero != null && choice.hero == Hero.SafeToSpend) {
+                // The budget block (ring, per day, range, month line) stays under the cash check, named, so one budget never passes for all your money (D187).
+                if (hero != null) {
+                    if (choice.hero == Hero.CashCheck) {
+                        Spacer(Modifier.height(Dimens.SectionGap))
+                        HairlineRule()
+                        Text(hero.budget.name + " budget", style = ChittaTheme.type.labelMedium, color = c.ink, modifier = Modifier.padding(top = Dimens.Gap3))
+                    }
                     Spacer(Modifier.height(Dimens.Gap3))
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.Gap6)) {
                         BudgetRing(hero.ring, diameter = 120.dp)
@@ -118,16 +124,16 @@ fun HomeScreen(
                             val pd = hero.perDay
                             if (pd != null) AmountText(pd, style = ChittaTheme.type.amountLarge, roundToRupee = true)
                             else Text("None", style = ChittaTheme.type.amountLarge, color = c.ink)
-                            Text("for the ${hero.summary.daysLeft} days left", style = ChittaTheme.type.label, color = c.inkMuted)
+                            Text(if (hero.summary.daysLeft == 1) "for the 1 day left" else "for the ${hero.summary.daysLeft} days left", style = ChittaTheme.type.label, color = c.inkMuted)
                         }
                         Column(Modifier.weight(1f)) {
                             Text("Range", style = ChittaTheme.type.label, color = c.inkMuted)
                             when (val r = hero.range) {
-                                is RangeResult.Days -> Text("${r.days} days", style = ChittaTheme.type.amountLarge, color = c.ink)
+                                is RangeResult.Days -> Text(if (r.days == 1) "1 day" else "${r.days} days", style = ChittaTheme.type.amountLarge, color = c.ink)
                                 RangeResult.NotEnoughData -> Text("Not enough data yet", style = ChittaTheme.type.body, color = c.inkMuted)
                                 RangeResult.NoSpending -> Text("No spending yet", style = ChittaTheme.type.body, color = c.inkMuted)
                             }
-                            hero.rangeShortDays?.let { Text("$it days short of the month end", style = ChittaTheme.type.label, color = c.warningText) }
+                            hero.rangeShortDays?.let { Text(if (it == 1) "1 day short of the month end" else "$it days short of the month end", style = ChittaTheme.type.label, color = c.warningText) }
                         }
                     }
                     Spacer(Modifier.height(Dimens.SectionGap))
