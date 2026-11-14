@@ -54,7 +54,7 @@ fun LockScreen(onUnlock: () -> Unit, message: String? = null) {
         Modifier.fillMaxSize().background(c.background).statusBarsPadding().navigationBarsPadding().padding(Dimens.Margin),
         verticalArrangement = Arrangement.Center,
     ) {
-        Text("Chitta", style = ChittaTheme.type.headline, color = c.ink)
+        Text("Paddhu Pusthakam", style = ChittaTheme.type.headline, color = c.ink)
         Spacer(Modifier.height(Dimens.Gap3))
         Text(message ?: "Your book is locked.", style = ChittaTheme.type.body, color = c.inkMuted)
         Spacer(Modifier.height(Dimens.Gap6))

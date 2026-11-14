@@ -289,7 +289,7 @@ class IntakeStore @Inject constructor(
         fun writeToInbox(context: Context, text: String) = synchronized(inboxLock) {
             val dir = inboxDir(context)
             if (!dir.isDirectory && !dir.mkdirs()) error("could not create the inbox folder")
-            if ((dir.list()?.size ?: 0) >= PingContract.MAX_INBOX_FILES) error("the inbox is full, open Chitta to empty it")
+            if ((dir.list()?.size ?: 0) >= PingContract.MAX_INBOX_FILES) error("the inbox is full, open Paddhu Pusthakam to empty it")
             val name = "${System.currentTimeMillis()}-${counter.incrementAndGet()}-${Integer.toHexString(text.hashCode())}"
             val tmp = File(dir, "$name.tmp")
             val done = File(dir, "$name.json")

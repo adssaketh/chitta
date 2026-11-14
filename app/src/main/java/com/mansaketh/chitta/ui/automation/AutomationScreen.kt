@@ -46,12 +46,12 @@ fun AutomationScreen(vm: AutomationViewModel, onBack: () -> Unit) {
                 ValueRow("Background add", if (ui.secretSet) "On" else "Off", onClick = { sheet = if (ui.secretSet) AutoSheet.ConfirmNew else AutoSheet.NewSecret(vm.newSecret()) })
                 if (ui.secretSet) ValueRow("Turn background add off", "", onClick = { vm.turnOffReceiver() })
                 Text(
-                    "Another app (Tasker, a shortcut) can add an entry without opening Chitta, but only if it sends your secret. The entry needs an amount, one of your accounts and one of your categories, or it is refused with a notice. " +
+                    "Another app (Tasker, a shortcut) can add an entry without opening Paddhu Pusthakam, but only if it sends your secret. The entry needs an amount, one of your accounts and one of your categories, or it is refused with a notice. " +
                         "Every add shows a notice with Undo for 10 seconds. Transfers cannot be added this way. Making a new secret stops the old one at once.",
                     style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2),
                 )
                 Text(
-                    "Bank messages come from Ping, and payment screenshots from your UPI apps are read in Bank messages and UPI, so Chitta does not read notifications.",
+                    "Bank messages come from Ping, and payment screenshots from your UPI apps are read in Bank messages and UPI, so Paddhu Pusthakam does not read notifications.",
                     style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2),
                 )
             }

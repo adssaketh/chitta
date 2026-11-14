@@ -18,10 +18,10 @@ object CloudBackups {
     /** The newest this many Chitta backups stay in Drive (master section 7: "keep latest 20"). */
     const val KEEP = 20
 
-    private val NAME = Regex("^chitta-(\\d+)\\.db$")
+    private val NAME = Regex("^(?:paddhu-pusthakam|chitta)-(\\d+)\\.db$") // "chitta-" names were made by test builds before the rename
 
     /** The name of a backup made at [atMs]. The time is in the name so the list is right even if Drive's own dates change. */
-    fun fileName(atMs: Long) = "chitta-$atMs.db"
+    fun fileName(atMs: Long) = "paddhu-pusthakam-$atMs.db"
 
     /** The backup this file is, or null for any other file (a Paddhu backup, a stray file). */
     fun parse(file: DriveFile): CloudBackup? {

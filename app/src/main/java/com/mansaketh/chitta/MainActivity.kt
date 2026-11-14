@@ -64,7 +64,7 @@ class MainActivity : FragmentActivity() {
     }
 
     private fun askToUnlock() {
-        BiometricGate.prompt(this, "Unlock Chitta", null, onSuccess = { appLock.unlocked() })
+        BiometricGate.prompt(this, "Unlock Paddhu Pusthakam", null, onSuccess = { appLock.unlocked() })
     }
 
     /** The share receiver opens this screen with a note of what arrived (bank messages, or a payment screenshot, PDF or CSV). */

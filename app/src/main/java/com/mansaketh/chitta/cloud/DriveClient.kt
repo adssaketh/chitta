@@ -45,14 +45,14 @@ object DriveJson {
 
     /** Plain words for a failed call, from the status and Drive's own error text. */
     fun explain(code: Int, body: String): String = when {
-        code == 401 -> "Google no longer accepts Chitta's Drive access. Try again."
+        code == 401 -> "Google no longer accepts Paddhu Pusthakam's Drive access. Try again."
         code == 403 && (body.contains("accessNotConfigured") || body.contains("SERVICE_DISABLED") || body.contains("has not been used")) ->
             "The Google Drive API is switched off for this Google Cloud project. Turn it on in the Cloud console, then try again."
         code == 403 && body.contains("storageQuotaExceeded") ->
             "Your Google Drive is full, so the backup was not saved."
         code == 403 -> "Google refused the Drive request."
         code == 404 -> "That backup is no longer in Drive."
-        code == 429 -> "Google asked Chitta to wait. It will try again later."
+        code == 429 -> "Google asked Paddhu Pusthakam to wait. It will try again later."
         code >= 500 -> "Google Drive had a problem. It will try again later."
         else -> "Drive answered with an error ($code)."
     }

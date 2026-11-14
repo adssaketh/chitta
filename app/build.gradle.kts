@@ -10,11 +10,12 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.mansaketh.chitta"
+        // The release takes the old Paddhu Pusthakam id and signing key, so it installs as an update (master section 10, D181). The source package stays com.mansaketh.chitta.
+        applicationId = "com.mansaketh.paddhupusthakam"
         minSdk = 26
         targetSdk = 36
-        versionCode = 9
-        versionName = "0.9.0-phase9a"
+        versionCode = 600
+        versionName = "6.0.0"
         // arm64 only (master section 8). There is no native code yet, so this is a guard for later.
         ndk { abiFilters += "arm64-v8a" }
         // The web client of Firebase project cashew-saketh (type 3 in the old google-services.json). A public id, not a secret.
@@ -38,7 +39,7 @@ android {
 
     buildTypes {
         debug {
-            // Installs next to the release build, and next to Paddhu Pusthakam (com.mansaketh.paddhupusthakam).
+            // Installs next to the release build (com.mansaketh.paddhupusthakam.debug). It cannot sign in to Google: its key is not registered.
             applicationIdSuffix = ".debug"
         }
         release {

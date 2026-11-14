@@ -40,7 +40,7 @@ class GoogleAccount @Inject constructor(
             val isGoogle = credential is CustomCredential &&
                 (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL ||
                     credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_SIWG_CREDENTIAL)
-            if (!isGoogle) return SignInResult.Failed("Google sent back something Chitta does not read. Nothing was changed.")
+            if (!isGoogle) return SignInResult.Failed("Google sent back something Paddhu Pusthakam does not read. Nothing was changed.")
             val google = GoogleIdTokenCredential.createFrom((credential as CustomCredential).data)
             // For a Google credential the id is the account's email address.
             val email = google.id.ifBlank { return SignInResult.Failed("Google did not say which account this is.") }

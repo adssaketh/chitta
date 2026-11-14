@@ -82,7 +82,7 @@ private fun FirstRun(vms: AppViewModels) {
         return
     }
     Column(Modifier.fillMaxSize().padding(Dimens.Margin).navigationBarsPadding(), verticalArrangement = Arrangement.Center) {
-        Text("Chitta", style = ChittaTheme.type.headline, color = c.ink)
+        Text("Paddhu Pusthakam", style = ChittaTheme.type.headline, color = c.ink)
         Spacer(Modifier.height(Dimens.Gap3))
         Text("Start with an empty book, or bring over your book from Paddhu Pusthakam.", style = ChittaTheme.type.body, color = c.ink)
         Spacer(Modifier.height(Dimens.Gap4))

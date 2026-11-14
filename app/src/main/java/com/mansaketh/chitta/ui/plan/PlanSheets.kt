@@ -96,7 +96,7 @@ fun BudgetSheet(existing: Budget?, ui: PlanUi, onSave: (BudgetForm) -> Unit, onD
                     ValueRow("Carry over what is left", if (rollover) "On" else "Off", onClick = { rollover = !rollover })
                     Text("On: money left unspent is added to the next period, and an overspend is taken off it. Starts from this budget's first period.", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted, modifier = Modifier.padding(top = Dimens.Gap1))
                 }
-                if (existing?.addedTransactionsOnly == true) Text("This was an \"added only\" budget in Paddhu Pusthakam. Chitta cannot tell which entries were added to it, so it counts every matching entry.", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
+                if (existing?.addedTransactionsOnly == true) Text("This was an \"added only\" budget in the old Paddhu Pusthakam app. This app cannot tell which entries were added to it, so it counts every matching entry.", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
                 Spacer(Modifier.height(Dimens.Gap4))
                 ChittaButton("Save", {
                     val p = AmountExpression.evaluate(amount)
@@ -326,7 +326,7 @@ fun ReminderSheet(s: ReminderSettings, autoPay: Boolean, paidOnDue: Boolean, ask
             Text("Bills and reminders", style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
             Spacer(Modifier.height(Dimens.Gap3))
             if (!allowed && (s.dueBills || s.logReminder)) {
-                Text("Chitta is not allowed to show notifications, so these reminders will stay silent. You can allow them in Android settings.", style = ChittaTheme.type.body, color = ChittaTheme.colors.warningText)
+                Text("Paddhu Pusthakam is not allowed to show notifications, so these reminders will stay silent. You can allow them in Android settings.", style = ChittaTheme.type.body, color = ChittaTheme.colors.warningText)
                 Spacer(Modifier.height(Dimens.Gap2))
                 ChittaButton("Open notification settings", { context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)) }, style = ButtonStyle.Quiet)
                 Spacer(Modifier.height(Dimens.Gap2))

@@ -48,7 +48,7 @@ class DriveAuthorizer @Inject constructor(
             .setAccount(Account(email, "com.google"))
             .build()
         return try { toResult(client.authorize(request).await()) } catch (e: Exception) {
-            TokenResult.Failed("Google would not give Chitta access to Drive (${e.javaClass.simpleName}). Nothing was changed.")
+            TokenResult.Failed("Google would not give Paddhu Pusthakam access to Drive (${e.javaClass.simpleName}). Nothing was changed.")
         }
     }
 

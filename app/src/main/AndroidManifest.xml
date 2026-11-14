@@ -5,14 +5,16 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <queries>
-        <!-- "View SMS in Ping" and Ping's logos: without this Android 11+ hides Ping from Chitta -->
+        <!-- "View SMS in Ping" and Ping's logos: without this Android 11+ hides Ping from the app -->
         <package android:name="com.ping.sms" />
     </queries>
 
     <application
         android:name=".ChittaApp"
         android:allowBackup="false"
-        android:label="Chitta"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="Paddhu Pusthakam"
         android:supportsRtl="false"
         android:theme="@style/Theme.Chitta">
         <activity
@@ -60,7 +62,7 @@
             <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
         </service>
 
-        <!-- A payment screenshot, statement PDF/CSV or Ping file shared to Chitta. Has no screen: it keeps a copy and opens the review list. -->
+        <!-- A payment screenshot, statement PDF/CSV or Ping file shared to Paddhu Pusthakam. Has no screen: it keeps a copy and opens the review list. -->
         <activity
             android:name=".intake.ShareReceiverActivity"
             android:exported="true"
@@ -84,9 +86,9 @@
         </activity>
 
         <!--
-          Ping starts the receiver by this exact name (contract/ping-paddhu/SPEC.md section 4). The name belongs to the final release package
-          (Paddhu Pusthakam), so Ping reaches the app only after the application id is renamed at release; until then Chitta is tested with
-          sample files (DECISIONS D76). It carries no intent filters of its own, so the share sheet shows Chitta once.
+          Ping starts the receiver by this exact name (contract/ping-paddhu/SPEC.md section 4). Since the application id is now
+          com.mansaketh.paddhupusthakam (D181), this name is Ping's real target. Do not change it. It carries no intent filters of its own,
+          so the share sheet shows the app once.
         -->
         <activity-alias
             android:name="com.mansaketh.paddhupusthakam.ShareReceiverActivity"

@@ -18,16 +18,18 @@ class CloudBackupsTest {
     @Test fun nameRoundTripsAndIsReadBack() {
         val ms = at(KOLKATA, 2026, 11, 14, 10, 57)
         val name = CloudBackups.fileName(ms)
-        assertEquals("chitta-$ms.db", name)
+        assertEquals("paddhu-pusthakam-$ms.db", name)
         val parsed = assertNotNull(CloudBackups.parse(DriveFile("a", name, 5, 0)))
         assertEquals(ms, parsed.createdAtMs)
     }
 
     @Test fun otherFilesAreNotBackups() {
-        listOf("cashew-2026-11-01.sqlite", "chitta-.db", "chitta-12x.db", "chitta-12.db.bak", "Chitta-12.db", "rp-auto-12.db", "").forEach {
-            assertNull(CloudBackups.parse(DriveFile("a", it, 5, 0)), "'$it' must not count as a Chitta backup")
+        listOf("cashew-2026-11-01.sqlite", "chitta-.db", "chitta-12x.db", "chitta-12.db.bak", "Chitta-12.db", "paddhu-pusthakam-.db", "paddhu-pusthakam-1x.db", "Paddhu-Pusthakam-12.db", "rp-auto-12.db", "").forEach {
+            assertNull(CloudBackups.parse(DriveFile("a", it, 5, 0)), "'$it' must not count as a backup")
         }
+        // Test builds before the rename made "chitta-" names; they stay listed and restorable.
         assertNotNull(CloudBackups.parse(DriveFile("a", "chitta-0.db", 5, 0)))
+        assertNotNull(CloudBackups.parse(DriveFile("a", "paddhu-pusthakam-0.db", 5, 0)))
     }
 
     @Test fun backupsAreNewestFirstAndOthersAreKeptApart() {

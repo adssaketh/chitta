@@ -149,7 +149,7 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
         )
         "csv-range" -> ChoiceSheet(
             "Export which dates?", ExportRange.entries.map { Choice(it.label, it) },
-            { csvRange = it; sheet = null; saveCsv.launch("chitta-entries-" + java.time.LocalDate.now(zone) + ".csv") }, { sheet = null },
+            { csvRange = it; sheet = null; saveCsv.launch("paddhu-pusthakam-entries-" + java.time.LocalDate.now(zone) + ".csv") }, { sheet = null },
         )
         "delete" -> ConfirmSheet(
             "Delete everything?",
@@ -163,7 +163,7 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
             "Replace your book with this backup?",
             listOf(
                 "The backup has ${cand.facts.accounts} accounts and ${cand.facts.entries} entries.",
-                "Your current book is saved as a restore point first. Chitta then closes; open it again to see the restored book.",
+                "Your current book is saved as a restore point first. Paddhu Pusthakam then closes; open it again to see the restored book.",
             ),
             "Restore and close", { vm.confirmCandidate { closeApp(activity) } }, { vm.clearCandidate() },
         )
@@ -186,7 +186,7 @@ fun RestorePointsScreen(vm: SettingsViewModel, onBack: () -> Unit) {
             Text(ui.notice!!, style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(horizontal = Dimens.Margin, vertical = Dimens.Gap2))
         }
         if (ui.points.isEmpty()) {
-            Text("No restore points yet. One is made each day you open Chitta, or make one in Settings.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(Dimens.Margin))
+            Text("No restore points yet. One is made each day you open Paddhu Pusthakam, or make one in Settings.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(Dimens.Margin))
         } else {
             LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 160.dp)) {
                 items(ui.points, key = { it.fileName }) { p ->
@@ -207,7 +207,7 @@ fun RestorePointsScreen(vm: SettingsViewModel, onBack: () -> Unit) {
             "Restore this point?",
             listOf(
                 "Your book goes back to how it was on ${dayAndTime(p.createdAtMs, zone)}. Anything added since is not in it.",
-                "Your current book is saved as a restore point first. Chitta then closes; open it again to see the restored book.",
+                "Your current book is saved as a restore point first. Paddhu Pusthakam then closes; open it again to see the restored book.",
             ),
             "Restore and close", { confirm = null; vm.restorePoint(p) { closeApp(activity) } }, { confirm = null },
         )

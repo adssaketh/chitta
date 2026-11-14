@@ -122,7 +122,7 @@ class FundPriceService @Inject constructor(
             try {
                 val c = URL(url).openConnection() as HttpURLConnection
                 c.connectTimeout = 15_000; c.readTimeout = 60_000
-                c.setRequestProperty("User-Agent", "Chitta")
+                c.setRequestProperty("User-Agent", "Paddhu Pusthakam")
                 try {
                     if (c.responseCode != 200) error("HTTP ${c.responseCode}")
                     // Read with a size limit by hand: InputStream.readNBytes needs Android 13, and the app supports Android 8.

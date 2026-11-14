@@ -116,7 +116,7 @@ private fun HomeStep(vm: IntakeViewModel, s: IntakeStage.Home) {
         HairlineRule()
         ValueRow("Bank messages waiting", if (pending == 0) "None" else "$pending", onClick = if (pending > 0) ({ vm.openWaiting() }) else null)
         Text(
-            "Messages Chitta is sure about are saved at once, and the Undo bar lets you take them back. A message goes here when its account is not in your list, it names no merchant, or no category fits.",
+            "Messages Paddhu Pusthakam is sure about are saved at once, and the Undo bar lets you take them back. A message goes here when its account is not in your list, it names no merchant, or no category fits.",
             style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2),
         )
 

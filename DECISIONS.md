@@ -240,3 +240,14 @@ Master section 7 lists both. Decided with the user on 13 Nov 2026: Ping already 
 | D179 | Receipt photos are not uploaded (as D152). The backup screen says so. | Your answer: keep photos on the phone. | decided |
 | D180 | `GOOGLE_WEB_CLIENT_ID` is a build setting (the web client of `cashew-saketh`, the same id as in Paddhu's `google-services.json`). It is a public identifier, not a secret, so it is in the public repo. Debug builds are `com.mansaketh.chitta.debug` and are signed with a key that changes per CI run, so Google sign-in is expected to work only in the release-signed APK. | Credential Manager needs the web client id; Google matches an Android client by package name and signing certificate. | decided |
 
+## Release rename decisions (14 Nov 2026)
+
+| # | Decision | Why | Status |
+|---|---|---|---|
+| D181 | The release application ID is `com.mansaketh.paddhupusthakam`, signed with the Paddhu keystore. The debug build is `com.mansaketh.paddhupusthakam.debug`. Version name 6.0.0, version code 600. | Master section 10: installs as an update, Ping and Firebase sign-in keep working. Android refuses an update with a lower or equal version code, and the old app was code 449 (pubspec 5.4.15+449). | decided |
+| D182 | Only what you see changes: label, launcher name, lock title, messages, file names. The Kotlin package, `chitta://` links, the background-add action `com.mansaketh.chitta.action.ADD`, database file `chitta.db`, preference file names and the repo name stay. | Your answer. Renaming the package touches every file and gives no visible gain; internal names can change later if wanted. Anyone using the action name in Tasker keeps working. | decided |
+| D183 | Your book comes across by backup file: export one in the old app, install the update, then use "Bring over your book". No automatic read of the old app's database. | Your answer. The importer is built and tested; reading another app's files in place is not. | decided |
+| D184 | New Drive backups are `paddhu-pusthakam-<ms>.db`. Names starting `chitta-` (from test builds) still count as backups, so they are listed, restorable and trimmed to the newest 20 together. | Nothing is orphaned by the rename. | decided |
+| D185 | Words that would now read as the same app twice say "the old Paddhu Pusthakam app" (import screens, "added only" budget notes). | After the update there is one app with this name; the old one is the Flutter version. | decided |
+| D186 | Ping needs no patch and the household (9b) needs no second Firebase app: the old registration (package, SHA-1, `google-services.json`) already matches. The Ping patch in the 9b plan is dropped. | Same package and same key as the old app. | decided |
+

@@ -205,7 +205,7 @@ internal fun Transaction.toRow(ui: LedgerUi, muted: androidx.compose.ui.graphics
 
 private fun copy(context: Context, text: String) {
     val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    cm.setPrimaryClip(ClipData.newPlainText("Chitta entries", text))
+    cm.setPrimaryClip(ClipData.newPlainText("Paddhu Pusthakam entries", text))
 }
 
 private fun share(context: Context, text: String) {

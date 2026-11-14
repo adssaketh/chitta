@@ -86,7 +86,7 @@ fun CloudBackupScreen(vm: CloudBackupViewModel, onBack: () -> Unit, onPaddhuFile
 
             if (ui.email == null) {
                 Text(
-                    "Sign in with Google to keep copies of your book in your own Drive. Only Chitta can open them.",
+                    "Sign in with Google to keep copies of your book in your own Drive. Only Paddhu Pusthakam can open them.",
                     style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(vertical = Dimens.Gap4),
                 )
                 ChittaButton("Sign in with Google", { activity?.let(vm::signIn) }, enabled = activity != null && !ui.busy)
@@ -149,7 +149,7 @@ fun CloudBackupScreen(vm: CloudBackupViewModel, onBack: () -> Unit, onPaddhuFile
             "Replace your book with this backup?",
             listOf(
                 "The backup has ${cand.facts.accounts} accounts and ${cand.facts.entries} entries.",
-                "Your current book is saved as a restore point first. Chitta then closes; open it again to see the restored book.",
+                "Your current book is saved as a restore point first. Paddhu Pusthakam then closes; open it again to see the restored book.",
             ),
             "Restore and close", { vm.confirmCandidate { closeApp(activity) } }, { vm.clearCandidate() },
         )

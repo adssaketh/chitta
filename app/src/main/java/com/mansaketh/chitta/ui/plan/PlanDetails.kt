@@ -112,7 +112,7 @@ fun BudgetDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit
                     HairlineRule()
                 }
             }
-            if (b.addedTransactionsOnly) Text("This was an \"added only\" budget in Paddhu Pusthakam. Chitta cannot tell which entries were added to it, so it counts every matching entry.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap3))
+            if (b.addedTransactionsOnly) Text("This was an \"added only\" budget in the old Paddhu Pusthakam app. This app cannot tell which entries were added to it, so it counts every matching entry.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap3))
             Text("Counts paid entries only. Lent and borrowed money is ${if (Budgets.filterOn(b.filters, BudgetFilter.INCLUDE_DEBT_AND_CREDIT)) "included" else "left out"}.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
             Spacer(Modifier.height(Dimens.Gap4))
             ChittaButton("Delete this budget", { deleting = true }, style = ButtonStyle.Quiet)

@@ -1,5 +1,12 @@
 # Changelog
 
+## Release rename to Paddhu Pusthakam 6.0.0 (14 Nov 2026) - on `main`
+- The app is now Paddhu Pusthakam: application ID `com.mansaketh.paddhupusthakam` (the old Flutter app's ID), label, launcher name, lock screen title, messages and backup file names. Version name 6.0.0, version code 600 (old app: 5.4.15, code 449). The release is signed with the Paddhu keystore, so it installs over the old app as an update.
+- Old launcher icon files (adaptive and monochrome) copied from the Paddhu repo.
+- New Drive backups are named `paddhu-pusthakam-<ms>.db`, local backup files `paddhu-pusthakam-backup-<date>.db`, CSV exports `paddhu-pusthakam-entries-<date>.csv`. Older `chitta-` Drive backups still list and restore.
+- Ping's names already matched (`com.mansaketh.paddhupusthakam.ShareReceiverActivity`, inbox authority `com.mansaketh.paddhupusthakam.pinginbox`), so Ping needs no change.
+- Not changed on purpose: Kotlin package `com.mansaketh.chitta`, `chitta://` links, the background-add action name, database and preference file names, repo name.
+
 ## Phase 9a: Google sign-in and Drive backup (14 Nov 2026) - on `main`
 
 - Settings > Backup and restore > **Google Drive backup**: sign in with Google (Credential Manager), then **Back up now**, an automatic daily backup (switch, on by default once signed in), the list of backups in Drive, Restore (same "Replace your book?" confirmation and restore point as a backup file) and Delete one from Drive. Sign out forgets the account on this phone and leaves Drive alone.

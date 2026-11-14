@@ -338,7 +338,7 @@ class RestorePointsTest {
     }
 
     @Test fun exportNameUsesLocalTime() {
-        assertEquals("chitta-backup-20261113-1449.db", RestorePoints.exportName(ms(2026, 11, 13, 14, 49), IST))
+        assertEquals("paddhu-pusthakam-backup-20261113-1449.db", RestorePoints.exportName(ms(2026, 11, 13, 14, 49), IST))
     }
 }
 
@@ -355,7 +355,7 @@ class BackupVerdictTest {
         assertIs<BackupVerdict.Refused>(j(v = 4))
         assertIs<BackupVerdict.Refused>(j(ok = false))
         assertTrue((j(room = false, tables = false, paddhu = true) as BackupVerdict.Refused).reason.contains("Bring over your book"))
-        assertTrue((j(room = false, tables = false) as BackupVerdict.Refused).reason.contains("not a Chitta backup"))
+        assertTrue((j(room = false, tables = false) as BackupVerdict.Refused).reason.contains("not a Paddhu Pusthakam backup"))
         assertIs<BackupVerdict.Refused>(j(tables = false))
         assertIs<BackupVerdict.Refused>(j(v = 0))
     }

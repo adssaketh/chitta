@@ -73,7 +73,7 @@ object RestorePoints {
 
     /** The name suggested when saving a backup file to Downloads or Drive. */
     fun exportName(nowMs: Long, zone: ZoneId): String =
-        "chitta-backup-" + DateTimeFormatter.ofPattern("yyyyMMdd-HHmm").format(Instant.ofEpochMilli(nowMs).atZone(zone)) + ".db"
+        "paddhu-pusthakam-backup-" + DateTimeFormatter.ofPattern("yyyyMMdd-HHmm").format(Instant.ofEpochMilli(nowMs).atZone(zone)) + ".db"
 }
 
 /** What a picked file turned out to be, decided from facts the phone reads out of it. */
@@ -88,10 +88,10 @@ sealed interface BackupVerdict {
          */
         fun judge(userVersion: Int, isRoomFile: Boolean, hasChittaTables: Boolean, looksLikePaddhu: Boolean, integrityOk: Boolean, currentVersion: Int): BackupVerdict = when {
             looksLikePaddhu && !isRoomFile -> Refused("This is a Paddhu Pusthakam backup. Use \"Bring over your book\" for that one.")
-            !isRoomFile || !hasChittaTables -> Refused("This file is not a Chitta backup.")
+            !isRoomFile || !hasChittaTables -> Refused("This file is not a Paddhu Pusthakam backup.")
             !integrityOk -> Refused("This backup file is damaged, so it was not used.")
-            userVersion > currentVersion -> Refused("This backup was made by a newer version of Chitta. Update the app first.")
-            userVersion < 1 -> Refused("This file is not a Chitta backup.")
+            userVersion > currentVersion -> Refused("This backup was made by a newer version of Paddhu Pusthakam. Update the app first.")
+            userVersion < 1 -> Refused("This file is not a Paddhu Pusthakam backup.")
             else -> Ok(userVersion)
         }
     }

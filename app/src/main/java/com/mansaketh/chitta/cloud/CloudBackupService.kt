@@ -118,7 +118,7 @@ class CloudBackupService @Inject constructor(
                     return CloudResult.Failed(e.message.orEmpty(), retryable = e.code == 429 || e.code >= 500)
                 }
             } catch (e: IOException) {
-                return CloudResult.Failed("Chitta could not reach Google. Check the connection and try again.", retryable = true)
+                return CloudResult.Failed("Paddhu Pusthakam could not reach Google. Check the connection and try again.", retryable = true)
             }
         }
         return CloudResult.Failed("Drive did not answer. Try again.", retryable = true)
