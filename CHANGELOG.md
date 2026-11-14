@@ -1,5 +1,10 @@
 # Changelog
 
+## UI polish pass: step 3, Ledger (14 Nov 2026) - on branch `phase-ui-polish`, not yet seen on a phone
+- Month header: 12 dp under the tab rule, 8 dp to In/Out, 12 dp to the rule, 8 dp before the first day. In/Out labels sit on the amounts' baseline. The 56 dp box that left about 24 dp of dead space under the month name is gone.
+- Rows: title and category line are one line each with an ellipsis (the category line no longer wraps), 12 dp padding, 64 dp minimum, 16 dp before the amount. The day number sits on the first title's baseline. Amounts step down a size if they do not fit.
+- End padding 96 dp (was 160); search hint and filter notes use token gaps.
+
 ## Tab switching animation (14 Nov 2026) - on branch `phase-ui-polish`, not yet seen on a phone
 - Switching main tabs slides the new tab in from the side you moved towards (about 1/8 of the screen) while it fades in, and the old one fades out: about 0.25 s, direction follows the bottom-bar order. The bottom bar stays still.
 - Swiping sideways on a main tab moves to the next or previous tab (72 dp drag). A screen part that scrolls sideways, such as a tab strip, takes the drag first.

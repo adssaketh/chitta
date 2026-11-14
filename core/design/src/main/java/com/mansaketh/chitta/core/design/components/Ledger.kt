@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.paddingFromBaseline
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -29,6 +30,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
@@ -69,12 +71,13 @@ fun LedgerDay(
 ) {
     val c = ChittaTheme.colors
     Row(modifier.fillMaxWidth().height(IntrinsicSize.Min).semantics(mergeDescendants = false) {}) {
-        Column(Modifier.width(Dimens.MarginColumn).padding(top = Dimens.Gap3)) {
+        Column(Modifier.width(Dimens.MarginColumn)) {
+            // The day number's baseline matches the first title's: the row pads 12 dp, then the title line puts its baseline about 17 dp down.
             Text(
                 dayNumber.toString(),
                 style = ChittaTheme.type.dayNumber,
                 color = c.ink,
-                modifier = Modifier.semantics { contentDescription = "$weekday $dayNumber" },
+                modifier = Modifier.paddingFromBaseline(top = Dimens.RowPadV + 17.dp).semantics { contentDescription = "$weekday $dayNumber" },
             )
             Text(weekday, style = ChittaTheme.type.label, color = c.inkMuted)
         }
@@ -124,22 +127,19 @@ fun LedgerRow(
     }
     val text: @Composable (Modifier) -> Unit = { m ->
         Column(m) {
-            Text(entry.title, style = ChittaTheme.type.body, color = c.ink)
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2),
-                verticalArrangement = Arrangement.spacedBy(Dimens.Gap1),
-                itemVerticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(entry.category, style = ChittaTheme.type.label, color = c.inkMuted)
+            // One line each with an ellipsis, so every row keeps the same height; the full text is on the entry's own page.
+            Text(entry.title, style = ChittaTheme.type.rowTitle, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.InlineGap), verticalAlignment = Alignment.CenterVertically) {
+                Text(entry.category, style = ChittaTheme.type.rowMeta, color = c.inkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                 if (entry.stamp != null) Stamp(entry.stamp, tone = entry.stampTone)
             }
         }
     }
     val base = modifier
         .fillMaxWidth()
-        .heightIn(min = Dimens.RowMin)
+        .heightIn(min = Dimens.RowLedger)
         .combinedClickable(role = Role.Button, onClick = onClick, onLongClick = onLongClick)
-        .padding(vertical = Dimens.Gap2)
+        .padding(vertical = Dimens.RowPadV)
     if (stacked) {
         Column(base, verticalArrangement = Arrangement.spacedBy(Dimens.Gap1)) {
             Row(verticalAlignment = Alignment.Top) {
@@ -153,8 +153,8 @@ fun LedgerRow(
     } else {
         Row(base, verticalAlignment = Alignment.CenterVertically) {
             glyph()
-            text(Modifier.weight(1f).padding(horizontal = Dimens.Gap3))
-            AmountText(entry.amount, tone = entry.tone)
+            text(Modifier.weight(1f).padding(start = Dimens.Gap3, end = Dimens.TitleAmountGap))
+            AmountText(entry.amount, tone = entry.tone, fallbackStyles = listOf(ChittaTheme.type.amountSmall))
         }
     }
 }
@@ -169,29 +169,31 @@ fun MonthHeader(
 ) {
     val c = ChittaTheme.colors
     Column(modifier.fillMaxWidth().background(c.background)) {
+        // 12 dp under the tab rule, 8 dp to In and Out, 12 dp to the rule, 8 dp before the first day (the gap stays when rows scroll under).
         Text(
             month,
-            style = ChittaTheme.type.headline,
+            style = ChittaTheme.type.screenTitle,
             color = c.ink,
-            modifier = Modifier.heightIn(min = Dimens.RowMin),
+            modifier = Modifier.padding(top = Dimens.HeadingGap),
         )
         // In at the start, Out at the end. FlowRow so at 200% text Out wraps under In instead of colliding.
         FlowRow(
-            Modifier.fillMaxWidth().padding(bottom = Dimens.Gap2),
+            Modifier.fillMaxWidth().padding(top = Dimens.InlineGap, bottom = Dimens.HeadingGap),
             itemVerticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalArrangement = Arrangement.spacedBy(Dimens.Gap2),
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
-                Text("In", style = ChittaTheme.type.label, color = c.inkMuted)
-                AmountText(moneyIn, style = ChittaTheme.type.amountSmall, tone = AmountTone.Income)
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.InlineGap)) {
+                Text("In", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.alignByBaseline())
+                AmountText(moneyIn, style = ChittaTheme.type.amountSmall, tone = AmountTone.Income, fallbackStyles = listOf(ChittaTheme.type.amountSmall), modifier = Modifier.alignByBaseline())
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
-                Text("Out", style = ChittaTheme.type.label, color = c.inkMuted)
-                AmountText(moneyOut, style = ChittaTheme.type.amountSmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.InlineGap)) {
+                Text("Out", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.alignByBaseline())
+                AmountText(moneyOut, style = ChittaTheme.type.amountSmall, modifier = Modifier.alignByBaseline())
             }
         }
         HairlineRule()
+        Box(Modifier.height(Dimens.InlineGap))
     }
 }
 

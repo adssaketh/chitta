@@ -70,16 +70,16 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
             if (searching && !selecting) {
                 ChittaField(
                     value = ui.filter.text, onValueChange = vm::setText, label = "Search title, note, category or account",
-                    modifier = Modifier.padding(horizontal = Dimens.Margin, vertical = Dimens.Gap2),
+                    modifier = Modifier.padding(horizontal = Dimens.Margin, vertical = Dimens.InlineGap),
                 )
                 if (ui.filter.text.isBlank()) {
                     Text(
                         "Filters: amt>500, cat:food, acc:hdfc, last:30d, type:lent, note:word, from:2026-10-01. A minus leaves one out: -cat:food.",
-                        style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(horizontal = Dimens.Margin),
+                        style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(start = Dimens.Margin, end = Dimens.Margin, bottom = Dimens.InlineGap),
                     )
                 }
                 ui.problems.forEach { problem ->
-                    Text("Not used: $problem", style = ChittaTheme.type.label, color = c.ink, modifier = Modifier.padding(horizontal = Dimens.Margin, vertical = Dimens.Gap1))
+                    Text("Not used: $problem", style = ChittaTheme.type.label, color = c.ink, modifier = Modifier.padding(horizontal = Dimens.Margin, vertical = Dimens.Space1))
                 }
             }
             val tabs = LedgerTab.entries
@@ -101,7 +101,7 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
                 ui.loading -> LoadingPlaceholder(Modifier.padding(Dimens.Margin))
                 ui.totalEntries == 0 -> EmptyState("No transactions yet. Add one.", "Add a transaction", onAdd, Modifier.padding(horizontal = Dimens.Margin))
                 ui.matching == 0 -> Text("Nothing matches. Clear the search or filters.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(Dimens.Margin))
-                else -> LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = 160.dp)) {
+                else -> LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
                     ui.months.forEach { month ->
                         stickyHeader(key = "m-${month.month}") {
                             MonthHeader(monthLabel(month.month), month.flow.moneyIn, month.flow.moneyOut)
