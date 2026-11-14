@@ -1,5 +1,8 @@
 # Changelog
 
+## UI polish pass: audit (14 Nov 2026) - on branch `phase-ui-polish`, awaiting approval
+- Added `UI_AUDIT.md`: every screen's spacing, heading and clipping problems, the conflicts with the design PDF, three possible bugs (reported, not fixed) and the proposed spacing and type tokens. No screen code changed.
+
 ## Category icons (14 Nov 2026) - on `main`, 6.0.2
 - Imported categories now show an icon that fits (270 old picture names mapped to 169 new line icons, or a guess from the category name), instead of one tag for all. The icon picker lists them all and searches by the old names too (D188).
 
