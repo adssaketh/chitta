@@ -13,6 +13,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -33,6 +34,7 @@ class MainActivity : FragmentActivity() {
     @Inject lateinit var appLock: AppLock
     @Inject lateinit var security: SecurityPrefs
     @Inject lateinit var clock: Clock
+    @Inject lateinit var uiPrefs: com.mansaketh.chitta.data.UiPrefs
 
     private val root: com.mansaketh.chitta.ui.RootViewModel by viewModels()
     private val ledger: com.mansaketh.chitta.ui.ledger.LedgerViewModel by viewModels()
@@ -100,7 +102,9 @@ class MainActivity : FragmentActivity() {
         if (savedInstanceState == null) { takeIntakeRequest(intent); takeLink(intent) }
         enableEdgeToEdge()
         setContent {
-            var mode by rememberSaveable { mutableStateOf(ThemeMode.System) }
+            val themeName by uiPrefs.themeMode.collectAsState()
+            val vibrate by uiPrefs.vibrations.collectAsState()
+            val mode = when (themeName) { "paper" -> ThemeMode.Paper; "ink" -> ThemeMode.Ink; else -> ThemeMode.System }
             var hide by rememberSaveable { mutableStateOf(security.hideAmounts.value) }
             // Kept on the phone so the home-screen widgets can mask too.
             val toggleHide = { hide = !hide; security.setHideAmounts(hide) }
@@ -114,6 +118,9 @@ class MainActivity : FragmentActivity() {
                 if (hideInRecents) window.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
                 else window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
             }
+            val realHaptics = androidx.compose.ui.platform.LocalHapticFeedback.current
+            val quietHaptics = remember { object : androidx.compose.ui.hapticfeedback.HapticFeedback { override fun performHapticFeedback(hapticFeedbackType: androidx.compose.ui.hapticfeedback.HapticFeedbackType) {} } }
+            androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalHapticFeedback provides (if (vibrate) realHaptics else quietHaptics)) {
             ChittaTheme(mode = mode, hideAmounts = hide) {
                 val vms = com.mansaketh.chitta.ui.AppViewModels(root, ledger, quickAdd, detail, manage, imports, plan, home, insights, settings, csvImport, intake, rules, automation, assets, cloud)
                 if (locked) {
@@ -121,10 +128,11 @@ class MainActivity : FragmentActivity() {
                     LockScreen(onUnlock = ::askToUnlock)
                 } else if (BuildConfig.DEBUG) {
                     // Component gallery stays reachable from More in debug builds only (Phase 2 decision).
-                    com.mansaketh.chitta.ui.AppRoot(vms, hide, toggleHide) { onBack -> ComponentGallery(mode, { mode = it }, hide, { hide = it }) ; androidx.activity.compose.BackHandler(onBack = onBack) }
+                    com.mansaketh.chitta.ui.AppRoot(vms, hide, toggleHide) { onBack -> ComponentGallery(mode, { uiPrefs.setThemeMode(it.name.lowercase()) }, hide, { hide = it }) ; androidx.activity.compose.BackHandler(onBack = onBack) }
                 } else {
                     com.mansaketh.chitta.ui.AppRoot(vms, hide, toggleHide)
                 }
+            }
             }
         }
     }

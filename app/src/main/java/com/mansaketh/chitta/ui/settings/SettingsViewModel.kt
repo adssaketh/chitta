@@ -64,7 +64,12 @@ class SettingsViewModel @Inject constructor(
     private val ledger: LedgerRepository,
     intake: com.mansaketh.chitta.intake.IntakeStore,
     private val receipts: com.mansaketh.chitta.receipts.ReceiptStore,
+    private val uiPrefs: com.mansaketh.chitta.data.UiPrefs,
 ) : ViewModel() {
+    val themeMode: StateFlow<String> = uiPrefs.themeMode
+    fun setThemeMode(v: String) = uiPrefs.setThemeMode(v)
+    val vibrations: StateFlow<Boolean> = uiPrefs.vibrations
+    fun setVibrations(v: Boolean) = uiPrefs.setVibrations(v)
     /** Bank messages waiting for a look, shown next to "Bank messages and UPI". */
     val pendingIntake: kotlinx.coroutines.flow.StateFlow<Int> = intake.pendingCount
 

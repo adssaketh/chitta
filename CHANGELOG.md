@@ -1,5 +1,9 @@
 # Changelog
 
+## Settings: theme, vibrations, diagnostics (14 Nov 2026) - on branch `phase-ui-polish`
+- Settings > Look and feel: Theme (follow the phone, Paper, Ink; now remembered) and a Vibrations switch that turns off every tap, keypad and swipe buzz.
+- Settings > Help > Diagnostics: shows errors the app recorded (crashes, failed Drive backup, receipt clean-up) with the app and Android version; Share sends it as text, Clear empties it.
+
 ## UI polish steps 7 to 9: the other screens and sheets (14 Nov 2026) - on branch `phase-ui-polish`
 - End of scroll: lists that can raise an Undo or hold actions (Accounts, Categories, Rules, Entry detail, Assets, Mutual funds, Plan details) end 96 dp from the bottom; forms and settings pages (Settings, Customise, Cloud backup, Imports, Intake, Review, Automation) end 32 dp from the bottom. The old 120, 140 and 160 dp gaps are gone.
 - Sheets: list and form heights are a share of the screen height instead of fixed dp, so they no longer get cut off on short phones or with big text.

@@ -53,6 +53,16 @@ class UiPrefs @Inject constructor(@ApplicationContext context: Context) {
     val firstDay: StateFlow<DayOfWeek> = _firstDay
     fun setFirstDay(v: DayOfWeek) { _firstDay.value = v; p.edit().putString("firstDay", v.name).apply() }
 
+    /** Look of the app: "system", "paper" (light) or "ink" (dark). Applied at once by MainActivity. */
+    private val _theme = MutableStateFlow(p.getString("theme", "system") ?: "system")
+    val themeMode: StateFlow<String> = _theme
+    fun setThemeMode(v: String) { _theme.value = v; p.edit().putString("theme", v).apply() }
+
+    /** Taps, long-presses and the keypad give a small vibration. On by default; the phone's own touch-feedback setting still applies. */
+    private val _vibrations = MutableStateFlow(p.getBoolean("vibrations", true))
+    val vibrations: StateFlow<Boolean> = _vibrations
+    fun setVibrations(v: Boolean) { _vibrations.value = v; p.edit().putBoolean("vibrations", v).apply() }
+
     /** Whether open fixed deposits count in Net worth. Off until switched on (D101). */
     private val _nwDeposits = MutableStateFlow(p.getBoolean("nwDeposits", false))
     val netWorthDeposits: StateFlow<Boolean> = _nwDeposits

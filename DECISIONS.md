@@ -263,3 +263,5 @@ Master section 7 lists both. Decided with the user on 13 Nov 2026: Ping already 
 
 
 | D192 | Heatmap level = the day's share of the 90th percentile (nearest rank) of days with spending, rounded up into four steps; days above it are the darkest step. A display scale only; no money rule changes. | One day with a big payment made every other day the lightest step (UI audit I6). | decided |
+| D193 | Theme and Vibrations are device choices in Settings > Look and feel (kept in UiPrefs). Theme: follow the phone, Paper (light) or Ink (dark); it was only in the debug gallery before and was never saved. Vibrations off swaps in a silent haptic handler at the app root, so every screen obeys it without per-screen checks. |
+| D194 | Diagnostics (Settings > Help) keeps a capped on-phone error log (crashes and failed background jobs: time, place, stack trace). Nothing is uploaded; the person reads it and chooses Share. Added so errors can be sent for debugging without a computer. |

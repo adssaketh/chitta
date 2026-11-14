@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -55,6 +56,8 @@ internal fun closeApp(activity: FragmentActivity?) {
 
 private fun onOff(v: Boolean) = if (v) "On" else "Off"
 
+private fun themeLabel(k: String) = when (k) { "paper" -> "Paper (light)"; "ink" -> "Ink (dark)"; else -> "Follow the phone" }
+
 /**
  * Settings, as far as this phase goes: Security, Backup and restore (with Google Drive backup, Phase 9a), Import and export, Data.
  * Cross-device sync and the household come later in Phase 9 (DECISIONS D66, D172).
@@ -63,6 +66,8 @@ private fun onOff(v: Boolean) = if (v) "On" else "Off"
 fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -> Unit) {
     val waiting by vm.pendingIntake.collectAsState()
     val ui by vm.ui.collectAsState()
+    val theme by vm.themeMode.collectAsState()
+    val vibrate by vm.vibrations.collectAsState()
     val c = ChittaTheme.colors
     val context = LocalContext.current
     val activity = context as? FragmentActivity
@@ -95,6 +100,12 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
             }
             if (ui.busy) Text("Working. Keep this screen open.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2))
 
+            SectionHeader("Look and feel")
+            HairlineRule()
+            ValueRow("Theme", themeLabel(theme), onClick = { sheet = "theme" })
+            ValueRow("Vibrations", onOff(vibrate), onClick = { vm.setVibrations(!vibrate) })
+
+            Spacer(Modifier.height(Dimens.SectionGap))
             SectionHeader("Security")
             HairlineRule()
             ValueRow("App lock", onOff(ui.lockEnabled), onClick = ::toggleLock)
@@ -130,6 +141,11 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
             ValueRow("Bring over your Paddhu book", "", onClick = { onOpen("import") })
 
             Spacer(Modifier.height(Dimens.SectionGap))
+            SectionHeader("Help")
+            HairlineRule()
+            ValueRow("Diagnostics", com.mansaketh.chitta.diagnostics.Diagnostics.count().let { if (it == 0) "No errors" else "$it recorded" }, onClick = { sheet = "diagnostics" })
+
+            Spacer(Modifier.height(Dimens.SectionGap))
             SectionHeader("Data")
             HairlineRule()
             ValueRow("Delete everything", "", onClick = { sheet = "delete" })
@@ -141,6 +157,33 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
     }
 
     when (sheet) {
+        "theme" -> ChoiceSheet(
+            "Theme",
+            listOf("system" to "Follow the phone", "paper" to "Paper (light)", "ink" to "Ink (dark)").map { (k, label) -> Choice(label, k, selected = k == theme) },
+            { vm.setThemeMode(it); sheet = null }, { sheet = null },
+        )
+        "diagnostics" -> com.mansaketh.chitta.ui.BottomOverlay({ sheet = null }) {
+            var report by remember { mutableStateOf(com.mansaketh.chitta.diagnostics.Diagnostics.report(context)) }
+            Text("Diagnostics", style = ChittaTheme.type.title, color = c.ink)
+            Spacer(Modifier.height(Dimens.Gap2))
+            Text(
+                "Errors the app hit on this phone, with the phone and app version. Nothing is sent anywhere. Read it, then share it only if you are happy to.",
+                style = ChittaTheme.type.label, color = c.inkMuted,
+            )
+            Spacer(Modifier.height(Dimens.Gap3))
+            Column(Modifier.heightIn(max = com.mansaketh.chitta.ui.sheetMax(0.35f)).verticalScroll(rememberScrollState())) {
+                Text(report.takeLast(2_500), style = ChittaTheme.type.label, color = c.ink)
+            }
+            Spacer(Modifier.height(Dimens.Gap4))
+            ChittaButton("Share", {
+                val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "text/plain"; putExtra(android.content.Intent.EXTRA_SUBJECT, "Paddhu Pusthakam diagnostics"); putExtra(android.content.Intent.EXTRA_TEXT, report)
+                }
+                context.startActivity(android.content.Intent.createChooser(send, "Share diagnostics"))
+            }, confirmHaptic = true)
+            Spacer(Modifier.height(Dimens.InlineGap))
+            ChittaButton("Clear", { com.mansaketh.chitta.diagnostics.Diagnostics.clear(); report = com.mansaketh.chitta.diagnostics.Diagnostics.report(context) }, style = ButtonStyle.Quiet)
+        }
         "timeout" -> ChoiceSheet("Lock after leaving", LockTimeout.entries.map { Choice(it.label, it, selected = it == ui.timeout) }, { vm.setTimeout(it); sheet = null }, { sheet = null })
         "csv-account" -> ChoiceSheet(
             "Export which accounts?",
