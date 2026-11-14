@@ -5,6 +5,7 @@ import com.mansaketh.chitta.core.model.Budget
 import com.mansaketh.chitta.core.model.CategoryLimit
 import com.mansaketh.chitta.core.model.LoanTerms
 import com.mansaketh.chitta.core.model.Objective
+import com.mansaketh.chitta.core.model.SinkingFund
 import com.mansaketh.chitta.core.model.Transaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -40,6 +41,17 @@ class PlanRepository(private val db: ChittaDatabase, private val ledger: LedgerR
     suspend fun restoreBudget(r: BudgetWithLimits) = db.withTransaction {
         db.budgets().upsert(r.budget.toEntity())
         db.budgets().upsertLimits(r.limits.map { it.toEntity() })
+    }
+
+    // ---- sinking funds
+    fun observeSinkingFunds(): Flow<List<SinkingFund>> = db.misc().observeSinkingFunds().map { rows -> rows.map { it.toModel() } }
+    suspend fun sinkingFund(id: String): SinkingFund? = db.misc().getSinkingFund(id)?.toModel()
+    suspend fun saveSinkingFund(f: SinkingFund) = db.misc().upsertSinkingFund(f.toEntity())
+    /** Deletes a fund; the result restores it. Entries are untouched (a fund only reads them). */
+    suspend fun deleteSinkingFund(id: String): SinkingFund? = db.withTransaction {
+        val f = db.misc().getSinkingFund(id)?.toModel() ?: return@withTransaction null
+        db.misc().deleteSinkingFund(id)
+        f
     }
 
     // ---- goals and loans

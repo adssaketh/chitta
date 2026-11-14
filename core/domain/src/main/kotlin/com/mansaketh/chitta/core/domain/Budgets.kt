@@ -30,6 +30,8 @@ data class BudgetSummary(
     val cumulative: List<Paise>,
     val started: Boolean,
     val ended: Boolean,
+    /** What carried in from earlier periods (rollover); zero when rollover is off. May be negative (an overspend carried forward). */
+    val carry: Paise = Paise.ZERO,
 )
 
 data class CategoryLine(val categoryId: String, val spent: Paise, val limit: Paise?, val gauge: Segments.Gauge?)
@@ -59,12 +61,12 @@ object Budgets {
         else -> f in filters
     }
 
-    private fun mainOf(categoryId: String, categories: List<Category>): String {
+    internal fun mainOf(categoryId: String, categories: List<Category>): String {
         val c = categories.firstOrNull { it.id == categoryId } ?: return categoryId
         return c.mainCategoryId ?: c.id
     }
 
-    private fun matches(set: List<String>?, t: Transaction, categories: List<Category>): Boolean {
+    internal fun matches(set: List<String>?, t: Transaction, categories: List<Category>): Boolean {
         if (set == null) return true
         return t.categoryId in set || t.subCategoryId in set || mainOf(t.categoryId, categories) in set
     }
@@ -102,7 +104,8 @@ object Budgets {
 
     /** Figures for one period. For a finished period everything is as at its last day, so the forecast equals what was spent. */
     fun summarize(budget: Budget, period: Period, entries: List<Transaction>, categories: List<Category>, nowMs: Long, zone: ZoneId): BudgetSummary {
-        val limit = Paise(budget.amount)
+        val carry = Rollover.carryInto(budget, period, entries, categories, zone)
+        val limit = Rollover.effectiveLimit(budget, carry)
         val days = Periods.daysIn(period, zone)
         val day = Periods.dayOfPeriod(period, nowMs, zone)
         val first = Periods.date(period.startMs, zone)
@@ -121,7 +124,7 @@ object Budgets {
             period = period, limit = limit, spent = spent, left = limit - spent, daysInPeriod = days, dayOfPeriod = day, daysLeft = days - day,
             ideal = ideal, pace = BudgetFigures.paceStatus(spent, ideal, limit), forecast = BudgetFigures.forecast(spent, day, days),
             limitDay = BudgetFigures.limitDay(spent, limit, day, days), cumulative = cumulative,
-            started = nowMs >= period.startMs, ended = nowMs >= period.endMs,
+            started = nowMs >= period.startMs, ended = nowMs >= period.endMs, carry = carry,
         )
     }
 
@@ -152,7 +155,7 @@ object Budgets {
 
     /** Spent per earlier period, for the history list: (period, spent, limit). */
     fun history(budget: Budget, entries: List<Transaction>, categories: List<Category>, nowMs: Long, zone: ZoneId, count: Int = 12): List<Triple<Period, Paise, Paise>> =
-        earlier(budget, nowMs, zone, count).map { Triple(it, spent(budget, it, entries, categories), Paise(budget.amount)) }
+        earlier(budget, nowMs, zone, count).map { Triple(it, spent(budget, it, entries, categories), Rollover.effectiveLimit(budget, Rollover.carryInto(budget, it, entries, categories, zone))) }
 
     /** Total of unpaid bills due inside [period] that count toward a spending budget: what Safe to spend (Phase 6) subtracts. Transfers are not bills. */
     fun billsDue(budget: Budget, period: Period, entries: List<Transaction>, categories: List<Category>): Paise {

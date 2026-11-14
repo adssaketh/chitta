@@ -5,6 +5,7 @@ import com.mansaketh.chitta.core.model.Budget
 import com.mansaketh.chitta.core.model.Category
 import com.mansaketh.chitta.core.model.Objective
 import com.mansaketh.chitta.core.model.ObjectiveKind
+import com.mansaketh.chitta.core.model.SinkingFund
 import com.mansaketh.chitta.core.model.Transaction
 import com.mansaketh.chitta.core.money.BudgetFigures
 import com.mansaketh.chitta.core.money.CashCheck
@@ -16,7 +17,7 @@ import java.time.ZoneId
 
 /**
  * Everything the top of Home shows for one budget (master sections 3 and 12). All money comes from [BudgetFigures] and [Segments].
- *  - [safe] = budget − spent − unpaid bills due this period that count toward the budget (negative when over);
+ *  - [safe] = budget − spent − unpaid bills due this period that count toward the budget − the sinking funds' set-aside for the period + spending they cover (negative when over);
  *  - [perDay] = safe ÷ days left, null when nothing is safe to spend;
  *  - [range] = safe ÷ average daily spending this period (D4), and [rangeShortDays] says how many days short of the period end it is;
  *  - [ring] is the 50-tick ring of the same three figures.
@@ -25,6 +26,8 @@ data class HeroData(
     val budget: Budget,
     val summary: BudgetSummary,
     val billsDue: Paise,
+    /** Sinking funds (Phase 8e): this period's set-aside, taken off [safe], and spending the funds already paid for, added back. */
+    val sinking: SinkingEffect,
     val safe: Paise,
     val perDay: Paise?,
     val range: RangeResult,
@@ -51,16 +54,18 @@ object HomeFigures {
         budgets.filter { !it.archived && !it.income && nowMs in Budgets.periodAt(it, nowMs, zone) }
             .sortedWith(compareByDescending<Budget> { it.pinned }.thenBy { it.sortOrder }.thenBy { it.name })
 
-    fun hero(budget: Budget, entries: List<Transaction>, categories: List<Category>, nowMs: Long, zone: ZoneId): HeroData {
+    fun hero(budget: Budget, entries: List<Transaction>, categories: List<Category>, nowMs: Long, zone: ZoneId, funds: List<SinkingFund> = emptyList()): HeroData {
         val period = Budgets.periodAt(budget, nowMs, zone)
         val summary = Budgets.summarize(budget, period, entries, categories, nowMs, zone)
         val bills = Budgets.billsDue(budget, period, entries, categories)
-        val limit = Paise(budget.amount)
-        val safe = BudgetFigures.safeToSpend(limit, summary.spent, bills)
+        val limit = summary.limit
+        val sinking = SinkingFunds.effect(funds, period, entries, categories, zone) { Budgets.contribution(it, budget, categories) != 0L }
+        val safe = BudgetFigures.safeToSpend(limit, summary.spent, bills) + sinking.covered - sinking.reserved
         val perDay = if (safe.value > 0) BudgetFigures.perDay(safe, summary.daysLeft) else null
         val range = BudgetFigures.range(safe, summary.spent, summary.dayOfPeriod)
         val short = (range as? RangeResult.Days)?.let { (summary.daysLeft - it.days).takeIf { d -> d > 0 } }
-        return HeroData(budget, summary, bills, safe, perDay, range, short, Segments.ring(limit, summary.spent, bills))
+        val ringSpent = Paise((summary.spent.value - sinking.covered.value).coerceAtLeast(0))
+        return HeroData(budget, summary, bills, sinking, safe, perDay, range, short, Segments.ring(limit, ringSpent, bills + sinking.reserved))
     }
 
     /** All open money-out bills due inside [period], whatever budget they belong to. Card statements are bills here; transfers are not. */
@@ -88,12 +93,12 @@ object HomeFigures {
     }
 
     /** The cash check for the accounts marked "for spending". Null when none is marked (the screen asks the user to mark some). Rupee accounts only (D43). */
-    fun cashCheck(entries: List<Transaction>, accounts: List<Account>, forSpending: Set<String>, period: Period, goalSavings: Paise): CashCheck? {
+    fun cashCheck(entries: List<Transaction>, accounts: List<Account>, forSpending: Set<String>, period: Period, goalSavings: Paise, sinking: Paise = Paise.ZERO): CashCheck? {
         val ids = accounts.filter { it.id in forSpending && NetWorth.isRupee(it) }.map { it.id }.toSet()
         if (ids.isEmpty()) return null
         var balances = Paise.ZERO
         for ((id, b) in Balances.balances(entries)) if (id in ids) balances += b
-        return CashCheck(balances, billsOut(entries, period), goalSavings)
+        return CashCheck(balances, billsOut(entries, period), goalSavings, sinking)
     }
 
     /**

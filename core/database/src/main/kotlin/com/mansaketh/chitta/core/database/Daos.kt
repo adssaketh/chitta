@@ -136,6 +136,10 @@ interface MiscDao {
     @Query("SELECT * FROM nps_account ORDER BY name, id") suspend fun getNps(): List<NpsAccountEntity>
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertNps(row: NpsAccountEntity)
     @Query("DELETE FROM nps_account WHERE id = :id") suspend fun deleteNps(id: String)
+    @Query("SELECT * FROM sinking_fund ORDER BY sortOrder, name, id") fun observeSinkingFunds(): Flow<List<SinkingFundEntity>>
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertSinkingFund(row: SinkingFundEntity)
+    @Query("SELECT * FROM sinking_fund WHERE id = :id") suspend fun getSinkingFund(id: String): SinkingFundEntity?
+    @Query("DELETE FROM sinking_fund WHERE id = :id") suspend fun deleteSinkingFund(id: String)
 }
 
 @Dao

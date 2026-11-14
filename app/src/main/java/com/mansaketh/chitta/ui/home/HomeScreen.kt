@@ -97,7 +97,7 @@ fun HomeScreen(
                     Spacer(Modifier.height(Dimens.Gap3))
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.Gap6)) {
                         BudgetRing(hero.ring, diameter = 120.dp)
-                        RingLegend(hero.summary.spent, hero.billsDue, hero.safe, Modifier.weight(1f))
+                        RingLegend(Paise((hero.summary.spent.value - hero.sinking.covered.value).coerceAtLeast(0)), hero.billsDue + hero.sinking.reserved, hero.safe, Modifier.weight(1f))
                     }
                     Spacer(Modifier.height(Dimens.SectionGap))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Dimens.Gap6)) {
@@ -274,6 +274,8 @@ private fun ExplainSheet(ui: HomeUi, onDismiss: () -> Unit) {
             FigureLine("Budget", hero.summary.limit)
             FigureLine("Already spent", hero.summary.spent, minus = true)
             FigureLine("Bills still to come", hero.billsDue, minus = true)
+            if (!hero.sinking.reserved.isZero) FigureLine("Set aside in sinking funds", hero.sinking.reserved, minus = true)
+            if (!hero.sinking.covered.isZero) FigureLine("Spending your sinking funds already cover", hero.sinking.covered)
             HairlineRule()
             FigureLine("Safe to spend", hero.safe, strong = true)
             Muted("Bills still to come are open money-out entries due before this period ends.")
@@ -285,6 +287,7 @@ private fun ExplainSheet(ui: HomeUi, onDismiss: () -> Unit) {
             FigureLine("In your spending accounts", cash.balances)
             FigureLine("Bills still to come", cash.bills, minus = true)
             FigureLine("Goal savings set aside", cash.goalSavings, minus = true)
+            if (!cash.sinking.isZero) FigureLine("Set aside in sinking funds", cash.sinking, minus = true)
             HairlineRule()
             FigureLine("Cash check", cash.value, strong = true)
             if (ui.cashStale) Row(verticalAlignment = Alignment.CenterVertically) {

@@ -24,6 +24,7 @@ data class PlanUi(
     val limits: List<CategoryLimit> = emptyList(),
     val objectives: List<Objective> = emptyList(),
     val terms: List<LoanTerms> = emptyList(),
+    val sinking: List<SinkingFund> = emptyList(),
     val categories: List<Category> = emptyList(),
     val accounts: List<Account> = emptyList(),
     val nowMs: Long = 0,
@@ -34,7 +35,7 @@ data class PlanUi(
 /** What the budget sheet collects. Dates matter only for a one-time budget. */
 data class BudgetForm(
     val name: String, val amount: Paise, val repeat: Repeat?, val startMs: Long, val endMs: Long, val savings: Boolean, val includeDebt: Boolean,
-    val accountIds: List<String>?, val excludedCategoryIds: List<String>?, val absoluteLimits: Boolean,
+    val accountIds: List<String>?, val excludedCategoryIds: List<String>?, val absoluteLimits: Boolean, val rollover: Boolean = false,
 )
 
 @HiltViewModel
@@ -52,7 +53,7 @@ class PlanViewModel @Inject constructor(
     private val core = combine(ledger.observeAll(), plan.observeBudgets(), plan.observeLimits(), plan.observeObjectives(), plan.observeLoanTerms()) { e, b, l, o, t ->
         PlanUi(entries = e, budgets = b, limits = l, objectives = o, terms = t, nowMs = clock.nowMs(), zone = clock.zone(), loading = false)
     }
-    val ui: StateFlow<PlanUi> = combine(core, categoryRepo.observeAll(), accountRepo.observeAll()) { p, c, a -> p.copy(categories = c, accounts = a) }
+    val ui: StateFlow<PlanUi> = combine(core, categoryRepo.observeAll(), accountRepo.observeAll(), plan.observeSinkingFunds()) { p, c, a, s -> p.copy(categories = c, accounts = a, sinking = s) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PlanUi())
 
     private val _settings = MutableStateFlow(Settings(prefs.autoPayOverdue, prefs.paidOnDueDate, prefs.reminders))
@@ -85,11 +86,25 @@ class PlanViewModel @Inject constructor(
             ui.value.budgets.size, ui.value.accounts.firstOrNull()?.id ?: "", null, null, false,
         )).copy(
             name = f.name.trim(), amount = f.amount.value, startMs = f.startMs, endMs = end, repeat = f.repeat, income = f.savings, accountIds = f.accountIds,
-            excludedCategoryIds = f.excludedCategoryIds, filters = filters, absoluteSpendingLimit = f.absoluteLimits, modifiedAtMs = now,
+            excludedCategoryIds = f.excludedCategoryIds, filters = filters, absoluteSpendingLimit = f.absoluteLimits, rollover = f.rollover && !f.savings && f.repeat != null, modifiedAtMs = now,
         )
         val before = existing
         plan.saveBudget(b)
         undo.post(if (existing == null) "Budget ${b.name} added" else "Budget ${b.name} saved") { if (before == null) plan.deleteBudget(b.id) else plan.saveBudget(before) }
+    }
+
+    // ---- sinking funds (Phase 8e)
+    fun saveFund(existing: SinkingFund?, name: String, target: Paise, startMs: Long, dueMs: Long, categoryId: String?) = viewModelScope.launch {
+        val now = clock.nowMs()
+        val f = (existing ?: SinkingFund(ids.newId(), name, target.value, startMs, dueMs, categoryId, false, ui.value.sinking.size, now, null))
+            .copy(name = name.trim(), targetPaise = target.value, startMs = startMs, targetDateMs = dueMs, categoryId = categoryId, modifiedAtMs = now)
+        plan.saveSinkingFund(f)
+        undo.post(if (existing == null) "Sinking fund ${f.name} added" else "Sinking fund ${f.name} saved") { if (existing == null) plan.deleteSinkingFund(f.id) else plan.saveSinkingFund(existing) }
+    }
+
+    fun deleteFund(id: String) = viewModelScope.launch {
+        val gone = plan.deleteSinkingFund(id) ?: return@launch
+        undo.post("Sinking fund ${gone.name} deleted") { plan.saveSinkingFund(gone) }
     }
 
     fun deleteBudget(id: String) = viewModelScope.launch {

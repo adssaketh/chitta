@@ -76,9 +76,9 @@ object BudgetFigures {
 /** Which number leads on Home. A setting can force the cash check; [Hero.CashCheck] is also used when no budget is set (master section 12). */
 enum class Hero { SafeToSpend, CashCheck }
 
-/** The cash check (master section 12): what the "for spending" accounts hold, less every bill due this period and this month's goal savings. */
-data class CashCheck(val balances: Paise, val bills: Paise, val goalSavings: Paise) {
-    val value: Paise get() = balances - bills - goalSavings
+/** The cash check (master section 12): what the "for spending" accounts hold, less every bill due this period, this month's goal savings and this period's sinking fund set-aside. */
+data class CashCheck(val balances: Paise, val bills: Paise, val goalSavings: Paise, val sinking: Paise = Paise.ZERO) {
+    val value: Paise get() = balances - bills - goalSavings - sinking
 }
 
 object HeroFigures {

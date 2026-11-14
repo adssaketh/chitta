@@ -187,7 +187,7 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                     v == "expense" -> openAdd(EntryType.Expense)
                     v == "income" -> openAdd(EntryType.Income)
                     v == "transfer" -> openAdd(EntryType.Transfer)
-                    v.startsWith("new-") -> { tabChoice = TabKey.Plan.key; stack = emptyList(); planTab = when (v) { "new-budget" -> 0; "new-goal" -> 1; "new-loan" -> 2; else -> 3 }; planSheet = v }
+                    v.startsWith("new-") -> { tabChoice = TabKey.Plan.key; stack = emptyList(); planTab = when (v) { "new-budget" -> 0; "new-goal" -> 1; "new-loan" -> 2; "new-fund" -> 5; else -> 3 }; planSheet = v }
                     v.startsWith("pin:") -> pinned.pinned.firstOrNull { it.id == v.removePrefix("pin:") }?.let { openAdd(pin = it) }
                 }
             },
@@ -238,6 +238,11 @@ private fun PlanSheetHost(vm: PlanViewModel, which: String, close: () -> Unit) {
     val id = which.substringAfter(":", "")
     when (kind) {
         "budget" -> BudgetSheet(ui.budgets.firstOrNull { it.id == id }, ui, { f -> vm.saveBudget(ui.budgets.firstOrNull { it.id == id }, f); close() }, close)
+        "fund" -> FundSheet(
+            ui.sinking.firstOrNull { it.id == id }, ui,
+            { n, t, s, d, c -> vm.saveFund(ui.sinking.firstOrNull { it.id == id }, n, t, s, d, c); close() },
+            { vm.deleteFund(id); close() }, close,
+        )
         "goal" -> GoalSheet(ui.objectives.firstOrNull { it.id == id }, ui.zone, ui.nowMs, { n, t, inc, end -> vm.saveGoal(ui.objectives.firstOrNull { it.id == id }, n, t, inc, end); close() }, close)
         "loan" -> {
             val existing: Objective? = ui.objectives.firstOrNull { it.id == id }

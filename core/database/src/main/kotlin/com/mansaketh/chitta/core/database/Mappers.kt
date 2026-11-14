@@ -5,6 +5,7 @@ import com.mansaketh.chitta.core.model.AccountWidget
 import com.mansaketh.chitta.core.model.ActivityEntity
 import com.mansaketh.chitta.core.model.ActivityEntry
 import com.mansaketh.chitta.core.model.Budget
+import com.mansaketh.chitta.core.model.SinkingFund
 import com.mansaketh.chitta.core.model.BudgetFilter
 import com.mansaketh.chitta.core.model.CardDue
 import com.mansaketh.chitta.core.model.Category
@@ -57,12 +58,12 @@ fun TransactionEntity.toModel() = Transaction(
 fun Budget.toEntity() = BudgetEntity(
     id, name, amount, colour, startMs, endMs, accountIds.toJson(), categoryIds.toJson(), excludedCategoryIds.toJson(), income, archived,
     addedTransactionsOnly, periodLength, repeat?.code, createdAtMs, modifiedAtMs, pinned, sortOrder, accountId,
-    filters?.map { it.code }.intsToJson(), memberFilters.toJson(), absoluteSpendingLimit,
+    filters?.map { it.code }.intsToJson(), memberFilters.toJson(), absoluteSpendingLimit, rollover,
 )
 fun BudgetEntity.toModel() = Budget(
     id, name, amountPaise, colour, startMs, endMs, accountIdsJson.toStrings(), categoryIdsJson.toStrings(), excludedCategoryIdsJson.toStrings(), income, archived,
     addedTransactionsOnly, periodLength, Repeat.fromCode(repeatCode), createdAtMs, modifiedAtMs, pinned, sortOrder, accountId,
-    filtersJson.toInts()?.mapNotNull { BudgetFilter.fromCode(it) }, memberFiltersJson.toStrings(), absoluteSpendingLimit,
+    filtersJson.toInts()?.mapNotNull { BudgetFilter.fromCode(it) }, memberFiltersJson.toStrings(), absoluteSpendingLimit, rollover,
 )
 
 fun CategoryLimit.toEntity() = CategoryLimitEntity(id, categoryId, budgetId, amount, modifiedAtMs, accountId)
@@ -96,3 +97,6 @@ fun MutualFund.toEntity() = MutualFundEntity(id, name, isin, schemeCode, units, 
 fun MutualFundEntity.toModel() = MutualFund(id, name, isin, schemeCode, units, investedPaise, source, unitsAsOfMs, navText, navDate, note, updatedAtMs, folio, groupId, sipAmountPaise, sipDay, sipUnits, sipInvestedPaise, sipCount, sipThrough)
 fun NpsAccount.toEntity() = NpsAccountEntity(id, name, netContributionsPaise, asOfMs, note, updatedAtMs)
 fun NpsAccountEntity.toModel() = NpsAccount(id, name, netContributionsPaise, asOfMs, note, updatedAtMs)
+
+fun SinkingFund.toEntity() = SinkingFundEntity(id, name, targetPaise, startMs, targetDateMs, categoryId, archived, sortOrder, createdAtMs, modifiedAtMs)
+fun SinkingFundEntity.toModel() = SinkingFund(id, name, targetPaise, startMs, targetDateMs, categoryId, archived, sortOrder, createdAtMs, modifiedAtMs)

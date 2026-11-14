@@ -27,7 +27,7 @@ import com.mansaketh.chitta.core.money.Segments
 import com.mansaketh.chitta.ui.*
 import java.time.YearMonth
 
-val PLAN_TABS = listOf("Budgets", "Goals", "Loans", "Bills", "Calendar")
+val PLAN_TABS = listOf("Budgets", "Goals", "Loans", "Bills", "Calendar", "Sinking funds")
 
 /** One row in a Plan list: a title with an amount on the right, an optional gauge, a line of small text and an optional stamp. */
 @OptIn(ExperimentalFoundationApi::class)
@@ -72,7 +72,8 @@ fun PlanScreen(vm: PlanViewModel, tab: Int, onTab: (Int) -> Unit, onOpen: (Strin
                     1 -> GoalsTab(ui, onOpen, onSheet)
                     2 -> LoansTab(vm, ui, onOpen, onSheet)
                     3 -> BillsTab(vm, ui, onSheet, { reminders = true })
-                    else -> CalendarTab(vm, ui)
+                    4 -> CalendarTab(vm, ui)
+                    else -> FundsTab(ui, onSheet)
                 }
             }
         }

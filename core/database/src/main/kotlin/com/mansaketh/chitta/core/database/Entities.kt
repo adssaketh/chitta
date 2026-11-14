@@ -120,6 +120,7 @@ data class BudgetEntity(
     val filtersJson: String?,
     val memberFiltersJson: String?,
     val absoluteSpendingLimit: Boolean,
+    val rollover: Boolean,
 )
 
 @Entity(tableName = "category_budget_limit", indices = [Index("budgetId"), Index("categoryId")])
@@ -326,4 +327,19 @@ data class NpsAccountEntity(
     val asOfMs: Long,
     val note: String,
     val updatedAtMs: Long?,
+)
+
+/** A sinking fund (Phase 8e). */
+@Entity(tableName = "sinking_fund")
+data class SinkingFundEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val targetPaise: Long,
+    val startMs: Long,
+    val targetDateMs: Long,
+    val categoryId: String?,
+    val archived: Boolean,
+    val sortOrder: Int,
+    val createdAtMs: Long,
+    val modifiedAtMs: Long?,
 )

@@ -16,6 +16,7 @@ import com.mansaketh.chitta.core.domain.Goals
 import com.mansaketh.chitta.core.domain.HeatCell
 import com.mansaketh.chitta.core.domain.Heatmap
 import com.mansaketh.chitta.core.domain.HeroData
+import com.mansaketh.chitta.core.domain.SinkingFunds
 import com.mansaketh.chitta.core.domain.HomeFigures
 import com.mansaketh.chitta.core.domain.HomeLayout
 import com.mansaketh.chitta.core.domain.HomeSection
@@ -40,6 +41,7 @@ import com.mansaketh.chitta.core.model.Account
 import com.mansaketh.chitta.core.model.Budget
 import com.mansaketh.chitta.core.model.Category
 import com.mansaketh.chitta.core.model.Objective
+import com.mansaketh.chitta.core.model.SinkingFund
 import com.mansaketh.chitta.core.model.ObjectiveKind
 import com.mansaketh.chitta.core.model.Transaction
 import com.mansaketh.chitta.core.money.CashCheck
@@ -105,10 +107,10 @@ class HomeViewModel @Inject constructor(
     netWorthInputs: NetWorthInputs,
     private val clock: Clock,
 ) : ViewModel() {
-    private data class Raw(val entries: List<Transaction>, val budgets: List<Budget>, val objectives: List<Objective>, val categories: List<Category>, val accounts: List<Account>, val extras: NetWorthExtras = NetWorthExtras.NONE)
+    private data class Raw(val entries: List<Transaction>, val budgets: List<Budget>, val objectives: List<Objective>, val categories: List<Category>, val accounts: List<Account>, val extras: NetWorthExtras = NetWorthExtras.NONE, val sinking: List<SinkingFund> = emptyList())
     private data class P(val layout: HomeLayout, val cash: Set<String>, val preferCash: Boolean, val heroId: String?, val firstDay: DayOfWeek)
 
-    private val raw = combine(combine(ledger.observeAll(), plan.observeBudgets(), plan.observeObjectives(), categoryRepo.observeAll(), accountRepo.observeAll()) { e, b, o, c, a -> Raw(e, b, o, c, a) }, netWorthInputs.extras) { r, x -> r.copy(extras = x) }
+    private val raw = combine(combine(ledger.observeAll(), plan.observeBudgets(), plan.observeObjectives(), categoryRepo.observeAll(), accountRepo.observeAll()) { e, b, o, c, a -> Raw(e, b, o, c, a) }, netWorthInputs.extras, plan.observeSinkingFunds()) { r, x, s -> r.copy(extras = x, sinking = s) }
     private val choices = combine(prefs.homeLayout, prefs.cashAccounts, prefs.preferCash, prefs.heroBudgetId, prefs.firstDay) { l, c, pc, h, f -> P(l, c, pc, h, f) }
 
     val ui: StateFlow<HomeUi> = combine(raw, choices) { r, p -> compute(r, p) }
@@ -121,10 +123,11 @@ class HomeViewModel @Inject constructor(
         val now = clock.nowMs()
         val zone = clock.zone()
         val budget = HomeFigures.currentBudget(r.budgets, now, zone, p.heroId)
-        val hero = budget?.let { HomeFigures.hero(it, r.entries, r.categories, now, zone) }
+        val hero = budget?.let { HomeFigures.hero(it, r.entries, r.categories, now, zone, r.sinking) }
         val period = hero?.summary?.period ?: monthPeriod(now, zone)
         val goalSavings = HomeFigures.goalSavings(r.objectives, r.entries, now, zone)
-        val cash = HomeFigures.cashCheck(r.entries, r.accounts, p.cash, period, goalSavings)
+        val sinkingReserve = SinkingFunds.effect(r.sinking, period, r.entries, r.categories, zone).reserved
+        val cash = HomeFigures.cashCheck(r.entries, r.accounts, p.cash, period, goalSavings, sinkingReserve)
         val stale = cash != null && HomeFigures.staleSpendingAccounts(r.entries, r.accounts, p.cash, now, zone).isNotEmpty()
         val choice = HeroFigures.choose(hero?.safe, cash, p.preferCash)
         val sections = p.layout.shown.associate { cfg -> cfg.section to section(cfg, r, now, zone, p.firstDay) }

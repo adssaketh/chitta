@@ -69,6 +69,7 @@ fun BudgetDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit
             Spacer(Modifier.height(Dimens.Gap3))
             AmountText(if (s.left.isNegative) -s.left else s.left, style = ChittaTheme.type.amountHero)
             Text(if (s.left.isNegative) "over the budget of ${rupees(s.limit)}" else "left of ${rupees(s.limit)}", style = ChittaTheme.type.body, color = c.inkMuted)
+            if (!s.carry.isZero) Text(if (s.carry.isNegative) "Includes ${rupees(-s.carry)} overspent in earlier periods, taken off." else "Includes ${rupees(s.carry)} carried in from earlier periods.", style = ChittaTheme.type.label, color = c.inkMuted)
             Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2), modifier = Modifier.padding(vertical = Dimens.Gap3)) {
                 if (!b.income && s.pace == PaceStatus.OverLimit) Stamp("Over limit", tone = StampTone.Attention)
                 else if (!b.income && s.pace == PaceStatus.OverPace) Stamp("Over pace", tone = StampTone.Attention)

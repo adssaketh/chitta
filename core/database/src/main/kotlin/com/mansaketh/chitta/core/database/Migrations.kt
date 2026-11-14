@@ -52,6 +52,14 @@ object Migrations {
         }
     }
 
+    /** Phase 8e: rollover switch on budgets (off for every existing budget) and the sinking fund table. Nothing is dropped. */
+    val V6_TO_V7 = object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `budget` ADD COLUMN `rollover` INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("CREATE TABLE IF NOT EXISTS `sinking_fund` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `targetPaise` INTEGER NOT NULL, `startMs` INTEGER NOT NULL, `targetDateMs` INTEGER NOT NULL, `categoryId` TEXT, `archived` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, `createdAtMs` INTEGER NOT NULL, `modifiedAtMs` INTEGER, PRIMARY KEY(`id`))")
+        }
+    }
+
     /** Phase 5: the day of month a monthly or yearly bill belongs on, so a bill on the 31st survives short months. Nothing is dropped. */
     val V2_TO_V3 = object : Migration(2, 3) {
         override fun migrate(db: SupportSQLiteDatabase) {

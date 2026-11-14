@@ -47,6 +47,7 @@ fun BudgetSheet(existing: Budget?, ui: PlanUi, onSave: (BudgetForm) -> Unit, onD
     var savings by remember { mutableStateOf(existing?.income ?: false) }
     var debt by remember { mutableStateOf(existing?.let { Budgets.filterOn(it.filters, BudgetFilter.INCLUDE_DEBT_AND_CREDIT) } ?: false) }
     var absolute by remember { mutableStateOf(existing?.absoluteSpendingLimit ?: false) }
+    var rollover by remember { mutableStateOf(existing?.rollover ?: false) }
     var accounts by remember { mutableStateOf(existing?.accountIds?.toSet() ?: emptySet()) }
     var excluded by remember { mutableStateOf(existing?.excludedCategoryIds?.toSet() ?: emptySet()) }
     var step by remember { mutableStateOf(BStep.Form) }
@@ -91,6 +92,10 @@ fun BudgetSheet(existing: Budget?, ui: PlanUi, onSave: (BudgetForm) -> Unit, onD
                 ValueRow("Leaves out", if (excluded.isEmpty()) "Nothing" else "${excluded.size} categories", onClick = { step = BStep.Categories })
                 ValueRow("Count lent and borrowed", if (debt) "On" else "Off", onClick = { debt = !debt })
                 ValueRow("Category goals are", if (absolute) "Amounts" else "Percentages", onClick = { absolute = !absolute })
+                if (!savings && repeat != null) {
+                    ValueRow("Carry over what is left", if (rollover) "On" else "Off", onClick = { rollover = !rollover })
+                    Text("On: money left unspent is added to the next period, and an overspend is taken off it. Starts from this budget's first period.", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted, modifier = Modifier.padding(top = Dimens.Gap1))
+                }
                 if (existing?.addedTransactionsOnly == true) Text("This was an \"added only\" budget in Paddhu Pusthakam. Chitta cannot tell which entries were added to it, so it counts every matching entry.", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
                 Spacer(Modifier.height(Dimens.Gap4))
                 ChittaButton("Save", {
@@ -99,7 +104,7 @@ fun BudgetSheet(existing: Budget?, ui: PlanUi, onSave: (BudgetForm) -> Unit, onD
                         name.isBlank() -> problem = "Give it a name"
                         p == null || p.isZero -> problem = "Enter an amount above zero"
                         repeat == null && endMs <= startMs -> problem = "The end must be after the start"
-                        else -> onSave(BudgetForm(name, p, repeat, startMs, endMs, savings, debt, accounts.toList().ifEmpty { null }, excluded.toList().ifEmpty { null }, absolute))
+                        else -> onSave(BudgetForm(name, p, repeat, startMs, endMs, savings, debt, accounts.toList().ifEmpty { null }, excluded.toList().ifEmpty { null }, absolute, rollover && !savings && repeat != null))
                     }
                 }, confirmHaptic = true)
             }

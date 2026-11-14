@@ -129,6 +129,8 @@ data class Budget(
     val filters: List<BudgetFilter>?,
     val memberFilters: List<String>?,
     val absoluteSpendingLimit: Boolean,
+    /** New in Chitta (schema 7). Unspent or overspent money carries into the next period of a repeating spending budget. Off for every imported budget. */
+    val rollover: Boolean = false,
 )
 
 data class CategoryLimit(
