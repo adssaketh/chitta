@@ -8,16 +8,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.nestedScroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedScroll.NestedScrollSource
-import androidx.compose.ui.input.nestedScroll.nestedScroll
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import com.mansaketh.chitta.core.design.components.*
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
@@ -203,13 +200,13 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                     top == "gallery" -> extra?.invoke(::pop)
                 }
                 if (top == null && tab != MORE && tab != TabKey.Accounts.key) {
-                    AnimatedVisibility(
-                        visible = fabShown.value,
-                        modifier = Modifier.align(Alignment.BottomEnd).padding(Dimens.FabMargin),
-                        enter = fadeIn() + slideInVertically { it },
-                        exit = fadeOut() + slideOutVertically { it },
-                    ) {
-                        AddButton(onClick = { openAdd() }, onLongClick = { addMenu = true })
+                    val fabP by animateFloatAsState(if (fabShown.value) 1f else 0f, label = "addButton")
+                    if (fabP > 0.01f) {
+                        AddButton(
+                            onClick = { openAdd() }, onLongClick = { addMenu = true },
+                            modifier = Modifier.align(Alignment.BottomEnd).padding(Dimens.FabMargin)
+                                .graphicsLayer { alpha = fabP; translationY = (1f - fabP) * (size.height + Dimens.FabMargin.toPx()) },
+                        )
                     }
                 }
             }
