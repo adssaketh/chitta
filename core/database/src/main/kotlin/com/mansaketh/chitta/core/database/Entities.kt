@@ -343,3 +343,23 @@ data class SinkingFundEntity(
     val createdAtMs: Long,
     val modifiedAtMs: Long?,
 )
+
+/** An asset typed in by hand: gold, EPF or PPF (Phase 8i). Its values are in [AssetValueEntity]. */
+@Entity(tableName = "manual_asset")
+data class ManualAssetEntity(
+    @PrimaryKey val id: String,
+    val kind: String,
+    val name: String,
+    val note: String,
+    val createdAtMs: Long,
+)
+
+/** One dated value of a manual asset (Phase 8i). Deleted together with its asset by the repository. */
+@Entity(tableName = "asset_value", indices = [Index("assetId")])
+data class AssetValueEntity(
+    @PrimaryKey val id: String,
+    val assetId: String,
+    val asOfMs: Long,
+    val valuePaise: Long,
+    val recordedAtMs: Long,
+)

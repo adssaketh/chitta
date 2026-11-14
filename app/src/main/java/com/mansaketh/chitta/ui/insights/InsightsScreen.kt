@@ -340,10 +340,16 @@ private fun NetWorthTab(ui: InsightsUi) {
     if (now.depositCount > 0) TotalRow("Fixed deposits", now.deposits)
     if (now.fundCount > 0) TotalRow("Mutual funds", now.funds)
     if (now.npsCount > 0) TotalRow("NPS", now.nps)
+    if (now.goldCount > 0) TotalRow("Gold", now.gold)
+    if (now.epfCount > 0) TotalRow("EPF", now.epf)
+    if (now.ppfCount > 0) TotalRow("PPF", now.ppf)
     TotalRow("Owed to you", now.owedToYou)
     TotalRow("You owe", now.youOwe)
     now.fundsPriceDate?.let { Text("Mutual funds at their price of ${priceDay(it)}.", style = ChittaTheme.type.label, color = c.inkMuted) }
     now.npsPriceDate?.let { Text("NPS at its statement price of ${priceDay(it)}.", style = ChittaTheme.type.label, color = c.inkMuted) }
+    // Gold, EPF and PPF are typed in: say how old the oldest value is, so a stale figure is never mistaken for a fresh one.
+    val typedOldest = listOfNotNull(now.goldAsOfMs, now.epfAsOfMs, now.ppfAsOfMs).minOrNull()
+    if (typedOldest != null) Text("Gold, EPF and PPF at the values you typed; the oldest is dated ${dateText(typedOldest, ui.zone)}.", style = ChittaTheme.type.label, color = c.inkMuted)
     Spacer(Modifier.height(Dimens.SectionGap))
     SectionHeader("Last 12 months")
     if (ui.netSeries.size >= 2) {
@@ -357,7 +363,8 @@ private fun NetWorthTab(ui: InsightsUi) {
         }
         Text(
             "Each point is the book as it stood at the end of that month." +
-                if (now.fundCount + now.npsCount > 0) " Funds and NPS have no price history, so only today's point counts them." else "",
+                (if (now.fundCount + now.npsCount > 0) " Funds and NPS have no price history, so only today's point counts them." else "") +
+                (if (now.goldCount + now.epfCount + now.ppfCount > 0) " Gold, EPF and PPF count the value you had typed by then." else ""),
             style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2),
         )
     }
@@ -402,8 +409,15 @@ private fun NetWorthTab(ui: InsightsUi) {
             style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2),
         )
     }
+    val assetsOff = ui.netExtras.assets.any { (it.kind == com.mansaketh.chitta.core.model.AssetKind.GOLD && !ui.netExtras.includeGold) || (it.kind == com.mansaketh.chitta.core.model.AssetKind.EPF && !ui.netExtras.includeEpf) || (it.kind == com.mansaketh.chitta.core.model.AssetKind.PPF && !ui.netExtras.includePpf) }
+    if (assetsOff) {
+        Text(
+            "Some gold, EPF or PPF is not counted. Switch it on under Accounts > Gold, EPF and PPF.",
+            style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2),
+        )
+    }
     Text(
-        "Not counted: other assets. Card dues read from messages show on each card, not here, so a purchase is never counted twice.",
+        "Not counted: other kinds of asset. Card dues read from messages show on each card, not here, so a purchase is never counted twice.",
         style = ChittaTheme.type.body, color = c.inkMuted,
     )
 }

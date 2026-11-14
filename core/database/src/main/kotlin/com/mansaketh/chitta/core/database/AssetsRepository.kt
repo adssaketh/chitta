@@ -1,9 +1,12 @@
 package com.mansaketh.chitta.core.database
 
+import com.mansaketh.chitta.core.model.AssetValue
 import com.mansaketh.chitta.core.model.CardDue
 import com.mansaketh.chitta.core.model.FixedDeposit
+import com.mansaketh.chitta.core.model.ManualAsset
 import com.mansaketh.chitta.core.model.MutualFund
 import com.mansaketh.chitta.core.model.NpsAccount
+import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -76,5 +79,38 @@ class AssetsRepository(private val db: ChittaDatabase) {
         db.misc().deleteFunds(schemes.map { it.id })
         db.misc().deleteNps(id)
         return acc to schemes
+    }
+
+    // ---- gold, EPF and PPF typed in by hand (Phase 8i). Records only: no account balance moves.
+    fun observeAssets(): Flow<List<ManualAsset>> = db.misc().observeAssets().map { rows -> rows.mapNotNull { it.toModel() } }
+    fun observeAssetValues(): Flow<List<AssetValue>> = db.misc().observeAssetValues().map { rows -> rows.map { it.toModel() } }
+    suspend fun assets(): List<ManualAsset> = db.misc().getAssets().mapNotNull { it.toModel() }
+    suspend fun assetValues(assetId: String): List<AssetValue> = db.misc().getAssetValues(assetId).map { it.toModel() }
+
+    /** Saves a new or renamed asset. Its values are untouched. */
+    suspend fun saveAsset(a: ManualAsset) = db.misc().upsertAsset(a.toEntity())
+
+    /** Saves a new asset and its first value together. */
+    suspend fun addAsset(a: ManualAsset, first: AssetValue) = db.withTransaction {
+        db.misc().upsertAsset(a.toEntity())
+        db.misc().upsertAssetValue(first.toEntity())
+    }
+
+    suspend fun saveAssetValue(v: AssetValue) = db.misc().upsertAssetValue(v.toEntity())
+    suspend fun deleteAssetValue(id: String) = db.misc().deleteAssetValue(id)
+
+    /** Deletes the asset with all its values and returns both, so Undo can put them back. */
+    suspend fun deleteAsset(id: String): Pair<ManualAsset, List<AssetValue>>? = db.withTransaction {
+        val old = db.misc().getAssets().firstOrNull { it.id == id }?.toModel() ?: return@withTransaction null
+        val values = db.misc().getAssetValues(id).map { it.toModel() }
+        db.misc().deleteAssetValues(id)
+        db.misc().deleteAsset(id)
+        old to values
+    }
+
+    /** Puts back an asset and its values (Undo of a delete). */
+    suspend fun restoreAsset(a: ManualAsset, values: List<AssetValue>) = db.withTransaction {
+        db.misc().upsertAsset(a.toEntity())
+        if (values.isNotEmpty()) db.misc().upsertAssetValues(values.map { it.toEntity() })
     }
 }

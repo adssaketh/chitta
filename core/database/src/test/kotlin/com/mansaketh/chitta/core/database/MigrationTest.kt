@@ -57,7 +57,7 @@ class MigrationTest {
         val file = File(tmp.root, "old.db")
         createVersion(file, 1)
         val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext<Context>(), ChittaDatabase::class.java, file.absolutePath)
-            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5, Migrations.V5_TO_V6, Migrations.V6_TO_V7).allowMainThreadQueries().build()
+            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5, Migrations.V5_TO_V6, Migrations.V6_TO_V7, Migrations.V7_TO_V8).allowMainThreadQueries().build()
         try {
             val t = db.transactions().get("t1")!!
             assertEquals(-48_600L, t.amountPaise)
@@ -78,7 +78,7 @@ class MigrationTest {
         val file = File(tmp.root, "v2.db")
         createVersion(file, 2)
         val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext<Context>(), ChittaDatabase::class.java, file.absolutePath)
-            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5, Migrations.V5_TO_V6, Migrations.V6_TO_V7).allowMainThreadQueries().build()
+            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5, Migrations.V5_TO_V6, Migrations.V6_TO_V7, Migrations.V7_TO_V8).allowMainThreadQueries().build()
         try {
             val t = db.transactions().get("t1")!!
             assertEquals(-48_600L, t.amountPaise)
@@ -95,7 +95,7 @@ class MigrationTest {
         val file = File(tmp.root, "v3.db")
         createVersion(file, 3)
         val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext<Context>(), ChittaDatabase::class.java, file.absolutePath)
-            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5, Migrations.V5_TO_V6, Migrations.V6_TO_V7).allowMainThreadQueries().build()
+            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5, Migrations.V5_TO_V6, Migrations.V6_TO_V7, Migrations.V7_TO_V8).allowMainThreadQueries().build()
         try {
             val t = db.transactions().get("t1")!!
             assertEquals(-48_600L, t.amountPaise)
@@ -131,7 +131,7 @@ class MigrationTest {
         val file = File(tmp.root, "v4.db")
         createVersion(file, 4)
         val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext<Context>(), ChittaDatabase::class.java, file.absolutePath)
-            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5, Migrations.V5_TO_V6, Migrations.V6_TO_V7).allowMainThreadQueries().build()
+            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5, Migrations.V5_TO_V6, Migrations.V6_TO_V7, Migrations.V7_TO_V8).allowMainThreadQueries().build()
         try {
             assertTrue(db.misc().getFunds().isEmpty())
             val f = com.mansaketh.chitta.core.model.MutualFund("m1", "Sample", "INF000A00000", "", "100.500", 4_000_000L, "manual", 1_000L, null, null, "", null)
@@ -142,6 +142,26 @@ class MigrationTest {
             val withSip = f.copy(sipAmountPaise = 500_000L, sipDay = 5, sipUnits = "12.345", sipInvestedPaise = 1_000_000L, sipCount = 2, sipThrough = "2026-11-05")
             AssetsRepository(db).saveFund(withSip)
             assertEquals(withSip, AssetsRepository(db).funds().single())
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test fun versionFourGainsAssetTablesAndKeepsEntries() = runBlocking {
+        val file = File(tmp.root, "v4-assets.db")
+        createVersion(file, 4)
+        val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext<Context>(), ChittaDatabase::class.java, file.absolutePath)
+            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5, Migrations.V5_TO_V6, Migrations.V6_TO_V7, Migrations.V7_TO_V8).allowMainThreadQueries().build()
+        try {
+            // Phase 8i (schema 8): the old book is intact and the two new tables start empty and work.
+            assertEquals(-48_600L, db.transactions().get("t1")!!.amountPaise)
+            val repo = AssetsRepository(db)
+            assertTrue(repo.assets().isEmpty())
+            val asset = com.mansaketh.chitta.core.model.ManualAsset("g1", com.mansaketh.chitta.core.model.AssetKind.GOLD, "Gold coins", "", 1_000L)
+            val first = com.mansaketh.chitta.core.model.AssetValue("v1", "g1", 2_000L, 10_000_000L, 2_000L)
+            repo.addAsset(asset, first)
+            assertEquals(asset, repo.assets().single())
+            assertEquals(listOf(first), repo.assetValues("g1"))
         } finally {
             db.close()
         }

@@ -60,6 +60,15 @@ object Migrations {
         }
     }
 
+    /** Phase 8i: gold, EPF and PPF typed in by hand, and their dated values. Two new tables; nothing is changed or dropped. */
+    val V7_TO_V8 = object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS `manual_asset` (`id` TEXT NOT NULL, `kind` TEXT NOT NULL, `name` TEXT NOT NULL, `note` TEXT NOT NULL, `createdAtMs` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+            db.execSQL("CREATE TABLE IF NOT EXISTS `asset_value` (`id` TEXT NOT NULL, `assetId` TEXT NOT NULL, `asOfMs` INTEGER NOT NULL, `valuePaise` INTEGER NOT NULL, `recordedAtMs` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_asset_value_assetId` ON `asset_value` (`assetId`)")
+        }
+    }
+
     /** Phase 5: the day of month a monthly or yearly bill belongs on, so a bill on the 31st survives short months. Nothing is dropped. */
     val V2_TO_V3 = object : Migration(2, 3) {
         override fun migrate(db: SupportSQLiteDatabase) {

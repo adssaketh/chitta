@@ -45,6 +45,7 @@ class AppViewModels(
     val intake: com.mansaketh.chitta.ui.intake.IntakeViewModel,
     val rules: com.mansaketh.chitta.ui.rules.RulesViewModel,
     val automation: com.mansaketh.chitta.ui.automation.AutomationViewModel,
+    val assets: com.mansaketh.chitta.ui.assets.AssetsViewModel,
 )
 
 /**
@@ -135,7 +136,7 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                         )
                         TabKey.Ledger.key -> LedgerScreen(vms.ledger, onOpen = { push("detail:$it") }, onAdd = { openAdd() })
                         TabKey.Insights.key -> InsightsScreen(vms.insights, onOpenEntry = { push("detail:$it") })
-                        TabKey.Accounts.key -> AccountsScreen(vms.manage, onBack = { tabChoice = "" }, onTransfer = { openAdd(EntryType.Transfer) }, onOpenFunds = { push("mutual-funds") })
+                        TabKey.Accounts.key -> AccountsScreen(vms.manage, onBack = { tabChoice = "" }, onTransfer = { openAdd(EntryType.Transfer) }, onOpenFunds = { push("mutual-funds") }, onOpenAssets = { push("assets") })
                         TabKey.Plan.key -> PlanScreen(vms.plan, planTab, { planTab = it }, { push(it) }, { planSheet = it })
                         TabKey.Budgets.key -> PlanScreen(vms.plan, 0, { tabChoice = TabKey.Plan.key; planTab = it }, { push(it) }, { planSheet = it })
                         TabKey.Goals.key -> PlanScreen(vms.plan, 1, { tabChoice = TabKey.Plan.key; planTab = it }, { push(it) }, { planSheet = it })
@@ -154,7 +155,8 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                     top.startsWith("history:") -> EntryHistoryScreen(vms.detail, top.removePrefix("history:"), onBack = ::pop)
                     top == "customise" -> CustomiseScreen(vms.home, onBack = ::pop)
                     top == "month-review" -> com.mansaketh.chitta.ui.insights.MonthReviewScreen(vms.insights, onBack = ::pop)
-                    top == "accounts" -> AccountsScreen(vms.manage, onBack = ::pop, onTransfer = { openAdd(EntryType.Transfer) }, onOpenFunds = { push("mutual-funds") })
+                    top == "accounts" -> AccountsScreen(vms.manage, onBack = ::pop, onTransfer = { openAdd(EntryType.Transfer) }, onOpenFunds = { push("mutual-funds") }, onOpenAssets = { push("assets") })
+                    top == "assets" -> com.mansaketh.chitta.ui.assets.AssetsScreen(vms.assets, onBack = ::pop)
                     top == "mutual-funds" -> com.mansaketh.chitta.ui.manage.MutualFundsScreen(vms.manage, onBack = ::pop)
                     top == "categories" -> CategoriesScreen(vms.manage, onBack = ::pop)
                     top == "import" -> ImportScreen(vms.imports, onBack = { vms.imports.reset(); pop() }, onFinished = { vms.imports.reset(); stack = emptyList() })

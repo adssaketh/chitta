@@ -98,4 +98,38 @@ class AssetsRepositoryTest {
         assertEquals(listOf("b", "c"), repo.funds().map { it.id })
         assertEquals("2", repo.funds().first { it.id == "c" }.units)
     }
+
+    private fun asset(id: String, kind: com.mansaketh.chitta.core.model.AssetKind = com.mansaketh.chitta.core.model.AssetKind.EPF) =
+        com.mansaketh.chitta.core.model.ManualAsset(id, kind, "Asset $id", "note", 1_000L)
+    private fun value(id: String, assetId: String, asOf: Long, paise: Long) = com.mansaketh.chitta.core.model.AssetValue(id, assetId, asOf, paise, asOf)
+
+    @Test fun assetsSaveAddValuesAndReadBackInOrder() = runBlocking {
+        repo.addAsset(asset("e1"), value("v1", "e1", 3_000, 5_000_000))
+        repo.saveAssetValue(value("v2", "e1", 2_000, 4_000_000))      // an older value typed later still sorts by its day
+        repo.saveAsset(asset("e1").copy(name = "EPF main"))
+        assertEquals("EPF main", repo.observeAssets().first().single().name)
+        assertEquals(listOf("v2", "v1"), repo.assetValues("e1").map { it.id })
+        assertEquals(listOf("v2", "v1"), repo.observeAssetValues().first().map { it.id })
+        repo.deleteAssetValue("v2")
+        assertEquals(listOf("v1"), repo.assetValues("e1").map { it.id })
+    }
+
+    @Test fun deletingAnAssetTakesItsValuesAndUndoBringsThemBack() = runBlocking {
+        repo.addAsset(asset("p1", com.mansaketh.chitta.core.model.AssetKind.PPF), value("v1", "p1", 1_000, 100))
+        repo.addAsset(asset("p2", com.mansaketh.chitta.core.model.AssetKind.PPF), value("v2", "p2", 1_000, 200))
+        val gone = repo.deleteAsset("p1")!!
+        assertEquals(listOf("p2"), repo.assets().map { it.id })
+        assertTrue(repo.assetValues("p1").isEmpty())
+        assertEquals(listOf("v2"), repo.observeAssetValues().first().map { it.id })     // the other asset's values are untouched
+        assertNull(repo.deleteAsset("p1"))
+        repo.restoreAsset(gone.first, gone.second)
+        assertEquals(listOf("p1", "p2"), repo.assets().map { it.id }.sorted())
+        assertEquals(listOf("v1"), repo.assetValues("p1").map { it.id })
+    }
+
+    @Test fun anUnknownKindWrittenByANewerBuildIsSkippedNotGuessed() = runBlocking {
+        db.misc().upsertAsset(ManualAssetEntity("x1", "BITCOIN", "Mystery", "", 1L))
+        repo.saveAsset(asset("e1"))
+        assertEquals(listOf("e1"), repo.assets().map { it.id })
+    }
 }

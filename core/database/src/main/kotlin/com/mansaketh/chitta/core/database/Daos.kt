@@ -140,6 +140,16 @@ interface MiscDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertSinkingFund(row: SinkingFundEntity)
     @Query("SELECT * FROM sinking_fund WHERE id = :id") suspend fun getSinkingFund(id: String): SinkingFundEntity?
     @Query("DELETE FROM sinking_fund WHERE id = :id") suspend fun deleteSinkingFund(id: String)
+    @Query("SELECT * FROM manual_asset ORDER BY kind, name, id") fun observeAssets(): Flow<List<ManualAssetEntity>>
+    @Query("SELECT * FROM manual_asset ORDER BY kind, name, id") suspend fun getAssets(): List<ManualAssetEntity>
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertAsset(row: ManualAssetEntity)
+    @Query("DELETE FROM manual_asset WHERE id = :id") suspend fun deleteAsset(id: String)
+    @Query("SELECT * FROM asset_value ORDER BY asOfMs, recordedAtMs, id") fun observeAssetValues(): Flow<List<AssetValueEntity>>
+    @Query("SELECT * FROM asset_value WHERE assetId = :assetId ORDER BY asOfMs, recordedAtMs, id") suspend fun getAssetValues(assetId: String): List<AssetValueEntity>
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertAssetValue(row: AssetValueEntity)
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertAssetValues(rows: List<AssetValueEntity>)
+    @Query("DELETE FROM asset_value WHERE id = :id") suspend fun deleteAssetValue(id: String)
+    @Query("DELETE FROM asset_value WHERE assetId = :assetId") suspend fun deleteAssetValues(assetId: String)
 }
 
 @Dao

@@ -5,6 +5,9 @@ import com.mansaketh.chitta.core.model.AccountWidget
 import com.mansaketh.chitta.core.model.ActivityEntity
 import com.mansaketh.chitta.core.model.ActivityEntry
 import com.mansaketh.chitta.core.model.Budget
+import com.mansaketh.chitta.core.model.AssetKind
+import com.mansaketh.chitta.core.model.AssetValue
+import com.mansaketh.chitta.core.model.ManualAsset
 import com.mansaketh.chitta.core.model.SinkingFund
 import com.mansaketh.chitta.core.model.BudgetFilter
 import com.mansaketh.chitta.core.model.CardDue
@@ -100,3 +103,9 @@ fun NpsAccountEntity.toModel() = NpsAccount(id, name, netContributionsPaise, asO
 
 fun SinkingFund.toEntity() = SinkingFundEntity(id, name, targetPaise, startMs, targetDateMs, categoryId, archived, sortOrder, createdAtMs, modifiedAtMs)
 fun SinkingFundEntity.toModel() = SinkingFund(id, name, targetPaise, startMs, targetDateMs, categoryId, archived, sortOrder, createdAtMs, modifiedAtMs)
+
+fun ManualAsset.toEntity() = ManualAssetEntity(id, kind.name, name, note, createdAtMs)
+/** A row whose kind is not one this version knows (written by a newer build) is skipped by the repository, not guessed as another kind. */
+fun ManualAssetEntity.toModel(): ManualAsset? = AssetKind.of(kind)?.let { ManualAsset(id, it, name, note, createdAtMs) }
+fun AssetValue.toEntity() = AssetValueEntity(id, assetId, asOfMs, valuePaise, recordedAtMs)
+fun AssetValueEntity.toModel() = AssetValue(id, assetId, asOfMs, valuePaise, recordedAtMs)

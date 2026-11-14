@@ -1,6 +1,9 @@
 package com.mansaketh.chitta.core.domain
 
 import com.mansaketh.chitta.core.model.Account
+import com.mansaketh.chitta.core.model.AssetKind
+import com.mansaketh.chitta.core.model.AssetValue
+import com.mansaketh.chitta.core.model.ManualAsset
 import com.mansaketh.chitta.core.model.FixedDeposit
 import com.mansaketh.chitta.core.model.LoanTerms
 import com.mansaketh.chitta.core.model.MutualFund
@@ -26,7 +29,10 @@ import java.time.ZoneId
  *    never added into each other. A fund with no price has no value and is left out; [fundCount] and [npsCount] say how many were counted, and
  *    [fundsPriceDate] / [npsPriceDate] give the oldest price date among them. Prices have no history here, so they are counted in today's
  *    figure only: [NetWorth.series] leaves them out of earlier months.
- * Not included yet: other assets. A credit card kept as an account already counts through its negative
+ *  - [gold], [epf] and [ppf] (Phase 8i): assets typed in by hand, each at the value in force on that day (the newest typed value dated on or before it),
+ *    each only when its switch is on. They have a value history, so an earlier month counts what had been typed by then. [goldCount] etc. say how many
+ *    assets were counted and [goldAsOfMs] etc. give the oldest value date among them.
+ * Not included yet: other kinds of asset. A credit card kept as an account already counts through its negative
  * balance; card dues read from SMS feed the card cockpit, not Net worth, so the same purchase is never counted twice.
  */
 data class NetWorthFigures(
@@ -34,8 +40,11 @@ data class NetWorthFigures(
     val deposits: Paise = Paise.ZERO, val depositCount: Int = 0,
     val funds: Paise = Paise.ZERO, val fundCount: Int = 0, val fundsPriceDate: String? = null,
     val nps: Paise = Paise.ZERO, val npsCount: Int = 0, val npsPriceDate: String? = null,
+    val gold: Paise = Paise.ZERO, val goldCount: Int = 0, val goldAsOfMs: Long? = null,
+    val epf: Paise = Paise.ZERO, val epfCount: Int = 0, val epfAsOfMs: Long? = null,
+    val ppf: Paise = Paise.ZERO, val ppfCount: Int = 0, val ppfAsOfMs: Long? = null,
 ) {
-    val total: Paise get() = accounts + deposits + funds + nps + owedToYou - youOwe
+    val total: Paise get() = accounts + deposits + funds + nps + gold + epf + ppf + owedToYou - youOwe
 }
 
 /**
@@ -47,6 +56,9 @@ data class NetWorthExtras(
     val includeDeposits: Boolean = false, val includeInstalments: Boolean = true,
     val funds: List<MutualFund> = emptyList(), val npsSchemes: List<MutualFund> = emptyList(),
     val includeFunds: Boolean = true, val includeNps: Boolean = true,
+    /** Phase 8i: gold, EPF and PPF typed in by hand, their dated values, and the three switches (all on by default). */
+    val assets: List<ManualAsset> = emptyList(), val assetValues: List<AssetValue> = emptyList(),
+    val includeGold: Boolean = true, val includeEpf: Boolean = true, val includePpf: Boolean = true,
 ) {
     /** The same extras without fund and NPS rows, for months before today (no price history exists). */
     fun withoutHoldings(): NetWorthExtras = copy(funds = emptyList(), npsSchemes = emptyList())
@@ -90,10 +102,16 @@ object NetWorth {
         val deposits = open.fold(Paise.ZERO) { a, d -> a + FixedDeposits.currentValue(d, asOfMs, zone) }
         val fundRows = if (extras.includeFunds) extras.funds.filter { MutualFunds.value(it) != null } else emptyList()
         val npsRows = if (extras.includeNps) extras.npsSchemes.filter { MutualFunds.value(it) != null } else emptyList()
+        val gold = if (extras.includeGold) ManualAssets.total(AssetKind.GOLD, extras.assets, extras.assetValues, asOfMs) else AssetTotal(Paise.ZERO, 0, null)
+        val epf = if (extras.includeEpf) ManualAssets.total(AssetKind.EPF, extras.assets, extras.assetValues, asOfMs) else AssetTotal(Paise.ZERO, 0, null)
+        val ppf = if (extras.includePpf) ManualAssets.total(AssetKind.PPF, extras.assets, extras.assetValues, asOfMs) else AssetTotal(Paise.ZERO, 0, null)
         return NetWorthFigures(
             balance, owed, owe, accounts.count { !isRupee(it) }, deposits, open.size,
             funds = fundRows.fold(Paise.ZERO) { a, f -> a + MutualFunds.value(f)!! }, fundCount = fundRows.size, fundsPriceDate = fundRows.mapNotNull { it.navDate }.minOrNull(),
             nps = npsRows.fold(Paise.ZERO) { a, f -> a + MutualFunds.value(f)!! }, npsCount = npsRows.size, npsPriceDate = npsRows.mapNotNull { it.navDate }.minOrNull(),
+            gold = gold.value, goldCount = gold.count, goldAsOfMs = gold.oldestAsOfMs,
+            epf = epf.value, epfCount = epf.count, epfAsOfMs = epf.oldestAsOfMs,
+            ppf = ppf.value, ppfCount = ppf.count, ppfAsOfMs = ppf.oldestAsOfMs,
         )
     }
 

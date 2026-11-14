@@ -73,6 +73,17 @@ class UiPrefs @Inject constructor(@ApplicationContext context: Context) {
     val netWorthNps: StateFlow<Boolean> = _nwNps
     fun setNetWorthNps(v: Boolean) { _nwNps.value = v; p.edit().putBoolean("nwNps", v).apply() }
 
+    /** Whether gold, EPF and PPF count in Net worth, each as its own line. On by default (D159). */
+    private val _nwGold = MutableStateFlow(p.getBoolean("nwGold", true))
+    val netWorthGold: StateFlow<Boolean> = _nwGold
+    fun setNetWorthGold(v: Boolean) { _nwGold.value = v; p.edit().putBoolean("nwGold", v).apply() }
+    private val _nwEpf = MutableStateFlow(p.getBoolean("nwEpf", true))
+    val netWorthEpf: StateFlow<Boolean> = _nwEpf
+    fun setNetWorthEpf(v: Boolean) { _nwEpf.value = v; p.edit().putBoolean("nwEpf", v).apply() }
+    private val _nwPpf = MutableStateFlow(p.getBoolean("nwPpf", true))
+    val netWorthPpf: StateFlow<Boolean> = _nwPpf
+    fun setNetWorthPpf(v: Boolean) { _nwPpf.value = v; p.edit().putBoolean("nwPpf", v).apply() }
+
     /** Daily fund price fetch (a background job plus a refresh when the app opens). On by default (D118). */
     private val _fundPricesAuto = MutableStateFlow(p.getBoolean("fundPricesAuto", true))
     val fundPricesAuto: StateFlow<Boolean> = _fundPricesAuto

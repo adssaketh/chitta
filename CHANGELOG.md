@@ -1,5 +1,12 @@
 # Changelog
 
+## Phase 8i: gold, EPF and PPF (14 Nov 2026) - on branch `phase-8i-assets`
+- Accounts > "Gold, EPF and PPF": add assets by name and type what each is worth with a date. Every update is kept as history; Update value, History, Rename or edit note, Delete (10-second Undo each).
+- Net worth: Gold, EPF and PPF lines, each with its own switch (on by default); the 12-month chart counts the value you had typed by each month. STALE after 35 days (EPF, PPF) or 60 days (gold).
+- `ManualAssets` in `:core:domain`; `ManualAsset`, `AssetValue`, `AssetKind` in `:core:model`. Schema 8 with tested migration: `manual_asset` and `asset_value`.
+- Decisions D158 to D164. Tests: 11 new in `Phase8iTest` worked by hand (416 in `:core:domain` pass locally); 4 new database and migration tests that CI runs (they need Robolectric).
+- Written without a local Android build; CI compiles the app. No new libraries.
+
 ## Phase 8h: receipt capture (14 Nov 2026) - on branch `phase-8h-receipts`
 - Entry detail gets a "Receipt" row: take a photo (phone camera app) or choose one from the gallery; one photo per entry; view it full screen with pinch to zoom; read the text again; remove it (10-second Undo).
 - `ReceiptParser` in `:core:intake` (plain Kotlin) reads the amount, date and shop name from the photo's text. ML Kit reads the text on the phone (already in the app). The result is only suggested: each of amount, date and title has its own "Use this" button.
