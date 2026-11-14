@@ -1,5 +1,13 @@
 # Changelog
 
+## Phase 8e: rollover budgets, sinking funds, Zerodha ledger (14 Nov 2026) - on `main`
+- Rollover: a per-budget switch (repeating spending budgets only, off by default) carries unspent or overspent money into the next period. `Rollover` in `:core:domain`; `BudgetSummary.carry`; the budget screen says what carried in; the earlier-periods list shows each period's own limit.
+- Sinking funds: Plan > Sinking funds. A total, a start, a due date and an optional category that pays the bill. `SinkingFunds` spreads the total over the calendar months (shares add up to the paisa), reserves this month's share off Safe to spend and the cash check, and adds back spending the fund already set aside. Home's "How this is worked out" shows both lines.
+- Schema 7 with tested migration: `budget.rollover` and the `sinking_fund` table.
+- Zerodha Console ledger (.xlsx or .csv): `XlsxReader` (no library) and `ZerodhaLedger` in `:core:intake`. The CSV import now accepts it: opening balance, every row's running balance and the closing balance are checked (refused with the row number if not); the review list then works as for any CSV, with the opening balance as the first row.
+- Decisions D124 to D134. Tests: 8 rollover, 13 sinking funds, 9 ledger, 3 xlsx (389 in the plain-Kotlin modules I could run).
+- Written without a local Android build; CI compiles and tests the rest.
+
 ## Phase 8d: fund prices, SIP estimates, Net worth lines (14 Nov 2026) - on branch `phase-8d-prices`
 - `:core:intake`: `AmfiNav` reads AMFI's NAV file by column name (refused if a column is missing or under 1,000 schemes); `FundMatchIndex` and `FundPrices` match funds to schemes by code, ISIN, then name, and offer a pick list when unsure. A trimmed real copy of the file is a test resource. 13 new tests.
 - `:core:domain`: `Sip` (instalment dates, units, crediting, reset); fund value and gain now include the SIP estimate; `NetWorth` gains Mutual funds and NPS lines (today only, each with a switch). 11 new tests.

@@ -72,9 +72,9 @@ fun CsvImportScreen(vm: CsvImportViewModel, onBack: () -> Unit) {
         ChittaTopBar("Import from CSV", onBack = { vm.reset(); onBack() })
         when (val s = stage) {
             CsvStage.Idle -> Column(Modifier.padding(horizontal = Dimens.Margin), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Dimens.Gap3)) {
-                Text("Pick a CSV file from a bank or another app. You confirm which column is which, then review every row before anything is saved.", style = ChittaTheme.type.body, color = c.ink)
+                Text("Pick a CSV file from a bank or another app, or a Zerodha Console ledger (Excel or CSV). You confirm which column is which, then review every row before anything is saved.", style = ChittaTheme.type.body, color = c.ink)
                 Text("Transfers between your own accounts are not imported from CSV. Add those with Transfer.", style = ChittaTheme.type.label, color = c.inkMuted)
-                ChittaButton("Choose a CSV file", { picker.launch(arrayOf("text/*", "application/csv", "application/vnd.ms-excel", "*/*")) })
+                ChittaButton("Choose a CSV or Excel file", { picker.launch(arrayOf("text/*", "application/csv", "application/vnd.ms-excel", "*/*")) })
             }
             CsvStage.Reading, CsvStage.Saving -> Column(Modifier.padding(horizontal = Dimens.Margin)) { LoadingPlaceholder() }
             is CsvStage.Failed -> Column(Modifier.padding(horizontal = Dimens.Margin), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Dimens.Gap3)) {
@@ -110,6 +110,7 @@ private fun MappingStep(vm: CsvImportViewModel, s: CsvStage.Mapping) {
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = 160.dp)) {
         Text("${s.fileName} · ${s.rows.size - (if (m.hasHeader) 1 else 0)} rows", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2))
+        if (s.notice != null) Text(s.notice, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2))
         SectionHeader("Which column is which")
         HairlineRule()
         fields.forEach { (key, label, value) -> ValueRow(label, columnLabel(value), onClick = { sheet = "col:$key" }) }
