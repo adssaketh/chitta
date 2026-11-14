@@ -1,5 +1,16 @@
 # Changelog
 
+## Phase 9b step 2: Household (15 Nov 2026) - on branch `phase-9b-household`
+- Settings > Household: sign in to the household with the same Google account as Drive backup (one extra tap on a phone that signed in during 9a), then create a household, join with an 8-character code, or leave.
+- Household page (PDF p.31): household name, members "2 of 8" with an OWNER stamp, "Invite someone", "Show account balances to members" (owner only), "Leave this household".
+- Owner taps another member: make owner (one atomic write, your invite code is cancelled), let them delete others' entries or not, remove. Tap the household name to rename it. Tap your own row to change your name.
+- Invite sheet (PDF p.32): one active code, tap to copy, share, make a new code (cancels the old one), stop people joining. Shows how many places are left.
+- Same Firestore data as the old Flutter Paddhu (users, invites, households, members), so a household made there opens here. The published `firestore.rules` are used unchanged.
+- Leaving or joining again deletes the loans and fixed deposits you had shared (the old app may have made some); entries on the phone are never touched.
+- Not in this step: sharing entries, Everyone/Mine, Who spent how much, settle-up, shared loans and deposits (steps 3 to 5). "Your sharing" and "Who spent how much" from PDF p.31 are not drawn yet.
+- Libraries: Firebase BoM 35.2.0 (firebase-auth, firebase-firestore). No google-services plugin.
+- 17 new domain tests (`HouseholdTest`).
+
 ## Swipe fix, vibration strength, ledger scroll ticks (14 Nov 2026) - on branch `phase-ui-polish`
 - Tab swipe: once the finger has clearly moved sideways the movement is taken before the list sees it, so a diagonal swipe no longer turns into a scroll and fails. The Plan tab strip still scrolls on its own.
 - Settings > Look and feel > Vibration strength: Off, Light, Medium (default), Strong. Uses the phone's vibrator directly (VIBRATE permission) with a set strength; phones whose motor cannot vary strength use the normal system tap. The old on/off choice carries over (Off stays Off).

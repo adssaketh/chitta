@@ -81,6 +81,11 @@ dependencies {
     implementation(libs.androidx.credentials.play)
     implementation(libs.google.googleid)
     implementation(libs.play.services.auth)
+    // Household (Phase 9b): Firebase Auth signs in with the same Google account, Firestore holds the household. No google-services plugin:
+    // the app starts Firebase itself from public ids in FirebaseSession (D197).
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
     // Home-screen widgets (Phase 8j). Glance 1.2.0 is the latest stable; 1.3.0 is still alpha.
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.biometric)

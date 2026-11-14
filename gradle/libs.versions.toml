@@ -24,6 +24,8 @@ glance = "1.2.0"
 credentials = "1.6.0"
 googleid = "1.2.1"
 playServicesAuth = "22.0.0"
+# Phase 9b: household. Firebase BoM 35.2.0 is the latest stable (11 Nov 2026); it pins firebase-auth 25.0.0 and firebase-firestore 27.2.0.
+firebaseBom = "35.2.0"
 
 [libraries]
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
@@ -62,6 +64,9 @@ androidx-credentials = { module = "androidx.credentials:credentials", version.re
 androidx-credentials-play = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentials" }
 google-googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
 play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+firebase-auth = { module = "com.google.firebase:firebase-auth" }
+firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
 androidx-work-runtime = { module = "androidx.work:work-runtime", version.ref = "work" }
 hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
 

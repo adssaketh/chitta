@@ -30,7 +30,20 @@ sealed interface SignInResult {
 class GoogleAccount @Inject constructor(
     @ApplicationContext private val context: Context,
     private val prefs: CloudPrefs,
+    private val firebase: FirebaseSession,
+    private val household: HouseholdPrefs,
 ) {
+    /**
+     * Makes sure Firebase has the same person signed in (the household needs it). A phone signed in by Phase 9a has the Google account
+     * but no Firebase sign-in yet, so this asks Google once more (one tap) and then signs in to Firebase.
+     */
+    suspend fun ensureFirebase(activity: Activity): SignInResult {
+        val have = firebase.email
+        val saved = prefs.email.value
+        if (firebase.uid != null && have != null && have.equals(saved, ignoreCase = true)) return SignInResult.Ok(have)
+        return signIn(activity)
+    }
+
     suspend fun signIn(activity: Activity): SignInResult {
         val request = GetCredentialRequest.Builder()
             .addCredentialOption(GetSignInWithGoogleOption.Builder(BuildConfig.GOOGLE_WEB_CLIENT_ID).build())
@@ -45,6 +58,9 @@ class GoogleAccount @Inject constructor(
             // For a Google credential the id is the account's email address.
             val email = google.id.ifBlank { return SignInResult.Failed("Google did not say which account this is.") }
             prefs.signedIn(email)
+            // Drive backup only needs the Google account, so a failed Firebase sign-in (no network, say) does not fail this one.
+            // The household screen tries again when it opens.
+            runCatching { firebase.signIn(google.idToken) }
             SignInResult.Ok(email)
         } catch (e: GetCredentialCancellationException) {
             SignInResult.Cancelled
@@ -63,6 +79,9 @@ class GoogleAccount @Inject constructor(
     /** Forgets the account on this phone. The backups stay in the person's Drive. */
     suspend fun signOut() {
         runCatching { CredentialManager.create(context).clearCredentialState(ClearCredentialStateRequest()) }
+        // The household copy on this phone belongs to the signed-in account, so it goes too. The household itself stays on the server.
+        firebase.signOut()
+        household.clear()
         prefs.signedOut()
     }
 }
