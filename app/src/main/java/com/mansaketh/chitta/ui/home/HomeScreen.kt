@@ -67,7 +67,7 @@ fun HomeScreen(
             HideAmountsAction(hidden, onToggleHide)
         })
         if (ui.loading) { LoadingPlaceholder(Modifier.padding(Dimens.Margin)); return@Column }
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = 160.dp)) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.FabInset)) {
             ui.reviewMonth?.let { month ->
                 Row(
                     Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(role = Role.Button, onClickLabel = "Open the month in review", onClick = onOpenReview),
@@ -100,56 +100,57 @@ fun HomeScreen(
                 if (choice.warn) {
                     Text("Your cash is lower than your budget says. The cash figure is the safer one.", style = ChittaTheme.type.body, color = c.warningText, modifier = Modifier.padding(top = Dimens.Gap2))
                 }
-                Text(
-                    "How this is worked out", style = ChittaTheme.type.labelMedium, color = c.ink,
-                    modifier = Modifier.heightIn(min = Dimens.TouchTarget).clickable(role = Role.Button) { sheet = "explain" }.wrapContentHeight(Alignment.CenterVertically),
-                )
+                LinkText("How this is worked out") { sheet = "explain" }
 
                 // The budget block (ring, per day, range, month line) stays under the cash check, named, so one budget never passes for all your money (D187).
                 if (hero != null) {
                     if (choice.hero == Hero.CashCheck) {
-                        Spacer(Modifier.height(Dimens.SectionGap))
+                        // The link's own 16 dp of air is the gap above the rule; the rule is followed by one section gap and a heading.
                         HairlineRule()
-                        Text(hero.budget.name + " budget", style = ChittaTheme.type.labelMedium, color = c.ink, modifier = Modifier.padding(top = Dimens.Gap3))
+                        Spacer(Modifier.height(Dimens.SectionGap))
+                        SectionHeader(hero.budget.name + " budget")
+                    } else {
+                        Spacer(Modifier.height(Dimens.HeadingGap))
                     }
-                    Spacer(Modifier.height(Dimens.Gap3))
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.Gap6)) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.FigureGap)) {
                         BudgetRing(hero.ring, diameter = 120.dp)
                         RingLegend(Paise((hero.summary.spent.value - hero.sinking.covered.value).coerceAtLeast(0)), hero.billsDue + hero.sinking.reserved, hero.safe, Modifier.weight(1f))
                     }
                     Spacer(Modifier.height(Dimens.SectionGap))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Dimens.Gap6)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Dimens.FigureGap)) {
                         Column(Modifier.weight(1f)) {
                             Text("Per day", style = ChittaTheme.type.label, color = c.inkMuted)
                             val pd = hero.perDay
-                            if (pd != null) AmountText(pd, style = ChittaTheme.type.amountLarge, roundToRupee = true)
-                            else Text("None", style = ChittaTheme.type.amountLarge, color = c.ink)
+                            // A figure steps down a size when it does not fit its half-width column.
+                            if (pd != null) AmountText(pd, style = ChittaTheme.type.figure, fallbackStyles = ChittaTheme.type.figureSteps, roundToRupee = true)
+                            else Text("None", style = ChittaTheme.type.figure, color = c.ink)
                             Text(if (hero.summary.daysLeft == 1) "for the 1 day left" else "for the ${hero.summary.daysLeft} days left", style = ChittaTheme.type.label, color = c.inkMuted)
                         }
                         Column(Modifier.weight(1f)) {
                             Text("Range", style = ChittaTheme.type.label, color = c.inkMuted)
                             when (val r = hero.range) {
-                                is RangeResult.Days -> Text(if (r.days == 1) "1 day" else "${r.days} days", style = ChittaTheme.type.amountLarge, color = c.ink)
+                                is RangeResult.Days -> Text(if (r.days == 1) "1 day" else "${r.days} days", style = ChittaTheme.type.figure, color = c.ink, maxLines = 1)
                                 RangeResult.NotEnoughData -> Text("Not enough data yet", style = ChittaTheme.type.body, color = c.inkMuted)
                                 RangeResult.NoSpending -> Text("No spending yet", style = ChittaTheme.type.body, color = c.inkMuted)
                             }
-                            hero.rangeShortDays?.let { Text(if (it == 1) "1 day short of the month end" else "$it days short of the month end", style = ChittaTheme.type.label, color = c.warningText) }
+                            hero.rangeShortDays?.let { Text(if (it == 1) "1 day short" else "$it days short", style = ChittaTheme.type.label, color = c.warningText) }
                         }
                     }
                     Spacer(Modifier.height(Dimens.SectionGap))
                     val s = hero.summary
+                    // Label and amount sit on one baseline; the stamp is centred on the row.
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Spent", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.weight(1f))
-                        AmountText(s.spent, style = ChittaTheme.type.amount)
-                        Spacer(Modifier.width(Dimens.Gap2))
+                        Text("Spent", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.weight(1f).alignByBaseline())
+                        AmountText(s.spent, style = ChittaTheme.type.amount, fallbackStyles = listOf(ChittaTheme.type.amountRow), modifier = Modifier.alignByBaseline())
+                        Spacer(Modifier.width(Dimens.InlineGap))
                         Stamp(
                             when (s.pace) { PaceStatus.OnPace -> "On pace"; PaceStatus.OverPace -> "Ahead of pace"; PaceStatus.OverLimit -> "Over budget" },
                             tone = if (s.pace == PaceStatus.OnPace) StampTone.Neutral else StampTone.Attention,
                         )
                     }
-                    Spacer(Modifier.height(Dimens.Gap3))
+                    Spacer(Modifier.height(Dimens.HeadingGap))
                     MonthRule(s.daysInPeriod, s.cumulative, s.limit)
-                    Row(Modifier.fillMaxWidth().padding(top = Dimens.Gap1), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Row(Modifier.fillMaxWidth().padding(top = Dimens.Space1), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Today · day ${s.dayOfPeriod}", style = ChittaTheme.type.label, color = c.inkMuted)
                         s.limitDay?.let { d ->
                             val date = Periods.date(s.period.startMs, ui.zone).plusDays((d - 1).toLong())
@@ -166,26 +167,25 @@ fun HomeScreen(
                 val lui = LedgerUi(categories = ui.categories, accounts = ui.accounts)
                 ui.coming.forEachIndexed { i, t ->
                     val row = t.toRow(lui, c.inkMuted) { id -> c.categoryTint(id) }
-                    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowTall).clickable(role = Role.Button) { onOpenEntry(t.id) }.padding(vertical = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(row.title, style = ChittaTheme.type.body, color = c.ink, maxLines = 1)
-                            Text(dateText(t.dateMs, ui.zone), style = ChittaTheme.type.label, color = c.inkMuted)
-                        }
-                        AmountText(row.amount, style = ChittaTheme.type.amountRow)
-                        // one stamp only: on the first, nearest bill
-                        if (i == 0) { Spacer(Modifier.width(Dimens.Gap2)); Stamp("Upcoming") }
-                    }
-                    HairlineRule()
+                    ListRow(
+                        title = row.title, meta = dateText(t.dateMs, ui.zone), onClick = { onOpenEntry(t.id) },
+                        trailing = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                AmountText(row.amount, style = ChittaTheme.type.rowAmount)
+                                // one stamp only: on the first, nearest bill
+                                if (i == 0) { Spacer(Modifier.width(Dimens.InlineGap)); Stamp("Upcoming") }
+                            }
+                        },
+                    )
                 }
             }
 
             ui.layout.shown.forEach { cfg ->
                 val data = ui.sections[cfg.section] ?: return@forEach
-                Spacer(Modifier.height(Dimens.SectionGap))
-                Section(cfg.section.title) {
+                Section(cfg.section.title, rule = true) {
                     when (data) {
                         is SectionData.BudgetsData -> if (data.rows.isEmpty()) Muted("No budgets yet.") else data.rows.forEach { r ->
-                            Column(Modifier.fillMaxWidth().clickable(role = Role.Button) { onOpenBudget(r.budget.id) }.padding(vertical = Dimens.Gap3)) {
+                            Column(Modifier.fillMaxWidth().clickable(role = Role.Button) { onOpenBudget(r.budget.id) }.padding(vertical = Dimens.RowPadV)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(r.budget.name, style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.weight(1f))
                                     AmountText(r.summary.left, style = ChittaTheme.type.amountRow)
@@ -195,17 +195,14 @@ fun HomeScreen(
                             HairlineRule()
                         }
                         is SectionData.BalancesData -> {
+                            // One line per account name with an ellipsis and at least 16 dp before the amount.
                             data.rows.forEach { (a, bal) ->
-                                Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin), verticalAlignment = Alignment.CenterVertically) {
-                                    Text(a.name, style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.weight(1f))
-                                    AmountText(bal, style = ChittaTheme.type.amountRow)
-                                }
-                                HairlineRule()
+                                ListRow(title = a.name, trailing = { AmountText(bal, style = ChittaTheme.type.rowAmount) })
                             }
-                            Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin), verticalAlignment = Alignment.CenterVertically) {
-                                Text("Total", style = ChittaTheme.type.bodyMedium, color = c.ink, modifier = Modifier.weight(1f))
-                                AmountText(data.total, style = ChittaTheme.type.amount)
-                            }
+                            ListRow(
+                                title = "Total", titleStyle = ChittaTheme.type.bodyMedium, rule = false,
+                                trailing = { AmountText(data.total, style = ChittaTheme.type.amount, fallbackStyles = listOf(ChittaTheme.type.rowAmount)) },
+                            )
                             if (data.otherCurrency > 0) Muted("${data.otherCurrency} in another currency, not added in.")
                         }
                         is SectionData.RecentData -> {
@@ -223,7 +220,7 @@ fun HomeScreen(
                             if (data.series.size >= 2) TrendLine(data.series.map { it.figures.total.value }, "Net worth over the last ${data.series.size} months", height = 80.dp)
                         }
                         is SectionData.GoalsData -> if (data.rows.isEmpty()) Muted("No goals yet.") else data.rows.forEach { (g, p) ->
-                            Column(Modifier.fillMaxWidth().clickable(role = Role.Button) { onOpenGoal(g.id) }.padding(vertical = Dimens.Gap3)) {
+                            Column(Modifier.fillMaxWidth().clickable(role = Role.Button) { onOpenGoal(g.id) }.padding(vertical = Dimens.RowPadV)) {
                                 Text(g.name, style = ChittaTheme.type.body, color = c.ink)
                                 GaugeBar(p.gauge, g.name)
                                 Text("${IndianFormat.rupeesRounded(p.saved)} of ${IndianFormat.rupeesRounded(p.target)}", style = ChittaTheme.type.label, color = c.inkMuted)
@@ -231,7 +228,7 @@ fun HomeScreen(
                             HairlineRule()
                         }
                         is SectionData.LoansData -> if (data.rows.isEmpty()) Muted("No loans yet.") else data.rows.forEach { (l, p) ->
-                            Column(Modifier.fillMaxWidth().clickable(role = Role.Button) { onOpenLoan(l.id) }.padding(vertical = Dimens.Gap3)) {
+                            Column(Modifier.fillMaxWidth().clickable(role = Role.Button) { onOpenLoan(l.id) }.padding(vertical = Dimens.RowPadV)) {
                                 Text(l.name, style = ChittaTheme.type.body, color = c.ink)
                                 GaugeBar(p.gauge, l.name)
                                 Text("${IndianFormat.rupeesRounded(p.outstanding)} still to go", style = ChittaTheme.type.label, color = c.inkMuted)
@@ -250,11 +247,8 @@ fun HomeScreen(
                     }
                 }
             }
-            Spacer(Modifier.height(Dimens.SectionGap))
-            Text(
-                "Customise Home", style = ChittaTheme.type.labelMedium, color = c.ink,
-                modifier = Modifier.heightIn(min = Dimens.TouchTarget).clickable(role = Role.Button, onClick = onCustomise).wrapContentHeight(Alignment.CenterVertically),
-            )
+            Spacer(Modifier.height(Dimens.HeadingGap))
+            LinkText("Customise Home", onClick = onCustomise)
         }
     }
 
@@ -267,13 +261,13 @@ fun HomeScreen(
     }
 }
 
+/** A text link: the underlined action style, 16 dp of air above and below so the whole line is a 48 dp touch target. */
 @Composable
-private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Column(Modifier.fillMaxWidth()) {
-        SectionHeader(title)
-        HairlineRule()
-        content()
-    }
+private fun LinkText(text: String, onClick: () -> Unit) {
+    Text(
+        text, style = ChittaTheme.type.link, color = ChittaTheme.colors.ink,
+        modifier = Modifier.clickable(role = Role.Button, onClick = onClick).padding(vertical = Dimens.Gap4),
+    )
 }
 
 @Composable

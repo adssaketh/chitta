@@ -121,6 +121,7 @@ fun ListRow(
     onClick: (() -> Unit)? = null,
     titleMaxLines: Int = 1,
     metaMaxLines: Int = 1,
+    titleStyle: androidx.compose.ui.text.TextStyle = ChittaTheme.type.rowTitle,
     minHeight: androidx.compose.ui.unit.Dp = if (meta == null) Dimens.RowMin else Dimens.RowTall,
     rule: Boolean = true,
 ) {
@@ -140,7 +141,7 @@ fun ListRow(
             Column(Modifier.weight(1f)) {
                 Text(
                     title.rupeeAware(),
-                    style = ChittaTheme.type.rowTitle,
+                    style = titleStyle,
                     color = ChittaTheme.colors.ink,
                     maxLines = titleMaxLines,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,

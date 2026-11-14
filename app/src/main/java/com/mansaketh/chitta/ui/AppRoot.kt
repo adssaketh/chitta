@@ -8,7 +8,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedScroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedScroll.NestedScrollSource
+import androidx.compose.ui.input.nestedScroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import com.mansaketh.chitta.core.design.components.*
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
@@ -131,9 +140,21 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
     BackHandler(enabled = !adding && stack.isNotEmpty()) { pop() }
     fun openAdd(type: EntryType = EntryType.Expense, pin: com.mansaketh.chitta.core.model.PinnedEntry? = null) { vms.quickAdd.reset(type, pin); adding = true }
 
+    // The add button hides while a screen scrolls down and returns when it scrolls up, so it never covers the last row.
+    val fabShown = remember { mutableStateOf(true) }
+    val fabScroll = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (available.y < -8f) fabShown.value = false else if (available.y > 8f) fabShown.value = true
+                return Offset.Zero
+            }
+        }
+    }
+    LaunchedEffect(tab, top) { fabShown.value = true }
+
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            Box(Modifier.weight(1f)) {
+            Box(Modifier.weight(1f).nestedScroll(fabScroll)) {
                 when {
                     top == null -> when (tab) {
                         TabKey.Home.key -> HomeScreen(
@@ -182,7 +203,14 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                     top == "gallery" -> extra?.invoke(::pop)
                 }
                 if (top == null && tab != MORE && tab != TabKey.Accounts.key) {
-                    AddButton(onClick = { openAdd() }, onLongClick = { addMenu = true }, modifier = Modifier.align(Alignment.BottomEnd).padding(Dimens.Margin))
+                    AnimatedVisibility(
+                        visible = fabShown.value,
+                        modifier = Modifier.align(Alignment.BottomEnd).padding(Dimens.FabMargin),
+                        enter = fadeIn() + slideInVertically { it },
+                        exit = fadeOut() + slideOutVertically { it },
+                    ) {
+                        AddButton(onClick = { openAdd() }, onLongClick = { addMenu = true })
+                    }
                 }
             }
             ChittaBottomNav(

@@ -99,7 +99,7 @@ fun MonthRule(
             .height(88.dp)
             .clearAndSetSemantics { contentDescription = spoken },
     ) {
-        val topPad = 8.dp.toPx()
+        val topPad = 4.dp.toPx()
         val baseY = size.height - 12.dp.toPx()
         val plotH = baseY - topPad
         val top = maxOf(limit.value, forecast?.value ?: 0L, spent.value).coerceAtLeast(1L).toFloat()
@@ -180,11 +180,15 @@ fun BudgetRing(
                 }
             }
         }
-        Text(
-            if (ticks.over) "over" else "${ticks.safePercent}%",
-            style = ChittaTheme.type.amount,
-            color = if (ticks.over) c.warningText else c.ink,
-        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                if (ticks.over) "over" else "${ticks.safePercent}%",
+                style = ChittaTheme.type.amount,
+                color = if (ticks.over) c.warningText else c.ink,
+            )
+            // The ring shows what is left, not what is used: say so (design p.9).
+            if (!ticks.over) Text("safe", style = ChittaTheme.type.label, color = c.inkMuted)
+        }
     }
 }
 
@@ -213,7 +217,7 @@ private fun LegendRow(label: String, swatch: Color, amount: Paise, outlined: Boo
             if (outlined) drawRect(c.mark, style = Stroke(1.dp.toPx()))
         }
         Box(Modifier.width(Dimens.Gap3))
-        Text(label, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.weight(1f))
-        AmountText(amount, style = ChittaTheme.type.amountSmall)
+        Text(label, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.weight(1f).alignByBaseline())
+        AmountText(amount, style = ChittaTheme.type.amountSmall, modifier = Modifier.alignByBaseline())
     }
 }

@@ -1,5 +1,13 @@
 # Changelog
 
+## UI polish pass: step 2, Home (14 Nov 2026) - on branch `phase-ui-polish`, not yet seen on a phone
+- Home: one gap rhythm from tokens (32 above each section heading, 12 heading to rule, 12 dp row padding). The 60 dp of air under "How this is worked out" is gone (the link keeps a 48 dp touch height; the rule sits right under it). "Groceries budget" is a normal section heading. "Customise Home" is styled as a link.
+- Balances, Coming up and Total use `ListRow`: names are one line with an ellipsis and at least 16 dp before the amount. The Total row no longer leaves about 100 dp before "Recent entries".
+- Per day and Range: figures step down a size when they do not fit; the Range note reads "15 days short" (one line). The Spent label, amount and stamp share one baseline, as do the ring legend labels and amounts. The month rule's inner top padding is 4 dp.
+- The ring says "safe" under its percent (answers the "8%" question: it is what is left).
+- End of the page is 96 dp (`FabInset`), was 160.
+- The add button hides while any main screen scrolls down and returns when it scrolls up, so it no longer covers the last row (Home, Ledger, Insights footnote). One change in `AppRoot`.
+
 ## UI polish pass: step 1, shared spacing and components (14 Nov 2026) - on branch `phase-ui-polish`, not yet built or checked on a phone
 - `Dimens`: spacing scale (`Space1` to `Space12`) and role tokens (`HeadingGap` 12, `RowPadV` 12, `RowLedger` 64, `InlineGap`, `FigureGap`, `TitleAmountGap`, `TitleBarMin`, `FabInset` 96, `EndInset` 32, `SheetMaxFraction`, `NavBarMin`, marker size). Old `Gap` names are aliases.
 - `Type`: role names (`screenTitle`, `sectionHeading`, `link`, `figure`, `figureSteps`, `rowTitle`, `rowMeta`, `rowAmount`...). No size or weight changed.
