@@ -65,7 +65,7 @@ BY_NAME = [
  (("rent","housing","home"),"house-line"),(("electric","power"),"lightbulb"),(("water",),"drop"),(("internet","wifi","broadband"),"wifi-high"),
  (("phone","mobile","recharge"),"device-mobile"),(("entertain","movie","cinema"),"film-strip"),(("music",),"music-notes"),
  (("game",),"game-controller"),(("health","doctor","medical","hospital"),"heartbeat"),(("medicine","pharmacy"),"pill"),
- (("insurance",),"first-aid-kit"),(("gym","fitness","sport"),"barbell"),(("school","education","course","fees","tuition"),"graduation-cap"),
+ (("insurance",),"first-aid-kit"),(("gym","fitness","sport"),"barbell"),(("school","education","course","tuition"),"graduation-cap"),
  (("book",),"book"),(("kid","child","baby"),"baby"),(("pet",),"paw-print"),(("gift","present"),"gift"),(("cloth","apparel","fashion"),"t-shirt"),
  (("shop","mall","online"),"shopping-bag"),(("beauty","salon","grooming","care"),"hair-dryer"),(("repair","maintenance","service"),"wrench"),
  (("bill","fee","tax","utility"),"receipt"),(("subscription",),"repeat"),(("salary","income","work","office","business"),"briefcase"),
@@ -116,7 +116,10 @@ object LegacyCategoryIcons {{
     /** A guess from the category's own name ("Dining" -> fork and knife), or null. Only used when the picture is unknown or missing. */
     fun keyForName(categoryName: String?): String? {{
         val n = categoryName?.lowercase()?.takeIf {{ it.isNotBlank() }} ?: return null
-        return byName.firstOrNull {{ (words, _) -> words.any {{ n.contains(it) }} }}?.second
+        val tokens = n.split(Regex("[^a-z]+")).filter {{ it.isNotEmpty() }}
+        // A short keyword must be the whole word ("air" is not "hair"); a longer one may start the word ("entertain" is "entertainment").
+        fun hit(w: String, k: String) = w == k || w == k + "s" || (k.length > 3 && w.startsWith(k))
+        return byName.firstOrNull {{ (words, _) -> words.any {{ k -> tokens.any {{ w -> hit(w, k) }} }} }}?.second
     }}
 
     /** Every Phosphor key this table can return (for the test that each one has a drawn icon). */
@@ -140,7 +143,7 @@ object CategoryIconCatalogMore {{
     # gen_icons.py extra list
     block = "# EXTRA (written by tools/legacy_icons.py)\nEXTRA = [\n" + "\n".join(f'    ("Cat{pascal(k)}", "{k}"),' for k in wanted) + "\n]\n"
     g = re.sub(r"# EXTRA.*?\n\]\n", "", g, flags=re.S)
-    g = g.replace("ICONS += CATEGORY_ICONS\n", block + "ICONS += CATEGORY_ICONS + EXTRA\n")
+    g = re.sub(r"ICONS \+= CATEGORY_ICONS( \+ EXTRA)?\n", lambda m: block + "ICONS += CATEGORY_ICONS + EXTRA\n", g)
     open(os.path.join(root, "tools/gen_icons.py"), "w").write(g)
     print(len(MAP), "pictures mapped;", len(wanted), "new icons")
 

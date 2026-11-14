@@ -300,7 +300,7 @@ object LegacyCategoryIcons {
         listOf("medicine", "pharmacy") to "pill",
         listOf("insurance") to "first-aid-kit",
         listOf("gym", "fitness", "sport") to "barbell",
-        listOf("school", "education", "course", "fees", "tuition") to "graduation-cap",
+        listOf("school", "education", "course", "tuition") to "graduation-cap",
         listOf("book") to "book",
         listOf("kid", "child", "baby") to "baby",
         listOf("pet") to "paw-print",
@@ -330,7 +330,10 @@ object LegacyCategoryIcons {
     /** A guess from the category's own name ("Dining" -> fork and knife), or null. Only used when the picture is unknown or missing. */
     fun keyForName(categoryName: String?): String? {
         val n = categoryName?.lowercase()?.takeIf { it.isNotBlank() } ?: return null
-        return byName.firstOrNull { (words, _) -> words.any { n.contains(it) } }?.second
+        val tokens = n.split(Regex("[^a-z]+")).filter { it.isNotEmpty() }
+        // A short keyword must be the whole word ("air" is not "hair"); a longer one may start the word ("entertain" is "entertainment").
+        fun hit(w: String, k: String) = w == k || w == k + "s" || (k.length > 3 && w.startsWith(k))
+        return byName.firstOrNull { (words, _) -> words.any { k -> tokens.any { w -> hit(w, k) } } }?.second
     }
 
     /** Every Phosphor key this table can return (for the test that each one has a drawn icon). */
