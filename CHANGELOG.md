@@ -1,5 +1,10 @@
 # Changelog
 
+## Tab switching animation (14 Nov 2026) - on branch `phase-ui-polish`, not yet seen on a phone
+- Switching main tabs slides the new tab in from the side you moved towards (about 1/8 of the screen) while it fades in, and the old one fades out: about 0.25 s, direction follows the bottom-bar order. The bottom bar stays still.
+- Swiping sideways on a main tab moves to the next or previous tab (72 dp drag). A screen part that scrolls sideways, such as a tab strip, takes the drag first.
+- The ledger page-turn idea was shown as a mockup and dropped.
+
 ## UI polish pass: step 2, Home (14 Nov 2026) - on branch `phase-ui-polish`, not yet seen on a phone
 - Home: one gap rhythm from tokens (32 above each section heading, 12 heading to rule, 12 dp row padding). The 60 dp of air under "How this is worked out" is gone (the link keeps a 48 dp touch height; the rule sits right under it). "Groceries budget" is a normal section heading. "Customise Home" is styled as a link.
 - Balances, Coming up and Total use `ListRow`: names are one line with an ellipsis and at least 16 dp before the amount. The Total row no longer leaves about 100 dp before "Recent entries".

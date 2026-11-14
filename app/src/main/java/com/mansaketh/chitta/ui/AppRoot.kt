@@ -8,7 +8,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -151,9 +161,35 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            Box(Modifier.weight(1f).nestedScroll(fabScroll)) {
+            // Tabs in bottom-bar order. Switching slides the new tab in from the side you moved towards and fades the old one out.
+            val tabOrder = tabLayout.slots.map { it.key } + MORE
+            Box(
+                Modifier.weight(1f).nestedScroll(fabScroll).pointerInput(tab, top, tabOrder) {
+                    // A horizontal swipe on a main tab moves to the next or previous tab. A child that scrolls sideways (a tab strip) takes the drag first.
+                    if (top != null) return@pointerInput
+                    val threshold = 72.dp.toPx()
+                    var total = 0f
+                    detectHorizontalDragGestures(
+                        onDragStart = { total = 0f },
+                        onDragEnd = {
+                            val i = tabOrder.indexOf(tab)
+                            if (i >= 0 && total < -threshold && i < tabOrder.lastIndex) { tabChoice = tabOrder[i + 1]; stack = emptyList() }
+                            else if (i >= 0 && total > threshold && i > 0) { tabChoice = tabOrder[i - 1]; stack = emptyList() }
+                        },
+                        onHorizontalDrag = { _, dx -> total += dx },
+                    )
+                },
+            ) {
                 when {
-                    top == null -> when (tab) {
+                    top == null -> AnimatedContent(
+                        targetState = tab,
+                        transitionSpec = {
+                            val dir = if (tabOrder.indexOf(targetState) >= tabOrder.indexOf(initialState)) 1 else -1
+                            (slideInHorizontally(tween(260, easing = FastOutSlowInEasing)) { dir * it / 8 } + fadeIn(tween(220, delayMillis = 40))) togetherWith
+                                (slideOutHorizontally(tween(260, easing = FastOutSlowInEasing)) { -dir * it / 8 } + fadeOut(tween(140)))
+                        },
+                        label = "tabs",
+                    ) { shownTab -> when (shownTab) {
                         TabKey.Home.key -> HomeScreen(
                             vms.home, hidden, onToggleHide,
                             onOpenEntry = { push("detail:$it") }, onOpenBudget = { push("budget:$it") }, onOpenGoal = { push("goal:$it") }, onOpenLoan = { push("loan:$it") },
@@ -173,7 +209,7 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                             open = { item -> push(item.key) },
                             onGallery = if (extra != null) ({ push("gallery") }) else null,
                         )
-                    }
+                    } }
                     top.startsWith("detail:") -> EntryDetailScreen(vms.detail, top.removePrefix("detail:"), onBack = ::pop, onHistory = { push("history:" + top.removePrefix("detail:")) }, plan = vms.plan)
                     top.startsWith("budget:") -> BudgetDetailScreen(vms.plan, top.removePrefix("budget:"), ::pop, { planSheet = "edit-budget:" + top.removePrefix("budget:") })
                     top.startsWith("goal:") -> GoalDetailScreen(vms.plan, top.removePrefix("goal:"), ::pop, { planSheet = "edit-goal:" + top.removePrefix("goal:") }, { push("detail:$it") })
