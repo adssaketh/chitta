@@ -25,6 +25,7 @@ import com.mansaketh.chitta.core.money.PaceStatus
 import com.mansaketh.chitta.core.money.Paise
 import com.mansaketh.chitta.core.money.Segments
 import com.mansaketh.chitta.ui.*
+import androidx.compose.ui.text.style.TextOverflow
 import java.time.YearMonth
 
 val PLAN_TABS = listOf("Budgets", "Goals", "Loans", "Bills", "Calendar", "Sinking funds")
@@ -37,14 +38,14 @@ fun PlanRow(
     attention: Boolean = false, onClick: () -> Unit = {}, onLongClick: (() -> Unit)? = null,
 ) {
     val c = ChittaTheme.colors
-    Column(Modifier.fillMaxWidth().heightIn(min = Dimens.RowTall).combinedClickable(role = Role.Button, onClick = onClick, onLongClick = onLongClick).padding(vertical = Dimens.Gap3)) {
+    Column(Modifier.fillMaxWidth().heightIn(min = Dimens.RowTall).combinedClickable(role = Role.Button, onClick = onClick, onLongClick = onLongClick).padding(vertical = Dimens.RowPadV)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(title, style = ChittaTheme.type.bodyMedium, color = c.ink, maxLines = 2)
-                if (subtitle != null) Text(subtitle, style = ChittaTheme.type.label, color = c.inkMuted)
+                Text(title, style = ChittaTheme.type.rowTitle, color = c.ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                if (subtitle != null) Text(subtitle, style = ChittaTheme.type.rowMeta, color = c.inkMuted, maxLines = 3, overflow = TextOverflow.Ellipsis)
             }
-            if (stamp != null) { Stamp(stamp, tone = if (attention) StampTone.Attention else StampTone.Neutral); Spacer(Modifier.width(Dimens.Gap2)) }
-            if (amount != null) AmountText(amount)
+            if (stamp != null) { Spacer(Modifier.width(Dimens.InlineGap)); Stamp(stamp, tone = if (attention) StampTone.Attention else StampTone.Neutral) }
+            if (amount != null) { Spacer(Modifier.width(Dimens.TitleAmountGap)); AmountText(amount, fallbackStyles = listOf(ChittaTheme.type.amountSmall)) }
         }
         if (gauge != null) { Spacer(Modifier.height(Dimens.Gap2)); GaugeBar(gauge, gaugeLabel) }
     }
@@ -87,7 +88,7 @@ fun PlanScreen(vm: PlanViewModel, tab: Int, onTab: (Int) -> Unit, onOpen: (Strin
 @Composable
 private fun BudgetsTab(ui: PlanUi, onOpen: (String) -> Unit, onSheet: (String) -> Unit) {
     val budgets = ui.budgets.filter { !it.archived }
-    LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = 120.dp)) {
+    LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
         if (budgets.isEmpty()) item {
             EmptyState("A budget says how much you mean to spend on something, and shows if you are on pace.", "Add a budget", { onSheet("new-budget") })
         }
@@ -100,7 +101,7 @@ private fun BudgetsTab(ui: PlanUi, onOpen: (String) -> Unit, onSheet: (String) -
                 attention = true, onClick = { onOpen("budget:${b.id}") }, onLongClick = { onSheet("edit-budget:${b.id}") },
             )
         }
-        if (budgets.isNotEmpty()) item { Spacer(Modifier.height(Dimens.Gap4)); ChittaButton("Add a budget", { onSheet("new-budget") }, style = ButtonStyle.Quiet) }
+        if (budgets.isNotEmpty()) item { Spacer(Modifier.height(Dimens.SectionGap)); ChittaButton("Add a budget", { onSheet("new-budget") }, style = ButtonStyle.Quiet) }
     }
 }
 
@@ -108,7 +109,7 @@ private fun BudgetsTab(ui: PlanUi, onOpen: (String) -> Unit, onSheet: (String) -
 @Composable
 private fun GoalsTab(ui: PlanUi, onOpen: (String) -> Unit, onSheet: (String) -> Unit) {
     val goals = ui.objectives.filter { Goals.isGoal(it) && !it.archived }
-    LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = 120.dp)) {
+    LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
         if (goals.isEmpty()) item { EmptyState("A goal is money you are setting aside for something, with a target and an optional date.", "Add a goal", { onSheet("new-goal") }) }
         items(goals, key = { it.id }) { o ->
             val p = remember(o, ui.entries, ui.nowMs) { Goals.progress(o, ui.entries, ui.nowMs, ui.zone) }
@@ -119,7 +120,7 @@ private fun GoalsTab(ui: PlanUi, onOpen: (String) -> Unit, onSheet: (String) -> 
             }
             PlanRow(o.name, p.saved, "of ${rupees(p.target)} · $sub", p.gauge, "${o.name} goal", stamp = if (p.pastEnd) "Behind" else null, attention = true, onClick = { onOpen("goal:${o.id}") }, onLongClick = { onSheet("edit-goal:${o.id}") })
         }
-        if (goals.isNotEmpty()) item { Spacer(Modifier.height(Dimens.Gap4)); ChittaButton("Add a goal", { onSheet("new-goal") }, style = ButtonStyle.Quiet) }
+        if (goals.isNotEmpty()) item { Spacer(Modifier.height(Dimens.SectionGap)); ChittaButton("Add a goal", { onSheet("new-goal") }, style = ButtonStyle.Quiet) }
     }
 }
 
@@ -133,9 +134,9 @@ private fun LoansTab(vm: PlanViewModel, ui: PlanUi, onOpen: (String) -> Unit, on
     val done = oneTime.filter { !it.paid }.sortedByDescending { it.modifiedAtMs ?: it.dateMs }.take(5)
     var acting by remember { mutableStateOf<Transaction?>(null) }
     var partOf by remember { mutableStateOf<Transaction?>(null) }
-    LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = 120.dp)) {
+    LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
         if (loans.isEmpty() && oneTime.isEmpty()) item { EmptyState("Money you lent or borrowed, kept apart from your spending.", "Add a loan", { onSheet("new-loan") }) }
-        if (loans.isNotEmpty()) item { SectionHeader("Loans") }
+        if (loans.isNotEmpty()) item { SectionHeader("Loans") }  // first on the tab: no extra gap above
         items(loans, key = { it.id }) { o ->
             val t = termsOf[o.id]
             val linked = ui.entries.filter { it.objectiveLoanId == o.id }
@@ -148,16 +149,16 @@ private fun LoansTab(vm: PlanViewModel, ui: PlanUi, onOpen: (String) -> Unit, on
                 PlanRow(o.name, p.outstanding, (if (o.income) "Lent" else "Borrowed") + " · repaid ${rupees(p.repaid)} of ${rupees(p.total)}", p.gauge, "${o.name} repaid", onClick = { onOpen("loan:${o.id}") }, onLongClick = { onSheet("edit-loan:${o.id}") })
             }
         }
-        if (open.isNotEmpty()) item { SectionHeader("Lent and borrowed once") }
+        if (open.isNotEmpty()) item { Spacer(Modifier.height(Dimens.SectionGap)); SectionHeader("Lent and borrowed once") }
         items(open, key = { it.id }) { t ->
             val lent = t.kind == TransactionKind.LENT
             PlanRow(t.name.ifBlank { if (lent) "Lent" else "Borrowed" }, Paise(Math.abs(t.amount)), (if (lent) "Lent " else "Borrowed ") + friendlyDay(t.dateMs, ui.nowMs, ui.zone), stamp = if (lent) "Lent" else "Borrowed", onClick = { acting = t })
         }
-        if (done.isNotEmpty()) item { SectionHeader("Collected recently") }
+        if (done.isNotEmpty()) item { Spacer(Modifier.height(Dimens.SectionGap)); SectionHeader("Collected recently") }
         items(done, key = { it.id }) { t ->
             PlanRow(t.name.ifBlank { "Entry" }, Paise(Math.abs(t.amount)), "Collected", stamp = "Collected", onClick = { acting = t })
         }
-        item { Spacer(Modifier.height(Dimens.Gap4)); ChittaButton("Add a loan", { onSheet("new-loan") }, style = ButtonStyle.Quiet) }
+        item { Spacer(Modifier.height(Dimens.SectionGap)); ChittaButton("Add a loan", { onSheet("new-loan") }, style = ButtonStyle.Quiet) }
     }
     acting?.let { t ->
         val lent = t.kind == TransactionKind.LENT
@@ -209,7 +210,7 @@ private fun BillsTab(vm: PlanViewModel, ui: PlanUi, onSheet: (String) -> Unit, o
         )
     }
 
-    LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = 120.dp)) {
+    LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
         if (scheduled.isEmpty()) item { EmptyState("Bills and subscriptions you know are coming, so nothing surprises you.", "Add a bill", { onSheet("new-bill") }) }
         else item {
             Column(Modifier.fillMaxWidth().clickable(role = Role.Button) { showTotals = true }.padding(vertical = Dimens.Gap3)) {
@@ -226,15 +227,17 @@ private fun BillsTab(vm: PlanViewModel, ui: PlanUi, onSheet: (String) -> Unit, o
                 null, "$names. Found in your ledger. Nothing is added until you say so.", onClick = { suggestionsOpen = true },
             )
         }
-        if (overdue.isNotEmpty()) item { SectionHeader("Overdue") }
+        if (overdue.isNotEmpty()) item { Spacer(Modifier.height(Dimens.SectionGap)); SectionHeader("Overdue") }
         items(overdue, key = { it.id }) { Bill(it) }
-        if (future.isNotEmpty()) item { SectionHeader("Coming up") }
+        if (future.isNotEmpty()) item { Spacer(Modifier.height(Dimens.SectionGap)); SectionHeader("Coming up") }
         items(shown, key = { it.id }) { Bill(it) }
         if (future.size >= 3 && !expanded) item { ChittaButton("Show ${future.size - 2} more", { expanded = true }, style = ButtonStyle.Quiet) }
         item {
-            Spacer(Modifier.height(Dimens.Gap4)); ChittaButton("Add a bill", { onSheet("new-bill") }, style = ButtonStyle.Quiet)
-            if (dismissed.isNotEmpty()) ChittaButton("Not subscriptions (${dismissed.size})", { dismissedOpen = true }, style = ButtonStyle.Quiet)
-            ChittaButton("Reminders and auto-pay", onSettings, style = ButtonStyle.Quiet)
+            Column(Modifier.padding(top = Dimens.SectionGap), verticalArrangement = Arrangement.spacedBy(Dimens.InlineGap)) {
+                ChittaButton("Add a bill", { onSheet("new-bill") }, style = ButtonStyle.Quiet)
+                if (dismissed.isNotEmpty()) ChittaButton("Not subscriptions (${dismissed.size})", { dismissedOpen = true }, style = ButtonStyle.Quiet)
+                ChittaButton("Reminders and auto-pay", onSettings, style = ButtonStyle.Quiet)
+            }
         }
     }
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## UI polish steps 5 and 6: More and Plan (14 Nov 2026) - on branch `phase-ui-polish`
+- More: each row is a standard list row with an ink label and a caret, 56 dp tall, and the page scrolls on short screens or big text.
+- Plan: rows use the shared spacing (12 dp above and below, 16 dp before the amount, long titles cut with an ellipsis, long grey lines wrap to three); section headings get 32 dp above them; the three buttons at the bottom of Bills now have 8 dp between them; the list ends 96 dp from the bottom so the add button never covers the last row.
+
 ## Keypad "=" key (14 Nov 2026) - on branch `phase-ui-polish`
 - An "=" key appears under the keypad once the amount holds a sum (120+45); tapping it replaces the sum with the total (165). It stays hidden for a plain amount. Rounds the same way as Save (to whole paise, half-even). Unit-tested.
 

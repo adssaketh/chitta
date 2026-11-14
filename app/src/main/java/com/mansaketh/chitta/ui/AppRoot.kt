@@ -4,6 +4,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -300,12 +302,21 @@ private fun tabIcon(k: TabKey) = when (k) {
     TabKey.Bills -> ChittaIcons.Receipt
 }
 
+/** One navigation row in More: ink label, optional grey line under it, a caret on the right. */
+@Composable
+private fun MoreRow(label: String, meta: String?, onClick: () -> Unit) {
+    com.mansaketh.chitta.core.design.components.ListRow(
+        title = label, meta = meta, onClick = onClick, minHeight = Dimens.RowMin,
+        trailing = { androidx.compose.material3.Icon(ChittaIcons.CaretRight, contentDescription = null, tint = ChittaTheme.colors.inkMuted, modifier = Modifier.size(16.dp)) },
+    )
+}
+
 @Composable
 private fun MoreScreen(order: List<MoreItem>, open: (MoreItem) -> Unit, onGallery: (() -> Unit)?) {
-    Column(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
         com.mansaketh.chitta.core.design.components.ScreenTitle("More", ChittaIcons.More)
-        order.forEach { ValueRow(it.label, "", onClick = { open(it) }) }
-        if (onGallery != null) ValueRow("Design gallery", "Debug builds only", onClick = onGallery)
+        order.forEach { MoreRow(it.label, null) { open(it) } }
+        if (onGallery != null) MoreRow("Design gallery", "Debug builds only", onGallery)
     }
 }
 

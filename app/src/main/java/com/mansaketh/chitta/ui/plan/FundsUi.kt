@@ -30,7 +30,7 @@ fun FundsTab(ui: PlanUi, onSheet: (String) -> Unit) {
     val funds = ui.sinking.filter { !it.archived }
     val statuses = remember(funds, ui.entries, ui.categories, ui.nowMs) { funds.map { SinkingFunds.status(it, ui.entries, ui.categories, ui.nowMs, ui.zone) } }
     val c = ChittaTheme.colors
-    LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = 120.dp)) {
+    LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
         if (funds.isEmpty()) item {
             EmptyState("A sinking fund spreads a yearly cost, like insurance, over the months before it is due, so that month is not a shock.", "Add a sinking fund", { onSheet("new-fund") })
         } else item {
