@@ -26,6 +26,7 @@ import com.mansaketh.chitta.core.money.Paise
 import com.mansaketh.chitta.core.money.Segments
 import com.mansaketh.chitta.ui.*
 import androidx.compose.ui.text.style.TextOverflow
+import com.mansaketh.chitta.ui.ownsSideways
 import java.time.YearMonth
 
 val PLAN_TABS = listOf("Budgets", "Goals", "Loans", "Bills", "Calendar", "Sinking funds")
@@ -63,7 +64,7 @@ fun PlanScreen(vm: PlanViewModel, tab: Int, onTab: (Int) -> Unit, onOpen: (Strin
             com.mansaketh.chitta.core.design.components.ScreenTitle("Plan", com.mansaketh.chitta.core.design.icons.ChittaIcons.Plan, Modifier.weight(1f))
             IconAction(com.mansaketh.chitta.core.design.icons.ChittaIcons.Bell, "Bills and reminders", { reminders = true })
         }
-        TextTabs(PLAN_TABS, tab, onTab, Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin))
+        TextTabs(PLAN_TABS, tab, onTab, Modifier.ownsSideways().horizontalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin))
         HairlineRule()
         when {
             ui.loading -> LoadingPlaceholder(Modifier.padding(Dimens.Margin))

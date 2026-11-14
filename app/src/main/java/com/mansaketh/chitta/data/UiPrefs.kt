@@ -58,10 +58,10 @@ class UiPrefs @Inject constructor(@ApplicationContext context: Context) {
     val themeMode: StateFlow<String> = _theme
     fun setThemeMode(v: String) { _theme.value = v; p.edit().putString("theme", v).apply() }
 
-    /** Taps, long-presses and the keypad give a small vibration. On by default; the phone's own touch-feedback setting still applies. */
-    private val _vibrations = MutableStateFlow(p.getBoolean("vibrations", true))
-    val vibrations: StateFlow<Boolean> = _vibrations
-    fun setVibrations(v: Boolean) { _vibrations.value = v; p.edit().putBoolean("vibrations", v).apply() }
+    /** Strength of the app's vibrations: "off", "light", "medium" (default) or "strong". The first version had an on/off switch only; off carries over. */
+    private val _vibration = MutableStateFlow(p.getString("vibration", null) ?: if (p.getBoolean("vibrations", true)) "medium" else "off")
+    val vibration: StateFlow<String> = _vibration
+    fun setVibration(v: String) { _vibration.value = v; p.edit().putString("vibration", v).apply() }
 
     /** Whether open fixed deposits count in Net worth. Off until switched on (D101). */
     private val _nwDeposits = MutableStateFlow(p.getBoolean("nwDeposits", false))

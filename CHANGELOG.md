@@ -1,5 +1,10 @@
 # Changelog
 
+## Swipe fix, vibration strength, ledger scroll ticks (14 Nov 2026) - on branch `phase-ui-polish`
+- Tab swipe: once the finger has clearly moved sideways the movement is taken before the list sees it, so a diagonal swipe no longer turns into a scroll and fails. The Plan tab strip still scrolls on its own.
+- Settings > Look and feel > Vibration strength: Off, Light, Medium (default), Strong. Uses the phone's vibrator directly (VIBRATE permission) with a set strength; phones whose motor cannot vary strength use the normal system tap. The old on/off choice carries over (Off stays Off).
+- Ledger: a small tick as each day passes the top while you scroll.
+
 ## Tab swipe reliability and shared label/value rows (14 Nov 2026) - on branch `phase-ui-polish`
 - Swiping between tabs now watches the touch before lists and rows react, decides left/right by which way the finger moves more, and also accepts a short quick flick (24 dp at speed) as well as a 56 dp drag. Before, a slightly diagonal swipe was often taken by the list and lost, so about one in five needed a second try. A tab strip that scrolls sideways still wins over the swipe.
 - The label/value row used in Quick Add, Settings and the detail screens uses the shared row spacing (12 dp above and below, 16 dp between label and value); long values are cut after two lines instead of squeezing the label.

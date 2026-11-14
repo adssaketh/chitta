@@ -67,7 +67,7 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
     val waiting by vm.pendingIntake.collectAsState()
     val ui by vm.ui.collectAsState()
     val theme by vm.themeMode.collectAsState()
-    val vibrate by vm.vibrations.collectAsState()
+    val vibrate by vm.vibration.collectAsState()
     val c = ChittaTheme.colors
     val context = LocalContext.current
     val activity = context as? FragmentActivity
@@ -103,7 +103,7 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
             SectionHeader("Look and feel")
             HairlineRule()
             ValueRow("Theme", themeLabel(theme), onClick = { sheet = "theme" })
-            ValueRow("Vibrations", onOff(vibrate), onClick = { vm.setVibrations(!vibrate) })
+            ValueRow("Vibration strength", com.mansaketh.chitta.ui.VibrationLevel.of(vibrate).label, onClick = { sheet = "vibration" })
 
             Spacer(Modifier.height(Dimens.SectionGap))
             SectionHeader("Security")
@@ -157,6 +157,11 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
     }
 
     when (sheet) {
+        "vibration" -> ChoiceSheet(
+            "Vibration strength",
+            com.mansaketh.chitta.ui.VibrationLevel.entries.map { Choice(it.label, it.key, selected = it.key == vibrate) },
+            { vm.setVibration(it); sheet = null }, { sheet = null },
+        )
         "theme" -> ChoiceSheet(
             "Theme",
             listOf("system" to "Follow the phone", "paper" to "Paper (light)", "ink" to "Ink (dark)").map { (k, label) -> Choice(label, k, selected = k == theme) },

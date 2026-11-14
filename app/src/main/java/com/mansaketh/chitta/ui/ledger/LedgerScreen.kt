@@ -97,11 +97,20 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
             }
             notice?.let { Text(it, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(horizontal = Dimens.Margin, vertical = Dimens.Gap2)) }
 
+            // A small tick each time a day passes the top while scrolling (not when the list changes by itself).
+            val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+            val scrollHaptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+            LaunchedEffect(listState) {
+                androidx.compose.runtime.snapshotFlow { listState.firstVisibleItemIndex }.collect {
+                    if (listState.isScrollInProgress) scrollHaptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.SegmentFrequentTick)
+                }
+            }
+
             when {
                 ui.loading -> LoadingPlaceholder(Modifier.padding(Dimens.Margin))
                 ui.totalEntries == 0 -> EmptyState("No transactions yet. Add one.", "Add a transaction", onAdd, Modifier.padding(horizontal = Dimens.Margin))
                 ui.matching == 0 -> Text("Nothing matches. Clear the search or filters.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(Dimens.Margin))
-                else -> LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
+                else -> LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), state = listState, contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
                     ui.months.forEach { month ->
                         stickyHeader(key = "m-${month.month}") {
                             MonthHeader(monthLabel(month.month), month.flow.moneyIn, month.flow.moneyOut)
