@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
@@ -35,6 +36,8 @@ fun ChittaField(
     placeholder: String = "",
     singleLine: Boolean = true,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    /** Lets a screen open the keyboard straight away. */
+    focusRequester: androidx.compose.ui.focus.FocusRequester? = null,
 ) {
     val c = ChittaTheme.colors
     val interaction = remember { MutableInteractionSource() }
@@ -50,7 +53,7 @@ fun ChittaField(
             textStyle = ChittaTheme.type.body.copy(color = c.ink),
             cursorBrush = SolidColor(c.ink),
             interactionSource = interaction,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier),
             decorationBox = { inner ->
                 Box(
                     Modifier

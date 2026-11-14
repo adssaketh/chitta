@@ -131,6 +131,11 @@ class QuickAddViewModel @Inject constructor(
         d.copy(amountRaw = raw)
     }
 
+    /** The amount typed on the phone's own keyboard. Keeps digits, the dot and the calculator signs; the rest is dropped. */
+    fun setAmountRaw(text: String) = draft.update { d ->
+        d.copy(amountRaw = text.filter { it.isDigit() || it in ".+-*/×÷−" }.take(40))
+    }
+
     fun setType(t: EntryType) = draft.update { it.copy(type = t, categoryId = if (t == EntryType.Transfer) null else it.categoryId.takeIf { c -> t == it.type } ) }
     fun setTitle(s: String) = draft.update { d ->
         // A category you chose for this exact title wins; then a rule. A rule never overrides a category you picked by hand,

@@ -1,6 +1,7 @@
 package com.mansaketh.chitta.ui.add
 
 import android.app.DatePickerDialog
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -34,6 +35,8 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
     val c = ChittaTheme.colors
     val context = LocalContext.current
     var pick by remember { mutableStateOf(Pick.None) }
+    var useKeyboard by remember { mutableStateOf(false) }
+    val amountFocus = remember { androidx.compose.ui.focus.FocusRequester() }
     var rateNotice by remember { mutableStateOf<String?>(null) }
     var splitTotal by remember { mutableStateOf<com.mansaketh.chitta.core.money.Paise?>(null) }
     val zone = remember { ZoneId.systemDefault() }
@@ -79,7 +82,24 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
             ui.problem?.let { if (d.amountRaw.isNotEmpty()) Text(it, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2)) }
 
             Spacer(Modifier.height(Dimens.Gap3))
-            Keypad(vm::key)
+            if (useKeyboard) {
+                // Phone keyboard: type the amount, or a sum such as 120+45 (use - * / for the other signs).
+                ChittaField(
+                    value = d.amountRaw, onValueChange = vm::setAmountRaw, label = "Amount",
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Ascii),
+                    focusRequester = amountFocus,
+                )
+                LaunchedEffect(Unit) { amountFocus.requestFocus() }
+            } else {
+                Keypad(vm::key)
+            }
+            Text(
+                if (useKeyboard) "Use the keypad" else "Use the phone keyboard",
+                style = ChittaTheme.type.link, color = c.ink,
+                modifier = Modifier.align(Alignment.End).heightIn(min = 48.dp)
+                    .clickable(role = androidx.compose.ui.semantics.Role.Button) { useKeyboard = !useKeyboard }
+                    .padding(top = 16.dp),
+            )
             Spacer(Modifier.height(Dimens.Gap3))
             Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2), modifier = Modifier.fillMaxWidth()) {
                 if (d.type != EntryType.Transfer && d.categoryId != null) ChittaButton("Pin", vm::pinCurrent, style = ButtonStyle.Quiet)

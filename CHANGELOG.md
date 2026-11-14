@@ -1,5 +1,8 @@
 # Changelog
 
+## Quick Add: phone keyboard option (14 Nov 2026) - on branch `phase-ui-polish`
+- A link under the keypad, "Use the phone keyboard", swaps the on-screen keypad for the normal keyboard (type 120+45 and it still adds up; - * / work as signs). "Use the keypad" swaps back. The keypad is unchanged and stays the default. Keypad keys no longer buzz twice.
+
 ## Vibrations and ring fill (14 Nov 2026) - on branch `phase-ui-polish`, not yet felt on a phone
 - Light haptics: bottom-bar tab change and a swipe between tabs (tick), add button (tap, and a firmer one on long-press), a long-press on a Ledger row (starts selecting), every keypad key. The save button already had its confirm buzz. They follow the phone's own touch-feedback setting.
 - Home: the budget ring fills circularly, clockwise from the top, in about 0.9 s every time Home is opened or returned to (not on a data refresh). The snapshot tests keep the ring still.
