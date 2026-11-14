@@ -17,8 +17,8 @@ import java.util.concurrent.TimeUnit
 @EntryPoint
 @InstallIn(SingletonComponent::class)
 interface FundPriceEntryPoint {
-    fun service(): FundPriceService
-    fun prefs(): UiPrefs
+    fun fundPriceService(): FundPriceService
+    fun uiPrefs(): UiPrefs
 }
 
 private const val WORK_NAME = "chitta-fund-prices"
@@ -27,8 +27,8 @@ private const val WORK_NAME = "chitta-fund-prices"
 class FundPriceWorker(private val context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         val ep = EntryPointAccessors.fromApplication(context, FundPriceEntryPoint::class.java)
-        if (!ep.prefs().fundPricesAuto.value) return Result.success()
-        ep.service().refresh()
+        if (!ep.uiPrefs().fundPricesAuto.value) return Result.success()
+        ep.fundPriceService().refresh()
         return Result.success()
     }
 }
