@@ -72,6 +72,15 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
                     value = ui.filter.text, onValueChange = vm::setText, label = "Search title, note, category or account",
                     modifier = Modifier.padding(horizontal = Dimens.Margin, vertical = Dimens.Gap2),
                 )
+                if (ui.filter.text.isBlank()) {
+                    Text(
+                        "Filters: amt>500, cat:food, acc:hdfc, last:30d, type:lent, note:word, from:2026-10-01. A minus leaves one out: -cat:food.",
+                        style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(horizontal = Dimens.Margin),
+                    )
+                }
+                ui.problems.forEach { problem ->
+                    Text("Not used: $problem", style = ChittaTheme.type.label, color = c.ink, modifier = Modifier.padding(horizontal = Dimens.Margin, vertical = Dimens.Gap1))
+                }
             }
             val tabs = LedgerTab.entries
             TextTabs(
@@ -79,7 +88,7 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
                 onSelect = { vm.setTab(tabs[it]) }, modifier = Modifier.padding(horizontal = Dimens.Margin),
             )
             HairlineRule()
-            val filtered = ui.filter.accountIds.isNotEmpty() || ui.filter.categoryIds.isNotEmpty()
+            val filtered = ui.filter.accountIds.isNotEmpty() || ui.filter.categoryIds.isNotEmpty() || ui.typedFilters
             if (filtered) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = Dimens.Margin), verticalAlignment = Alignment.CenterVertically) {
                     Text("Filtered: ${ui.matching} of ${ui.totalEntries} entries", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.weight(1f))

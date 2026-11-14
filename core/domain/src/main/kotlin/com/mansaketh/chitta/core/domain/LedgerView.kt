@@ -23,11 +23,48 @@ data class LedgerFilter(
     val toMs: Long? = null,           // exclusive
     val minAmount: Paise? = null,
     val maxAmount: Paise? = null,
+    /** Typed filters from the search box (Phase 8f). They apply on top of everything above. */
+    val smart: SmartFilter = SmartFilter(),
 )
 
 object LedgerSearch {
     fun isUpcoming(t: Transaction): Boolean =
         (t.kind == TransactionKind.UPCOMING || t.kind == TransactionKind.SUBSCRIPTION || t.kind == TransactionKind.REPETITIVE) && !t.paid && !t.skipPaid
+
+    private fun isIncomeSide(t: Transaction, incomeCategory: Set<String>, known: Set<String>) =
+        t.categoryId in incomeCategory || (t.categoryId !in known && t.amount > 0)
+
+    private fun hasType(t: Transaction, type: SearchType, incomeCategory: Set<String>, known: Set<String>): Boolean = when (type) {
+        SearchType.Transfer -> Totals.isTransfer(t)
+        SearchType.Upcoming -> isUpcoming(t)
+        SearchType.Lent -> t.kind == TransactionKind.LENT
+        SearchType.Borrowed -> t.kind == TransactionKind.BORROWED
+        SearchType.Subscription -> t.kind == TransactionKind.SUBSCRIPTION
+        SearchType.Repeating -> t.kind == TransactionKind.REPETITIVE
+        SearchType.Income -> !isUpcoming(t) && !Totals.isNeutral(t) && isIncomeSide(t, incomeCategory, known)
+        SearchType.Spending -> !isUpcoming(t) && !Totals.isNeutral(t) && !isIncomeSide(t, incomeCategory, known)
+    }
+
+    /** The typed filters of [SmartFilter]: all kinds must hold; inside one kind any value may hold; excluded values must not. */
+    private fun matchesSmart(t: Transaction, s: SmartFilter, incomeCategory: Set<String>, known: Set<String>): Boolean {
+        if (!s.isActive) return true
+        fun inCats(ids: Set<String>) = t.categoryId in ids || t.subCategoryId in ids
+        if (s.categoryIds != null && !inCats(s.categoryIds)) return false
+        if (s.excludeCategoryIds.isNotEmpty() && inCats(s.excludeCategoryIds)) return false
+        if (s.accountIds != null && t.accountId !in s.accountIds) return false
+        if (t.accountId in s.excludeAccountIds) return false
+        if (s.types != null && s.types.none { hasType(t, it, incomeCategory, known) }) return false
+        if (s.excludeTypes.any { hasType(t, it, incomeCategory, known) }) return false
+        val note = t.note.lowercase()
+        if (s.notes.isNotEmpty() && s.notes.none { note.contains(it) }) return false
+        if (s.excludeNotes.any { note.contains(it) }) return false
+        val abs = Math.abs(t.amount)
+        if (s.minAmount != null && abs < s.minAmount.value) return false
+        if (s.maxAmount != null && abs > s.maxAmount.value) return false
+        if (s.fromMs != null && t.dateMs < s.fromMs) return false
+        if (s.toMs != null && t.dateMs >= s.toMs) return false
+        return true
+    }
 
     /** Entries that pass [filter], newest first. Text matches the title, note, category name and account name, ignoring case. */
     fun apply(entries: List<Transaction>, filter: LedgerFilter, categories: List<Category>, accounts: List<Account>): List<Transaction> {
@@ -48,6 +85,7 @@ object LedgerSearch {
             .filter { filter.toMs == null || it.dateMs < filter.toMs }
             .filter { filter.minAmount == null || Math.abs(it.amount) >= filter.minAmount.value }
             .filter { filter.maxAmount == null || Math.abs(it.amount) <= filter.maxAmount.value }
+            .filter { matchesSmart(it, filter.smart, incomeCategory, categoryName.keys) }
             .filter {
                 q.isEmpty() || it.name.lowercase().contains(q) || it.note.lowercase().contains(q) ||
                     categoryName[it.categoryId]?.lowercase()?.contains(q) == true || accountName[it.accountId]?.lowercase()?.contains(q) == true

@@ -58,7 +58,7 @@ fun InsightsScreen(vm: InsightsViewModel, onOpenEntry: (String) -> Unit) {
 
     Column(Modifier.fillMaxSize()) {
         Text("Insights", style = ChittaTheme.type.headline, color = c.ink, modifier = Modifier.padding(horizontal = Dimens.Margin, vertical = Dimens.Gap3))
-        TextTabs(listOf("Current", "History", "Net worth"), tab, { tab = it }, Modifier.padding(horizontal = Dimens.Margin))
+        TextTabs(listOf("Current", "History", "Net worth", "Review"), tab, { tab = it }, Modifier.padding(horizontal = Dimens.Margin))
         HairlineRule()
         when {
             ui.loading -> LoadingPlaceholder(Modifier.padding(Dimens.Margin))
@@ -67,7 +67,8 @@ fun InsightsScreen(vm: InsightsViewModel, onOpenEntry: (String) -> Unit) {
                 when (tab) {
                     0 -> CurrentTab(ui, onRange = { sheet = "range" }, onAccounts = { sheet = "accounts" }, onIncome = vm::showIncome, onDrill = vm::openDrill)
                     1 -> HistoryTab(ui, onBucket = vm::setBucket, onCumulative = vm::setCumulative, onAccounts = { sheet = "accounts" })
-                    else -> NetWorthTab(ui)
+                    2 -> NetWorthTab(ui)
+                    else -> MonthReviewContent(ui, onMonth = vm::setReviewMonth)
                 }
             }
         }

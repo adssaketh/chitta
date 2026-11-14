@@ -1,5 +1,12 @@
 # Changelog
 
+## Phase 8f: month in review and smart search (14 Nov 2026) - on `main`
+- Month in review: `MonthReviews` in `:core:domain` (totals as the All Spending Summary, the month before for comparison, top 3 categories up and down by at least ₹500, budgets hit or missed). Insights gets a Review tab with arrows between finished months; Home shows "<month> in review" on the 1st to the 3rd and opens the same screen. No notification, no badges.
+- Smart search in the Ledger: `SearchSyntax` reads `amt`, `cat`, `acc`, `type`, `note`, `last`, `from`, `to`, with a minus to leave matches out. Plain words search as before. Anything that cannot be used is listed as "Not used: ..." and the rest still applies. A one-line hint shows when the box is open and empty.
+- No database change.
+- Decisions D135 to D143. Tests: 50 new in `Phase8fTest` (parser, applying filters to entries, review figures worked by hand); 387 in `:core:domain` pass locally.
+- Written without a local Android build; CI compiles the app.
+
 ## Phase 8e: rollover budgets, sinking funds, Zerodha ledger (14 Nov 2026) - on `main`
 - Rollover: a per-budget switch (repeating spending budgets only, off by default) carries unspent or overspent money into the next period. `Rollover` in `:core:domain`; `BudgetSummary.carry`; the budget screen says what carried in; the earlier-periods list shows each period's own limit.
 - Sinking funds: Plan > Sinking funds. A total, a start, a due date and an optional category that pays the bill. `SinkingFunds` spreads the total over the calendar months (shares add up to the paisa), reserves this month's share off Safe to spend and the cash check, and adds back spending the fund already set aside. Home's "How this is worked out" shows both lines.

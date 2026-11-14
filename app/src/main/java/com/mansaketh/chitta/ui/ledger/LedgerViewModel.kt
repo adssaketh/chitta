@@ -12,6 +12,7 @@ import com.mansaketh.chitta.core.domain.LedgerGrouping
 import com.mansaketh.chitta.core.domain.LedgerSearch
 import com.mansaketh.chitta.core.domain.LedgerTab
 import com.mansaketh.chitta.core.domain.MonthGroup
+import com.mansaketh.chitta.core.domain.SearchSyntax
 import com.mansaketh.chitta.core.domain.Totals
 import com.mansaketh.chitta.core.model.Account
 import com.mansaketh.chitta.core.model.Category
@@ -48,6 +49,10 @@ data class LedgerUi(
     val matching: Int = 0,
     /** Entries that look like a second copy of another (master section 8). Only a mark; nothing is changed. */
     val possibleDuplicates: Set<String> = emptySet(),
+    /** Typed filters in the search box (amt>500 cat:food ...) are narrowing the list. */
+    val typedFilters: Boolean = false,
+    /** Parts of the search box that could not be used, as plain sentences. Those parts are ignored. */
+    val problems: List<String> = emptyList(),
 )
 
 @HiltViewModel
@@ -68,7 +73,8 @@ class LedgerViewModel @Inject constructor(
     private val data = combine(ledger.observeAll(), accounts.observeAll(), categories.observeAll()) { e, a, c -> Data(e, a, c) }
 
     val ui: StateFlow<LedgerUi> = combine(data, filter, selected) { d, f, sel ->
-        val shown = LedgerSearch.apply(d.entries, f, d.categories, d.accounts)
+        val parsed = SearchSyntax.parse(f.text, d.categories, d.accounts, clock.nowMs(), clock.zone())
+        val shown = LedgerSearch.apply(d.entries, f.copy(text = parsed.text, smart = parsed.filter), d.categories, d.accounts)
         LedgerUi(
             loading = false,
             months = LedgerGrouping.group(shown, d.categories, clock.zone()),
@@ -77,6 +83,7 @@ class LedgerViewModel @Inject constructor(
             selected = sel.intersect(d.entries.map { it.id }.toSet()),
             totalEntries = d.entries.size, matching = shown.size,
             possibleDuplicates = com.mansaketh.chitta.core.domain.Duplicates.flaggedIds(d.entries),
+            typedFilters = parsed.filter.isActive, problems = parsed.problems,
         )
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LedgerUi())
 

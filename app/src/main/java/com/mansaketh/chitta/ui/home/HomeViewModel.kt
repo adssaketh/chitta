@@ -95,6 +95,8 @@ data class HomeUi(
     val sections: Map<HomeSection, SectionData> = emptyMap(),
     val hasEntries: Boolean = false,
     val preferCash: Boolean = false,
+    /** The month Home links to as "<month> in review": the one before this, during the first days of a month, when it has entries. */
+    val reviewMonth: YearMonth? = null,
 )
 
 @HiltViewModel
@@ -136,6 +138,7 @@ class HomeViewModel @Inject constructor(
             budgetOptions = HomeFigures.selectableBudgets(r.budgets, now, zone), cash = cash, cashStale = stale, choice = choice,
             coming = HomeFigures.comingUp(r.entries, 3), comingTotal = HomeFigures.billsOut(r.entries, period), period = period,
             layout = p.layout, sections = sections, hasEntries = r.entries.isNotEmpty(), preferCash = p.preferCash,
+            reviewMonth = com.mansaketh.chitta.core.domain.MonthReviews.homeMonth(r.entries, now, zone),
         )
     }
 

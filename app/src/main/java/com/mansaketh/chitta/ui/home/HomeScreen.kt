@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -53,6 +54,7 @@ fun HomeScreen(
     onOpenPlan: () -> Unit,
     onOpenLedger: () -> Unit,
     onCustomise: () -> Unit,
+    onOpenReview: () -> Unit = {},
 ) {
     val ui by vm.ui.collectAsState()
     val firstDay by vm.prefs.firstDay.collectAsState()
@@ -66,6 +68,16 @@ fun HomeScreen(
         })
         if (ui.loading) { LoadingPlaceholder(Modifier.padding(Dimens.Margin)); return@Column }
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = 160.dp)) {
+            ui.reviewMonth?.let { month ->
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(role = Role.Button, onClickLabel = "Open the month in review", onClick = onOpenReview),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(month.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH) + " in review", style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.weight(1f))
+                    Icon(ChittaIcons.CaretRight, contentDescription = null, tint = c.inkMuted, modifier = Modifier.size(16.dp))
+                }
+                HairlineRule()
+            }
             val hero = ui.hero
             val choice = ui.choice
             if (choice == null) {

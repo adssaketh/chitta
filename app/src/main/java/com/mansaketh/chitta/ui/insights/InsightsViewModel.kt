@@ -14,6 +14,8 @@ import com.mansaketh.chitta.core.domain.Flow
 import com.mansaketh.chitta.core.domain.History
 import com.mansaketh.chitta.core.domain.HistoryPoint
 import com.mansaketh.chitta.core.domain.Insights
+import com.mansaketh.chitta.core.domain.MonthReview
+import com.mansaketh.chitta.core.domain.MonthReviews
 import com.mansaketh.chitta.core.domain.NetWorth
 import com.mansaketh.chitta.core.domain.NetWorthExtras
 import com.mansaketh.chitta.data.NetWorthInputs
@@ -26,6 +28,7 @@ import com.mansaketh.chitta.core.domain.SpendingRange
 import com.mansaketh.chitta.core.domain.SpendingSummary
 import com.mansaketh.chitta.core.domain.SummaryFilter
 import com.mansaketh.chitta.core.model.Account
+import com.mansaketh.chitta.core.model.Budget
 import com.mansaketh.chitta.core.model.Category
 import com.mansaketh.chitta.core.model.Objective
 import com.mansaketh.chitta.core.model.Repeat
@@ -44,6 +47,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
@@ -88,6 +92,9 @@ data class InsightsUi(
     val netSeries: List<NetWorthPoint> = emptyList(),
     val netExtras: NetWorthExtras = NetWorthExtras.NONE,
     val hasEntries: Boolean = false,
+    /** Finished months that have entries, newest first, and the review of the chosen one (the newest unless the person stepped back). */
+    val reviewMonths: List<YearMonth> = emptyList(),
+    val review: MonthReview? = null,
 )
 
 @HiltViewModel
@@ -100,9 +107,10 @@ class InsightsViewModel @Inject constructor(
     netWorthInputs: NetWorthInputs,
     private val clock: Clock,
 ) : ViewModel() {
-    private data class Raw(val entries: List<Transaction>, val objectives: List<Objective>, val categories: List<Category>, val accounts: List<Account>, val extras: NetWorthExtras = NetWorthExtras.NONE)
+    private data class Raw(val entries: List<Transaction>, val objectives: List<Objective>, val categories: List<Category>, val accounts: List<Account>, val extras: NetWorthExtras = NetWorthExtras.NONE, val budgets: List<Budget> = emptyList())
     private data class Q(
         val range: RangeChoice, val accountIds: Set<String>, val income: Boolean, val bucket: Bucket, val cumulative: Boolean, val drill: String?, val firstDay: DayOfWeek,
+        val reviewMonth: YearMonth? = null,
     )
 
     private val range = MutableStateFlow<RangeChoice>(RangeChoice.ThisMonth)
@@ -111,10 +119,11 @@ class InsightsViewModel @Inject constructor(
     private val bucket = MutableStateFlow(Bucket.Month)
     private val cumulative = MutableStateFlow(false)
     private val drill = MutableStateFlow<String?>(null)
+    private val reviewMonth = MutableStateFlow<YearMonth?>(null)
 
-    private val raw = combine(combine(ledger.observeAll(), plan.observeObjectives(), categoryRepo.observeAll(), accountRepo.observeAll()) { e, o, c, a -> Raw(e, o, c, a) }, netWorthInputs.extras) { r, x -> r.copy(extras = x) }
+    private val raw = combine(combine(ledger.observeAll(), plan.observeObjectives(), categoryRepo.observeAll(), accountRepo.observeAll()) { e, o, c, a -> Raw(e, o, c, a) }, netWorthInputs.extras, plan.observeBudgets()) { r, x, b -> r.copy(extras = x, budgets = b) }
     private val q = combine(range, accountIds, income, bucket, cumulative) { r, a, i, b, c -> Triple(Triple(r, a, i), b, c) }
-    private val query = combine(q, drill, prefs.firstDay) { t, d, f -> Q(t.first.first, t.first.second, t.first.third, t.second, t.third, d, f) }
+    private val query = combine(q, drill, prefs.firstDay, reviewMonth) { t, d, f, m -> Q(t.first.first, t.first.second, t.first.third, t.second, t.third, d, f, m) }
 
     val ui: StateFlow<InsightsUi> = combine(raw, query) { r, qq -> compute(r, qq) }
         .flowOn(Dispatchers.Default)
@@ -126,6 +135,7 @@ class InsightsViewModel @Inject constructor(
     fun setBucket(v: Bucket) { bucket.value = v }
     fun setCumulative(v: Boolean) { cumulative.value = v }
     fun openDrill(categoryId: String?) { drill.update { categoryId } }
+    fun setReviewMonth(month: YearMonth) { reviewMonth.value = month }
 
     private fun spendingRange(c: RangeChoice, now: Long, zone: ZoneId): SpendingRange {
         val today = Periods.date(now, zone)
@@ -165,6 +175,10 @@ class InsightsViewModel @Inject constructor(
             )
         }
 
+        val reviewMonths = MonthReviews.months(r.entries, now, zone)
+        val reviewOf = (q.reviewMonth?.takeIf { it in reviewMonths } ?: reviewMonths.firstOrNull())
+            ?.let { MonthReviews.review(it, r.entries, r.categories, r.budgets, now, zone) }
+
         val histCount = when (q.bucket) { Bucket.Day -> 30; Bucket.Week -> 12; Bucket.Month -> 12; Bucket.Year -> 5 }
         val history = History.series(r.entries, r.categories, q.bucket, histCount, now, zone, filter, q.firstDay)
 
@@ -174,6 +188,7 @@ class InsightsViewModel @Inject constructor(
             showIncome = q.income, changes = changes, drill = drillData, history = history, historyBucket = q.bucket, historyAverage = History.average(history),
             cumulative = q.cumulative, netNow = NetWorth.at(now, r.entries, r.accounts, r.objectives, r.extras, zone),
             netSeries = NetWorth.series(r.entries, r.accounts, r.objectives, now, zone, 12, r.extras), hasEntries = r.entries.isNotEmpty(), netExtras = r.extras,
+            reviewMonths = reviewMonths, review = reviewOf,
         )
     }
 
