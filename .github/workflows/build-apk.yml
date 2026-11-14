@@ -4,6 +4,9 @@ on:
   push:
     branches: ['phase-*', main]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -16,6 +19,15 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 9.9.1
+      - name: Re-record screenshots (only when the commit message contains [record snapshots])
+        if: contains(github.event.head_commit.message, '[record snapshots]')
+        run: |
+          gradle :core:design:recordRoborazziDebug --no-daemon
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add core/design/src/test/snapshots
+          git diff --cached --quiet || git commit -m "Re-record screenshots"
+          git push origin HEAD:${{ github.ref_name }}
       - name: Tests and screenshot check
         run: gradle :core:money:test :core:intake:test :core:domain:test :core:importer:test :core:database:testDebugUnitTest :app:testDebugUnitTest :core:design:testDebugUnitTest :core:design:verifyRoborazziDebug --no-daemon
       - name: Debug APK
