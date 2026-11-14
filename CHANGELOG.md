@@ -1,6 +1,15 @@
 # Changelog
 
-## Phase 8j: widgets, Quick Settings tile and shortcuts (14 Nov 2026) - on branch `phase-8j-widgets`
+## Phase 9a: Google sign-in and Drive backup (14 Nov 2026) - on `main`
+
+- Settings > Backup and restore > **Google Drive backup**: sign in with Google (Credential Manager), then **Back up now**, an automatic daily backup (switch, on by default once signed in), the list of backups in Drive, Restore (same "Replace your book?" confirmation and restore point as a backup file) and Delete one from Drive. Sign out forgets the account on this phone and leaves Drive alone.
+- Backups go to the app's hidden Drive folder only (scope `drive.appdata`), as `chitta-<time>.db`. The newest 20 are kept; older ones are removed only after the new one has arrived with the right size. Files in that folder that are not Chitta backups are listed, never deleted, and can be tried as a Paddhu book through the existing preview.
+- No Drive library: five small HTTPS calls. New libraries: Credential Manager 1.6.0, googleid 1.2.1, play-services-auth 22.0.0 (all latest stable).
+- `:core:domain`: `CloudBackups` (naming, keep 20, due once a day, "days since"). 13 new tests. App: `DriveJson` tests (5).
+- Not in 9a: cross-device sync, receipt photos in backups, the household (9b), the release rename (9c).
+- Decisions D171 to D180. Nothing has run on a phone. Sign-in works only on the release-signed APK once `com.mansaketh.chitta` is registered in Firebase project `cashew-saketh`.
+
+## Phase 8j: widgets, Quick Settings tile and shortcuts (14 Nov 2026) - approved, on `main`
 
 - Two home-screen widgets (Glance 1.2.0, latest stable): **Quick add** (Expense and Income buttons, open the add sheet through the existing `chitta://add?type=` link; nothing is saved) and **Safe to spend** (the figure Home leads with, per day and days left, and spent today).
 - The spend widget masks every amount when hide-amounts is on or the lock is on. Hide-amounts is now remembered across restarts so the widget can read it (D166).

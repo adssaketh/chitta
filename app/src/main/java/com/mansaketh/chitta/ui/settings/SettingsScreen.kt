@@ -56,8 +56,8 @@ internal fun closeApp(activity: FragmentActivity?) {
 private fun onOff(v: Boolean) = if (v) "On" else "Off"
 
 /**
- * Settings, as far as this phase goes: Security, Backup and restore, Import and export, Data. Backup to Drive and sync come with sign-in
- * in Phase 9 (DECISIONS D66).
+ * Settings, as far as this phase goes: Security, Backup and restore (with Google Drive backup, Phase 9a), Import and export, Data.
+ * Cross-device sync and the household come later in Phase 9 (DECISIONS D66, D172).
  */
 @Composable
 fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -> Unit) {
@@ -108,14 +108,14 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
             Spacer(Modifier.height(Dimens.SectionGap))
             SectionHeader("Backup and restore")
             HairlineRule()
+            ValueRow("Google Drive backup", "", onClick = { onOpen("cloud-backup") })
             ValueRow("Restore points", "${ui.points.size}", onClick = { vm.refreshPoints(); onOpen("restore-points") })
             ValueRow("Make a restore point now", "", onClick = { vm.makePoint() })
             ValueRow("Save a backup file", "", onClick = { saveBackup.launch(RestorePoints.exportName(System.currentTimeMillis(), zone)) })
             ValueRow("Bring back a backup file", "", onClick = { openBackup.launch(arrayOf("*/*")) })
             Text(
                 "A restore point is a copy of your book kept on this phone: one a day, and one before every restore, CSV import and delete. " +
-                    "Receipt photos stay on this phone and are not in restore points or backup files. " +
-                    "Backup to Google Drive comes later, with sign-in.",
+                    "Receipt photos stay on this phone and are not in restore points or backup files.",
                 style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2),
             )
 

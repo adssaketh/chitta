@@ -46,6 +46,7 @@ class AppViewModels(
     val rules: com.mansaketh.chitta.ui.rules.RulesViewModel,
     val automation: com.mansaketh.chitta.ui.automation.AutomationViewModel,
     val assets: com.mansaketh.chitta.ui.assets.AssetsViewModel,
+    val cloud: com.mansaketh.chitta.ui.cloud.CloudBackupViewModel,
 )
 
 /**
@@ -168,6 +169,11 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                     top == "categories" -> CategoriesScreen(vms.manage, onBack = ::pop)
                     top == "import" -> ImportScreen(vms.imports, onBack = { vms.imports.reset(); pop() }, onFinished = { vms.imports.reset(); stack = emptyList() })
                     top == "settings" -> com.mansaketh.chitta.ui.settings.SettingsScreen(vms.settings, onBack = ::pop, onOpen = { push(it) })
+                    top == "cloud-backup" -> com.mansaketh.chitta.ui.cloud.CloudBackupScreen(
+                        vms.cloud, onBack = ::pop,
+                        // A file from Drive that may be a Paddhu backup goes through the same preview and approval as a file you pick.
+                        onPaddhuFile = { f -> vms.imports.pick(android.net.Uri.fromFile(f)); push("import") },
+                    )
                     top == "restore-points" -> com.mansaketh.chitta.ui.settings.RestorePointsScreen(vms.settings, onBack = ::pop)
                     top == "automation" -> com.mansaketh.chitta.ui.automation.AutomationScreen(vms.automation, onBack = ::pop)
                     top == "rules" -> com.mansaketh.chitta.ui.rules.RulesScreen(vms.rules, onBack = ::pop)

@@ -20,6 +20,10 @@ fragment = "1.8.9"
 mlkitText = "16.0.1"
 pdfbox = "2.0.27.0"
 glance = "1.2.0"
+# Phase 9a: Google sign-in and Drive backup. Credential Manager 1.6.0 is the latest stable (7.0 is alpha, not used).
+credentials = "1.6.0"
+googleid = "1.2.1"
+playServicesAuth = "22.0.0"
 
 [libraries]
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
@@ -54,6 +58,10 @@ androidx-fragment = { module = "androidx.fragment:fragment", version.ref = "frag
 mlkit-text-recognition = { module = "com.google.mlkit:text-recognition", version.ref = "mlkitText" }
 pdfbox-android = { module = "com.tom-roush:pdfbox-android", version.ref = "pdfbox" }
 androidx-glance-appwidget = { module = "androidx.glance:glance-appwidget", version.ref = "glance" }
+androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentials" }
+androidx-credentials-play = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentials" }
+google-googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
+play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
 androidx-work-runtime = { module = "androidx.work:work-runtime", version.ref = "work" }
 hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
 

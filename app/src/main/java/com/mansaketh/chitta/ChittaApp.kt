@@ -21,6 +21,8 @@ class ChittaApp : Application() {
     @Inject lateinit var receipts: com.mansaketh.chitta.receipts.ReceiptStore
     @Inject lateinit var ledger: com.mansaketh.chitta.core.database.LedgerRepository
     @Inject lateinit var security: com.mansaketh.chitta.data.SecurityPrefs
+    @Inject lateinit var cloudPrefs: com.mansaketh.chitta.cloud.CloudPrefs
+    @Inject lateinit var cloudBackup: com.mansaketh.chitta.cloud.CloudBackupService
 
     /** A restore staged by Settings is swapped in here, before anything can open the book (DECISIONS D69). */
     override fun attachBaseContext(base: Context) {
@@ -35,6 +37,11 @@ class ChittaApp : Application() {
         ReminderScheduler.scheduleNext(this, prefs.reminders, clock.nowMs(), clock.zone())
         com.mansaketh.chitta.data.FundPriceScheduler.sync(this, uiPrefs.fundPricesAuto.value)
         com.mansaketh.chitta.widgets.Shortcuts.publish(this)
+        // Daily Drive backup (Phase 9a): queued only while signed in with the switch on. Also tried when the app opens, if none was made today.
+        com.mansaketh.chitta.cloud.CloudBackupScheduler.sync(this, cloudPrefs.email.value != null && cloudPrefs.autoBackup.value)
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO).launch {
+            runCatching { cloudBackup.backupIfDue() }
+        }
         // The spend widget is redrawn whenever the book changes, or hide-amounts or the lock is switched, while the app is running.
         // Between runs it refreshes every 30 minutes (the shortest period Android allows), so the day's total can lag after midnight.
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default).launch {
