@@ -169,23 +169,26 @@ fun MonthHeader(
 ) {
     val c = ChittaTheme.colors
     Column(modifier.fillMaxWidth().background(c.background)) {
-        // FlowRow: at 200% text the totals wrap under the month name instead of colliding with it.
+        Text(
+            month,
+            style = ChittaTheme.type.headline,
+            color = c.ink,
+            modifier = Modifier.heightIn(min = Dimens.RowMin),
+        )
+        // In at the start, Out at the end. FlowRow so at 200% text Out wraps under In instead of colliding.
         FlowRow(
-            Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin),
+            Modifier.fillMaxWidth().padding(bottom = Dimens.Gap2),
             itemVerticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalArrangement = Arrangement.spacedBy(Dimens.Gap2),
         ) {
-            Text(month, style = ChittaTheme.type.headline, color = c.ink)
-            Column(horizontalAlignment = Alignment.End) {
-                Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
-                    Text("In", style = ChittaTheme.type.label, color = c.inkMuted)
-                    AmountText(moneyIn, style = ChittaTheme.type.amountSmall, tone = AmountTone.Income)
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Out", style = ChittaTheme.type.label, color = c.inkMuted)
-                    AmountText(moneyOut, style = ChittaTheme.type.amountSmall)
-                }
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
+                Text("In", style = ChittaTheme.type.label, color = c.inkMuted)
+                AmountText(moneyIn, style = ChittaTheme.type.amountSmall, tone = AmountTone.Income)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
+                Text("Out", style = ChittaTheme.type.label, color = c.inkMuted)
+                AmountText(moneyOut, style = ChittaTheme.type.amountSmall)
             }
         }
         HairlineRule()
