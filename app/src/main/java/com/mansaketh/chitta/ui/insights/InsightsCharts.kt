@@ -10,6 +10,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -122,7 +126,8 @@ private val LEVEL_ALPHA = floatArrayOf(0f, 0.15f, 0.35f, 0.70f, 0.92f)
 
 /**
  * The month as weeks of day cells, shaded in four steps of ink by how much was spent (design: ink and quiet greys only, no colour ramp).
- * Days after today are drawn empty. Each cell has the date and the amount for TalkBack.
+ * Days after today are outlined only, with a muted number, so they never look like days with nothing spent (those have the light fill).
+ * A legend under the grid shows the five steps. Each cell has the date and the amount for TalkBack.
  */
 @Composable
 fun HeatGrid(
@@ -131,8 +136,10 @@ fun HeatGrid(
     modifier: Modifier = Modifier,
 ) {
     val c = ChittaTheme.colors
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(Modifier.fillMaxWidth().clearAndSetSemantics {}, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+    val today = androidx.compose.runtime.remember { java.time.LocalDate.now() }
+    val anyFuture = weeks.any { w -> w.any { it.date?.isAfter(today) == true } }
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Dimens.Space1)) {
+        Row(Modifier.fillMaxWidth().clearAndSetSemantics {}, horizontalArrangement = Arrangement.spacedBy(Dimens.Space1)) {
             for (i in 0 until 7) {
                 val d = firstDay.plus(i.toLong())
                 Text(
@@ -142,25 +149,43 @@ fun HeatGrid(
             }
         }
         weeks.forEach { week ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Dimens.Space1)) {
                 week.forEach { cell ->
                     val date = cell.date
                     if (date == null) {
                         Box(Modifier.weight(1f).aspectRatio(1f))
                     } else {
                         val level = cell.level.coerceIn(0, 4)
-                        val dense = level >= 3
+                        val future = date.isAfter(today)
+                        val dense = level >= 3 && !future
                         Box(
                             Modifier.weight(1f).aspectRatio(1f)
-                                .background(c.rule.copy(alpha = 0.5f))
-                                .background(c.ink.copy(alpha = LEVEL_ALPHA[level]))
+                                .then(
+                                    if (future) Modifier.border(Dimens.Hairline, c.mark.copy(alpha = 0.6f))
+                                    else Modifier.background(c.rule.copy(alpha = 0.5f)).background(c.ink.copy(alpha = LEVEL_ALPHA[level]))
+                                )
                                 .semantics { contentDescription = "${date.dayOfMonth} ${date.month.getDisplayName(TextStyle.FULL, Locale.ENGLISH)}, " + if (cell.spent.value > 0) "spent ${IndianFormat.spoken(cell.spent)}" else "nothing spent" },
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(date.dayOfMonth.toString(), style = ChittaTheme.type.label, color = if (dense) c.background else c.ink, modifier = Modifier.padding(0.dp))
+                            Text(date.dayOfMonth.toString(), style = ChittaTheme.type.label, color = if (dense) c.background else if (future) c.inkMuted else c.ink, modifier = Modifier.padding(0.dp))
                         }
                     }
                 }
+            }
+        }
+        // Legend: Less, five steps, More. Outlined days are still to come.
+        Spacer(Modifier.height(Dimens.InlineGap))
+        Row(Modifier.clearAndSetSemantics {}, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.Space1)) {
+            Text("Less", style = ChittaTheme.type.label, color = c.inkMuted)
+            Spacer(Modifier.width(Dimens.Space1))
+            for (lvl in 0..4) Box(Modifier.size(Dimens.Space3).background(c.rule.copy(alpha = 0.5f)).background(c.ink.copy(alpha = LEVEL_ALPHA[lvl])))
+            Spacer(Modifier.width(Dimens.Space1))
+            Text("More", style = ChittaTheme.type.label, color = c.inkMuted)
+        }
+        if (anyFuture) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.InlineGap)) {
+                Box(Modifier.size(Dimens.Space3).border(Dimens.Hairline, c.mark.copy(alpha = 0.6f)))
+                Text("Outlined days are still to come.", style = ChittaTheme.type.label, color = c.inkMuted)
             }
         }
     }

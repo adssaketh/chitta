@@ -63,7 +63,7 @@ fun InsightsScreen(vm: InsightsViewModel, onOpenEntry: (String) -> Unit) {
         when {
             ui.loading -> LoadingPlaceholder(Modifier.padding(Dimens.Margin))
             !ui.hasEntries -> Text("Nothing to show yet. Add a transaction and the totals appear here.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(Dimens.Margin))
-            else -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = 160.dp)) {
+            else -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(top = Dimens.HeadingGap, bottom = Dimens.FabInset)) {
                 when (tab) {
                     0 -> CurrentTab(ui, onRange = { sheet = "range" }, onAccounts = { sheet = "accounts" }, onIncome = vm::showIncome, onDrill = vm::openDrill)
                     1 -> HistoryTab(ui, onBucket = vm::setBucket, onCumulative = vm::setCumulative, onAccounts = { sheet = "accounts" })
@@ -164,7 +164,7 @@ private fun CurrentTab(ui: InsightsUi, onRange: () -> Unit, onAccounts: () -> Un
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Dimens.Gap6)) {
         Column(Modifier.weight(1f)) {
             Text("Spent", style = ChittaTheme.type.label, color = c.inkMuted)
-            AmountText(s.expense, style = ChittaTheme.type.amountLarge, roundToRupee = true)
+            AmountText(s.expense, style = ChittaTheme.type.figure, fallbackStyles = ChittaTheme.type.figureSteps, roundToRupee = true)
             val prev = ui.previous
             if (prev != null) {
                 val diff = s.expense - prev.expense
@@ -182,7 +182,8 @@ private fun CurrentTab(ui: InsightsUi, onRange: () -> Unit, onAccounts: () -> Un
         Column(Modifier.weight(1f)) {
             Text("Saved", style = ChittaTheme.type.label, color = c.inkMuted)
             val pct = s.savedPercent
-            Text(if (pct != null) "$pct%" else "None", style = ChittaTheme.type.amountLarge, color = c.ink)
+            // A true minus sign, the same as the amounts use, not a hyphen.
+            Text(if (pct != null) "$pct%".replace('-', '\u2212') else "None", style = ChittaTheme.type.figure, color = c.ink, maxLines = 1)
             Text(if (pct != null) "of income" else "No income in this range", style = ChittaTheme.type.label, color = c.inkMuted)
         }
     }

@@ -323,8 +323,10 @@ object Heatmap {
 
     /**
      * A month as weeks of seven cells, starting on [firstDay] (a setting). Spending is what [Totals.of] calls money out for that day.
-     * Level = the share of the month's biggest day, rounded up into four steps; a day with nothing spent (or only refunds) is level 0.
-     * Days after today are drawn but empty.
+     * Level = the day's share of a reference amount, rounded up into four steps; a day with nothing spent (or only refunds) is level 0.
+     * The reference is the 90th percentile (nearest rank) of the days with spending, not the biggest day, so one very large day does not push
+     * every other day into the lightest step. Days above the reference take the darkest step. This is a display scale, not a money rule.
+     * Days after today are drawn but empty (the screen outlines them).
      */
     fun month(
         entries: List<Transaction>, categories: List<Category>, month: YearMonth, firstDay: DayOfWeek, zone: ZoneId,
@@ -333,7 +335,8 @@ object Heatmap {
         val scope = entries.filter { filter.accountIds.isEmpty() || it.accountId in filter.accountIds }
         val byDay = scope.groupBy { Periods.date(it.dateMs, zone) }.filterKeys { YearMonth.from(it) == month }
             .mapValues { (_, list) -> Totals.of(list, categories).moneyOut.value.coerceAtLeast(0) }
-        val max = byDay.values.maxOrNull() ?: 0L
+        val spending = byDay.values.filter { it > 0 }.sorted()
+        val max = if (spending.isEmpty()) 0L else spending[(kotlin.math.ceil(spending.size * 0.9).toInt() - 1).coerceIn(0, spending.lastIndex)]
         val first = month.atDay(1)
         val pad = Math.floorMod(first.dayOfWeek.value - firstDay.value, 7)
         val cells = ArrayList<HeatCell>()

@@ -1,5 +1,9 @@
 # Changelog
 
+## UI polish pass: step 4, Insights and heatmap (14 Nov 2026) - on branch `phase-ui-polish`, not yet seen on a phone
+- Insights: a 12 dp gap under the tab rule on all four tabs; Spent steps down a size so "₹1,35,449" no longer touches "-103%"; the percentage uses a true minus; the gaps around "Totals" are the section rhythm; end padding 96 dp.
+- Heatmap (Insights and Home): the shade scale is the 90th percentile of days with spending, so one big day no longer turns every other day the lightest step (display scale in `Heatmap.month`, new unit test). Days still to come are outlined with a muted number; days with nothing spent keep the light fill. A legend (Less, five steps, More) sits under the grid.
+
 ## UI polish pass: step 3, Ledger (14 Nov 2026) - on branch `phase-ui-polish`, not yet seen on a phone
 - Month header: 12 dp under the tab rule, 8 dp to In/Out, 12 dp to the rule, 8 dp before the first day. In/Out labels sit on the amounts' baseline. The 56 dp box that left about 24 dp of dead space under the month name is gone.
 - Rows: title and category line are one line each with an ellipsis (the category line no longer wraps), 12 dp padding, 64 dp minimum, 16 dp before the amount. The day number sits on the first title's baseline. Amounts step down a size if they do not fit.

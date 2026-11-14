@@ -261,3 +261,6 @@ Master section 7 lists both. Decided with the user on 13 Nov 2026: Ping already 
 | D190 | `SectionHeader` is as tall as its text plus a 12 dp heading gap; only a heading with an action is 48 dp tall. `Section` adds the 32 dp above. | The 48 dp always-tall heading caused the gaps under headings (audit H5). | decided |
 | D191 | `TabularText` reports its first baseline and steps down through `fallbackStyles` when the figure does not fit. | A fixed-size canvas could not baseline-align or shrink (audit S3). | decided |
 
+
+| D192 | Heatmap level = the day's share of the 90th percentile (nearest rank) of days with spending, rounded up into four steps; days above it are the darkest step. A display scale only; no money rule changes. | One day with a big payment made every other day the lightest step (UI audit I6). | decided |
+\n

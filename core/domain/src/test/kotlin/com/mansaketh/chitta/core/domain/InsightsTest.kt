@@ -278,6 +278,16 @@ class HeatmapTest {
         assertEquals(0, cells[1]!!.level)
     }
 
+    @Test fun oneHugeDayDoesNotFlattenTheRest() {
+        // Nine ordinary days (1,000 to 9,000) and one 100,000 day. Scaled to the biggest day every ordinary day would be level 1.
+        val many = (1..9).map { tx("d$it", -(it * 1_000L), ms(2026, 11, it + 1)) } + tx("big", -100_000, ms(2026, 11, 12))
+        val cells = Heatmap.month(many, CATS, nov, DayOfWeek.SUNDAY, IST).flatten().filter { it.date != null }.associateBy { it.date!!.dayOfMonth }
+        assertEquals(1, cells[2]!!.level)   // 1,000 of the 9,000 reference
+        assertEquals(3, cells[6]!!.level)   // 5,000
+        assertEquals(4, cells[10]!!.level)  // 9,000 is the reference itself
+        assertEquals(4, cells[12]!!.level)  // the huge day takes the darkest step, no more
+    }
+
     @Test fun aMonthWithNoSpendingIsAllLevelZero() {
         assertTrue(Heatmap.month(emptyList(), CATS, nov, DayOfWeek.MONDAY, IST).flatten().all { it.level == 0 })
     }
