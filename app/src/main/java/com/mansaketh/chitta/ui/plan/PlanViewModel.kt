@@ -56,6 +56,20 @@ class PlanViewModel @Inject constructor(
     val ui: StateFlow<PlanUi> = combine(core, categoryRepo.observeAll(), accountRepo.observeAll(), plan.observeSinkingFunds()) { p, c, a, s -> p.copy(categories = c, accounts = a, sinking = s) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PlanUi())
 
+    // ---- subscription suggestions (Phase 8g)
+    private fun decodeDismissed(raw: Set<String>): Map<String, String> =
+        raw.mapNotNull { e -> e.indexOf('|').takeIf { it > 0 }?.let { e.substring(0, it) to e.substring(it + 1) } }.toMap()
+    private val _dismissed = MutableStateFlow(decodeDismissed(prefs.dismissedSubscriptions))
+    /** Payees the person said are not subscriptions: key to the name shown. */
+    val dismissedSubscriptions: StateFlow<Map<String, String>> = _dismissed
+    private fun setDismissed(next: Map<String, String>) {
+        _dismissed.value = next
+        prefs.dismissedSubscriptions = next.map { (k, n) -> "$k|$n" }.toSet()
+    }
+    val suggestions: StateFlow<List<SubscriptionSuggestion>> = combine(ui, _dismissed) { u, d ->
+        if (u.loading) emptyList() else Subscriptions.detect(u.entries, d.keys, u.nowMs, u.zone)
+    }.flowOn(kotlinx.coroutines.Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     private val _settings = MutableStateFlow(Settings(prefs.autoPayOverdue, prefs.paidOnDueDate, prefs.reminders))
     data class Settings(val autoPay: Boolean, val paidOnDue: Boolean, val reminders: ReminderSettings)
     val settings: StateFlow<Settings> = _settings
@@ -289,6 +303,19 @@ class PlanViewModel @Inject constructor(
         val following = next?.let { series.copy(id = ids.newId(), dateMs = it, originalDueMs = null, paid = false, createdAnotherFuture = false, modifiedAtMs = null, pairedTransactionId = null) }
         commit("Now repeats ${repeatLabel(repeat, length)}", updated = listOf(series.copy(createdAnotherFuture = following != null)), created = listOfNotNull(following))
     }
+
+    /** Adds a detected subscription as a repeating bill. The ledger entries it came from are not touched. Undo removes it. */
+    fun addSuggestion(s: SubscriptionSuggestion) = viewModelScope.launch {
+        commit("${s.name} added to your subscriptions", created = listOf(Subscriptions.toBill(s, ids.newId())))
+    }
+
+    /** "Not a subscription": never suggested again. Undo, or the Dismissed list, brings it back. */
+    fun dismissSuggestion(s: SubscriptionSuggestion) {
+        setDismissed(_dismissed.value + (s.key to s.name))
+        undo.post("${s.name} will not be suggested") { setDismissed(_dismissed.value - s.key) }
+    }
+
+    fun restoreSuggestion(key: String) = setDismissed(_dismissed.value - key)
 
     /** Pays overdue repeating bills now if "Auto-pay overdue" is on. Called when Plan opens. */
     fun runAutoPay() = viewModelScope.launch {

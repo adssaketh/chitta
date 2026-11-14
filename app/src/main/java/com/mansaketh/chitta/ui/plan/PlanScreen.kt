@@ -192,6 +192,11 @@ private fun BillsTab(vm: PlanViewModel, ui: PlanUi, onSheet: (String) -> Unit, o
     var amountFor by remember { mutableStateOf<Transaction?>(null) }
     var deleting by remember { mutableStateOf<Transaction?>(null) }
     val shown = if (!expanded && future.size >= 3) future.take(2) else future
+    val suggestions by vm.suggestions.collectAsState()
+    val dismissed by vm.dismissedSubscriptions.collectAsState()
+    var suggestionsOpen by rememberSaveable { mutableStateOf(false) }
+    var dismissedOpen by rememberSaveable { mutableStateOf(false) }
+    var picked by remember { mutableStateOf<SubscriptionSuggestion?>(null) }
 
     @Composable fun Bill(t: Transaction) {
         val st = Bills.status(t, ui.nowMs, ui.zone)
@@ -214,13 +219,50 @@ private fun BillsTab(vm: PlanViewModel, ui: PlanUi, onSheet: (String) -> Unit, o
             }
             HairlineRule()
         }
+        if (suggestions.isNotEmpty()) item {
+            val names = suggestions.take(2).joinToString(", ") { it.name } + if (suggestions.size > 2) " and ${suggestions.size - 2} more" else ""
+            PlanRow(
+                if (suggestions.size == 1) "1 possible subscription" else "${suggestions.size} possible subscriptions",
+                null, "$names. Found in your ledger. Nothing is added until you say so.", onClick = { suggestionsOpen = true },
+            )
+        }
         if (overdue.isNotEmpty()) item { SectionHeader("Overdue") }
         items(overdue, key = { it.id }) { Bill(it) }
         if (future.isNotEmpty()) item { SectionHeader("Coming up") }
         items(shown, key = { it.id }) { Bill(it) }
         if (future.size >= 3 && !expanded) item { ChittaButton("Show ${future.size - 2} more", { expanded = true }, style = ButtonStyle.Quiet) }
-        item { Spacer(Modifier.height(Dimens.Gap4)); ChittaButton("Add a bill", { onSheet("new-bill") }, style = ButtonStyle.Quiet); ChittaButton("Reminders and auto-pay", onSettings, style = ButtonStyle.Quiet) }
+        item {
+            Spacer(Modifier.height(Dimens.Gap4)); ChittaButton("Add a bill", { onSheet("new-bill") }, style = ButtonStyle.Quiet)
+            if (dismissed.isNotEmpty()) ChittaButton("Not subscriptions (${dismissed.size})", { dismissedOpen = true }, style = ButtonStyle.Quiet)
+            ChittaButton("Reminders and auto-pay", onSettings, style = ButtonStyle.Quiet)
+        }
     }
+
+    LaunchedEffect(suggestions.isEmpty()) { if (suggestions.isEmpty()) suggestionsOpen = false }
+    if (suggestionsOpen && suggestions.isNotEmpty()) BottomOverlay({ suggestionsOpen = false }) {
+        Text("Possible subscriptions", style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
+        Text("Charges that came back on a steady rhythm. Tap one to add it or set it aside.", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted)
+        Spacer(Modifier.height(Dimens.Gap2))
+        LazyColumn(Modifier.heightIn(max = 420.dp)) {
+            items(suggestions, key = { it.key }) { s ->
+                PlanRow(
+                    s.name, s.amount,
+                    "${s.cadence.label.replaceFirstChar { it.uppercase() }} · seen ${s.charges} times · next ${friendlyDay(s.dueMs, ui.nowMs, ui.zone)}",
+                    onClick = { picked = s },
+                )
+            }
+        }
+    }
+    picked?.let { s ->
+        ChoiceSheet(s.name, listOf(
+            Choice("Add to my subscriptions", "add", "${s.cadence.label.replaceFirstChar { it.uppercase() }}, first due ${friendlyDay(s.dueMs, ui.nowMs, ui.zone)}. Your past entries stay as they are."),
+            Choice("Not a subscription", "no", "Never suggested again. You can bring it back."),
+        ), { v -> picked = null; if (v == "add") vm.addSuggestion(s) else vm.dismissSuggestion(s) }, { picked = null })
+    }
+    if (dismissedOpen) ChoiceSheet(
+        "Not subscriptions", dismissed.map { (k, n) -> Choice(n, k, "Tap to let it be suggested again.") },
+        { k -> vm.restoreSuggestion(k); if (dismissed.size <= 1) dismissedOpen = false }, { dismissedOpen = false }, emptyText = "Nothing set aside.",
+    )
 
     if (showTotals) ConfirmSheet("How this adds up", listOf(
         "Only money going out is counted, and only bills not yet paid or skipped.",

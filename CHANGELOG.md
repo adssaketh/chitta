@@ -1,5 +1,12 @@
 # Changelog
 
+## Phase 8g: subscription detection (14 Nov 2026) - on `main`
+- `Subscriptions` in `:core:domain`: finds payees charged 3 times in a row on a weekly, monthly, every-3-months or yearly rhythm, amounts within 10%, still live (not long overdue), and not already a repeating bill or dismissed.
+- Plan > Bills: one row "N possible subscriptions" opens a sheet; tap one to add it as a subscription (first due date today or later, reminders on) or say it is not one (remembered, with Undo; "Not subscriptions (n)" brings it back).
+- No database change; dismissals are kept in the app settings on the phone (sync in Phase 9).
+- Decisions D144 to D150. Tests: 18 new in `Phase8gTest` worked by hand (monthly, quarterly, yearly, weekly, 31st anchor, 10% edge, cancelled, tracked, dismissed); 405 in `:core:domain` pass locally.
+- Written without a local Android build; CI compiles the app.
+
 ## Phase 8f: month in review and smart search (14 Nov 2026) - on `main`
 - Month in review: `MonthReviews` in `:core:domain` (totals as the All Spending Summary, the month before for comparison, top 3 categories up and down by at least ₹500, budgets hit or missed). Insights gets a Review tab with arrows between finished months; Home shows "<month> in review" on the 1st to the 3rd and opens the same screen. No notification, no badges.
 - Smart search in the Ledger: `SearchSyntax` reads `amt`, `cat`, `acc`, `type`, `note`, `last`, `from`, `to`, with a minus to leave matches out. Plain words search as before. Anything that cannot be used is listed as "Not used: ..." and the rest still applies. A one-line hint shows when the box is open and empty.

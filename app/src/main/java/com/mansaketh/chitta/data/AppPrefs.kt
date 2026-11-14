@@ -55,6 +55,14 @@ class AppPrefs @Inject constructor(@ApplicationContext context: Context) {
         get() = p.getStringSet("csvTemplates", emptySet())?.toSet() ?: emptySet()
         set(v) { p.edit().putStringSet("csvTemplates", v.toSet()).apply() }
 
+    /**
+     * Payees the person said are not subscriptions (Phase 8g), each stored as `key|Name`. The key is letters only, so the first `|` splits it.
+     * Device-only for now: it moves into the synced book with the other settings in Phase 9.
+     */
+    var dismissedSubscriptions: Set<String>
+        get() = p.getStringSet("dismissedSubs", emptySet())?.toSet() ?: emptySet()
+        set(v) { p.edit().putStringSet("dismissedSubs", v.toSet()).apply() }
+
     /** The secret another app must send to add an entry in the background. Null = the receiver is off. Device-only. */
     var broadcastSecret: String?
         get() = p.getString("broadcastSecret", null)
