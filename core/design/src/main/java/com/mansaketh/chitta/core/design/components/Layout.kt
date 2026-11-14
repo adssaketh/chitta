@@ -307,6 +307,7 @@ fun ChittaBottomNav(
     onLongPress: (() -> Unit)? = null,
 ) {
     val c = ChittaTheme.colors
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     Column(modifier.fillMaxWidth().background(c.background)) {
         HairlineRule()
         Row(Modifier.fillMaxWidth()) {
@@ -318,7 +319,11 @@ fun ChittaBottomNav(
                         .weight(1f)
                         .heightIn(min = Dimens.NavBarMin)
                         .semantics { selected = isSelected }
-                        .combinedClickable(role = Role.Tab, onClick = { onSelect(item.key) }, onLongClick = onLongPress),
+                        .combinedClickable(
+                            role = Role.Tab,
+                            onClick = { if (!isSelected) haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.SegmentTick); onSelect(item.key) },
+                            onLongClick = onLongPress?.let { lp -> { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress); lp() } },
+                        ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Box(Modifier.width(Dimens.MarkerWidth).height(Dimens.MarkerHeight).background(if (isSelected) c.ink else c.background))

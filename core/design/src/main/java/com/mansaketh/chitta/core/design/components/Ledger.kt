@@ -110,6 +110,7 @@ fun LedgerRow(
     onLongClick: () -> Unit = {},
 ) {
     val c = ChittaTheme.colors
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val stacked = LocalDensity.current.fontScale >= 1.5f
     val glyph: @Composable () -> Unit = {
         if (entry.selected) {
@@ -138,7 +139,7 @@ fun LedgerRow(
     val base = modifier
         .fillMaxWidth()
         .heightIn(min = Dimens.RowLedger)
-        .combinedClickable(role = Role.Button, onClick = onClick, onLongClick = onLongClick)
+        .combinedClickable(role = Role.Button, onClick = onClick, onLongClick = { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress); onLongClick() })
         .padding(vertical = Dimens.RowPadV)
     if (stacked) {
         Column(base, verticalArrangement = Arrangement.spacedBy(Dimens.Gap1)) {

@@ -113,7 +113,7 @@ fun HomeScreen(
                         Spacer(Modifier.height(Dimens.HeadingGap))
                     }
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.FigureGap)) {
-                        BudgetRing(hero.ring, diameter = 120.dp)
+                        BudgetRing(hero.ring, diameter = 120.dp, animate = true)
                         RingLegend(Paise((hero.summary.spent.value - hero.sinking.covered.value).coerceAtLeast(0)), hero.billsDue + hero.sinking.reserved, hero.safe, Modifier.weight(1f))
                     }
                     Spacer(Modifier.height(Dimens.SectionGap))

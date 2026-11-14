@@ -10,7 +10,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -155,9 +160,13 @@ fun BudgetRing(
     ticks: RingTicks?,
     modifier: Modifier = Modifier,
     diameter: androidx.compose.ui.unit.Dp = 120.dp,
+    /** Fill the ring in a circle, clockwise from the top, each time it first appears (Home). Off in snapshots. */
+    animate: Boolean = false,
 ) {
     if (ticks == null) return
     val c = ChittaTheme.colors
+    val fill = remember { Animatable(if (animate) 0f else 1f) }
+    LaunchedEffect(animate) { if (animate) fill.animateTo(1f, tween(900, easing = FastOutSlowInEasing)) }
     val spoken = if (ticks.over) "Budget ring: over the budget"
     else "Budget ring: ${ticks.safePercent} percent is safe to spend"
     Box(modifier.size(diameter).clearAndSetSemantics { contentDescription = spoken }, contentAlignment = Alignment.Center) {
@@ -166,8 +175,10 @@ fun BudgetRing(
             val tickW = 3.dp.toPx()
             val r = size.minDimension / 2f
             val center = Offset(size.width / 2f, size.height / 2f)
+            val reached = fill.value * RingTicks.TOTAL
             repeat(RingTicks.TOTAL) { i ->
                 val color: Color = when {
+                    i + 1 > reached -> c.rule // not reached yet by the sweep
                     i < ticks.spent -> c.ink
                     i < ticks.spent + ticks.bills -> c.mark
                     else -> c.rule

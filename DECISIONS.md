@@ -263,4 +263,3 @@ Master section 7 lists both. Decided with the user on 13 Nov 2026: Ping already 
 
 
 | D192 | Heatmap level = the day's share of the 90th percentile (nearest rank) of days with spending, rounded up into four steps; days above it are the darkest step. A display scale only; no money rule changes. | One day with a big payment made every other day the lightest step (UI audit I6). | decided |
-\n

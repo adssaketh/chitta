@@ -158,6 +158,7 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
         }
     }
     LaunchedEffect(tab, top) { fabShown.value = true }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
@@ -173,8 +174,8 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                         onDragStart = { total = 0f },
                         onDragEnd = {
                             val i = tabOrder.indexOf(tab)
-                            if (i >= 0 && total < -threshold && i < tabOrder.lastIndex) { tabChoice = tabOrder[i + 1]; stack = emptyList() }
-                            else if (i >= 0 && total > threshold && i > 0) { tabChoice = tabOrder[i - 1]; stack = emptyList() }
+                            if (i >= 0 && total < -threshold && i < tabOrder.lastIndex) { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.SegmentTick); tabChoice = tabOrder[i + 1]; stack = emptyList() }
+                            else if (i >= 0 && total > threshold && i > 0) { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.SegmentTick); tabChoice = tabOrder[i - 1]; stack = emptyList() }
                         },
                         onHorizontalDrag = { _, dx -> total += dx },
                     )

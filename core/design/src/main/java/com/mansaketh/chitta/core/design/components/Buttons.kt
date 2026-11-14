@@ -118,12 +118,17 @@ fun AddButton(
     modifier: Modifier = Modifier,
 ) {
     val c = ChittaTheme.colors
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     Box(
         modifier
             .size(Dimens.ButtonHeight)
             .clip(CircleShape)
             .background(c.sindoor)
-            .combinedClickable(role = Role.Button, onClick = onClick, onLongClick = onLongClick),
+            .combinedClickable(
+                role = Role.Button,
+                onClick = { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.VirtualKey); onClick() },
+                onLongClick = { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress); onLongClick() },
+            ),
         contentAlignment = Alignment.Center,
     ) {
         Icon(ChittaIcons.Plus, contentDescription = "Add a transaction. Long-press for more.", tint = c.onSindoor, modifier = Modifier.size(Dimens.IconSize))

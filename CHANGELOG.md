@@ -1,5 +1,9 @@
 # Changelog
 
+## Vibrations and ring fill (14 Nov 2026) - on branch `phase-ui-polish`, not yet felt on a phone
+- Light haptics: bottom-bar tab change and a swipe between tabs (tick), add button (tap, and a firmer one on long-press), a long-press on a Ledger row (starts selecting), every keypad key. The save button already had its confirm buzz. They follow the phone's own touch-feedback setting.
+- Home: the budget ring fills circularly, clockwise from the top, in about 0.9 s every time Home is opened or returned to (not on a data refresh). The snapshot tests keep the ring still.
+
 ## UI polish pass: step 4, Insights and heatmap (14 Nov 2026) - on branch `phase-ui-polish`, not yet seen on a phone
 - Insights: a 12 dp gap under the tab rule on all four tabs; Spent steps down a size so "₹1,35,449" no longer touches "-103%"; the percentage uses a true minus; the gaps around "Totals" are the section rhythm; end padding 96 dp.
 - Heatmap (Insights and Home): the shade scale is the 90th percentile of days with spending, so one big day no longer turns every other day the lightest step (display scale in `Heatmap.month`, new unit test). Days still to come are outlined with a muted number; days with nothing spent keep the light fill. A legend (Less, five steps, More) sits under the grid.

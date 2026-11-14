@@ -80,6 +80,7 @@ fun Keypad(
 @Composable
 private fun RowScope.Key(label: String, description: String, muted: Boolean = false, onClick: () -> Unit) {
     val c = ChittaTheme.colors
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
     Box(
@@ -88,7 +89,7 @@ private fun RowScope.Key(label: String, description: String, muted: Boolean = fa
             .heightIn(min = Dimens.ButtonHeight)
             .clip(Shapes.Control)
             .background(if (pressed) c.rule else c.background)
-            .clickable(interactionSource = source, indication = null, role = Role.Button, onClick = onClick)
+            .clickable(interactionSource = source, indication = null, role = Role.Button, onClick = { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.VirtualKey); onClick() })
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
@@ -99,6 +100,7 @@ private fun RowScope.Key(label: String, description: String, muted: Boolean = fa
 @Composable
 private fun RowScope.IconKey(description: String, onClick: () -> Unit) {
     val c = ChittaTheme.colors
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
     Box(
@@ -107,7 +109,7 @@ private fun RowScope.IconKey(description: String, onClick: () -> Unit) {
             .heightIn(min = Dimens.ButtonHeight)
             .clip(Shapes.Control)
             .background(if (pressed) c.rule else c.background)
-            .clickable(interactionSource = source, indication = null, role = Role.Button, onClick = onClick),
+            .clickable(interactionSource = source, indication = null, role = Role.Button, onClick = { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.VirtualKey); onClick() }),
         contentAlignment = Alignment.Center,
     ) {
         Icon(ChittaIcons.Backspace, contentDescription = description, tint = c.ink, modifier = Modifier.size(Dimens.IconSize))
