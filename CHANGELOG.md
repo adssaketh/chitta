@@ -1,5 +1,12 @@
 # Changelog
 
+## Phase 8h: receipt capture (14 Nov 2026) - on branch `phase-8h-receipts`
+- Entry detail gets a "Receipt" row: take a photo (phone camera app) or choose one from the gallery; one photo per entry; view it full screen with pinch to zoom; read the text again; remove it (10-second Undo).
+- `ReceiptParser` in `:core:intake` (plain Kotlin) reads the amount, date and shop name from the photo's text. ML Kit reads the text on the phone (already in the app). The result is only suggested: each of amount, date and title has its own "Use this" button.
+- Photos live in the app's private storage, one file per entry, outside backups and restore points. No database change. Photos of deleted entries are removed after 30 days; Delete everything removes all photos.
+- Decisions D151 to D157. Tests: 17 new in `ReceiptParserTest` worked by hand; 107 in `:core:intake` pass locally.
+- Written without a local Android build; CI compiles the app. No new libraries.
+
 ## Phase 8g: subscription detection (14 Nov 2026) - on `main`
 - `Subscriptions` in `:core:domain`: finds payees charged 3 times in a row on a weekly, monthly, every-3-months or yearly rhythm, amounts within 10%, still live (not long overdue), and not already a repeating bill or dismissed.
 - Plan > Bills: one row "N possible subscriptions" opens a sheet; tap one to add it as a subscription (first due date today or later, reminders on) or say it is not one (remembered, with Undo; "Not subscriptions (n)" brings it back).

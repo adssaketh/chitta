@@ -114,6 +114,7 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
             ValueRow("Bring back a backup file", "", onClick = { openBackup.launch(arrayOf("*/*")) })
             Text(
                 "A restore point is a copy of your book kept on this phone: one a day, and one before every restore, CSV import and delete. " +
+                    "Receipt photos stay on this phone and are not in restore points or backup files. " +
                     "Backup to Google Drive comes later, with sign-in.",
                 style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2),
             )
@@ -152,7 +153,7 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
         )
         "delete" -> ConfirmSheet(
             "Delete everything?",
-            listOf("This empties your accounts, categories, entries, budgets, goals and loans on this phone.", "A restore point is made first. To undo this, open Restore points and restore it."),
+            listOf("This empties your accounts, categories, entries, budgets, goals and loans on this phone.", "A restore point is made first. To undo this, open Restore points and restore it. Receipt photos are deleted for good: a restore point does not hold them."),
             "Delete everything", { sheet = null; vm.deleteAll { } }, { sheet = null },
         )
     }

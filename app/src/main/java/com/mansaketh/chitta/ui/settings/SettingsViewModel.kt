@@ -63,6 +63,7 @@ class SettingsViewModel @Inject constructor(
     private val categoryRepo: CategoryRepository,
     private val ledger: LedgerRepository,
     intake: com.mansaketh.chitta.intake.IntakeStore,
+    private val receipts: com.mansaketh.chitta.receipts.ReceiptStore,
 ) : ViewModel() {
     /** Bank messages waiting for a look, shown next to "Bank messages and UPI". */
     val pendingIntake: kotlinx.coroutines.flow.StateFlow<Int> = intake.pendingCount
@@ -173,7 +174,7 @@ class SettingsViewModel @Inject constructor(
             notice.value = "Could not make a restore point first, so nothing was deleted."
             return@work
         }
-        withContext(Dispatchers.IO) { db.clearAllTables() }
+        withContext(Dispatchers.IO) { db.clearAllTables(); receipts.deleteAll() }
         prefs.clearImportMarker(); prefs.firstRunDone = false
         refreshPoints()
         onDone()

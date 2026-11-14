@@ -8,13 +8,20 @@ import com.mansaketh.chitta.core.database.LedgerRepository
 import com.mansaketh.chitta.core.database.PinnedRepository
 import com.mansaketh.chitta.core.domain.*
 import com.mansaketh.chitta.core.model.*
+import com.mansaketh.chitta.core.intake.ReceiptParser
+import com.mansaketh.chitta.core.intake.ReceiptReading
 import com.mansaketh.chitta.core.money.Paise
+import com.mansaketh.chitta.intake.TextReaders
+import com.mansaketh.chitta.receipts.ReceiptStore
 import com.mansaketh.chitta.di.Clock
 import com.mansaketh.chitta.di.IdSource
 import com.mansaketh.chitta.ui.EntryActions
 import com.mansaketh.chitta.ui.UndoCenter
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.withContext
+import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -30,6 +37,14 @@ data class DetailUi(
     val loading: Boolean = true,
 )
 
+/** The receipt photo of the open entry. [reading] is what the text on it seemed to say, shown as suggestions until closed. */
+data class ReceiptUi(
+    val has: Boolean = false,
+    val busy: Boolean = false,
+    val reading: ReceiptReading? = null,
+    val notice: String? = null,
+)
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class EntryDetailViewModel @Inject constructor(
@@ -41,9 +56,83 @@ class EntryDetailViewModel @Inject constructor(
     private val undo: UndoCenter,
     private val ids: IdSource,
     private val clock: Clock,
+    private val receipts: ReceiptStore,
 ) : ViewModel() {
     private val id = MutableStateFlow<String?>(null)
-    fun load(entryId: String) { id.value = entryId }
+    fun load(entryId: String) {
+        if (id.value != entryId) receipt.value = ReceiptUi()
+        id.value = entryId
+        viewModelScope.launch { receipt.value = receipt.value.copy(has = withContext(Dispatchers.IO) { receipts.has(entryId) }) }
+    }
+
+    val receipt = MutableStateFlow(ReceiptUi())
+
+    /** A fresh address for the camera app to write its picture to. */
+    fun newCaptureUri() = receipts.newCaptureUri()
+    /** The camera reported success: keep its picture as the receipt. */
+    fun attachCaptured() = attachReceipt(receipts.capturedUri())
+    fun setReceiptNotice(text: String) { receipt.value = receipt.value.copy(notice = text) }
+
+    /** Keeps [source] as this entry's receipt, then reads its text for suggestions. Nothing on the entry changes until a suggestion is tapped. */
+    fun attachReceipt(source: android.net.Uri) {
+        val eid = id.value ?: return
+        if (receipt.value.busy) return
+        viewModelScope.launch {
+            receipt.value = receipt.value.copy(busy = true, notice = null, reading = null)
+            if (!receipts.attach(eid, source)) {
+                receipt.value = receipt.value.copy(busy = false, notice = "That picture could not be read. Nothing was changed.")
+                return@launch
+            }
+            receipt.value = receipt.value.copy(has = true)
+            readReceipt(eid)
+        }
+    }
+
+    /** Reads the stored photo again (for example after an update of the reader). */
+    fun readAgain() {
+        val eid = id.value ?: return
+        if (receipt.value.busy) return
+        viewModelScope.launch { receipt.value = receipt.value.copy(busy = true, notice = null, reading = null); readReceipt(eid) }
+    }
+
+    private suspend fun readReceipt(eid: String) {
+        val bitmap = receipts.load(eid)
+        if (bitmap == null) { receipt.value = receipt.value.copy(busy = false, has = false, notice = "The photo is not on this phone any more."); return }
+        val today = java.time.Instant.ofEpochMilli(clock.nowMs()).atZone(clock.zone()).toLocalDate()
+        val merged = try {
+            ReceiptParser.merge(TextReaders.readReceiptTexts(bitmap).map { ReceiptParser.parse(it, today) })
+        } catch (e: Exception) { ReceiptReading() } finally { bitmap.recycle() }
+        receipt.value = receipt.value.copy(
+            busy = false, reading = merged.takeUnless { it.isEmpty },
+            notice = if (merged.isEmpty) "The photo is saved, but no amount, date or shop name could be read from it." else null,
+        )
+    }
+
+    fun closeReading() { receipt.value = receipt.value.copy(reading = null) }
+    fun clearReceiptNotice() { receipt.value = receipt.value.copy(notice = null) }
+    suspend fun receiptImage(): androidx.compose.ui.graphics.ImageBitmap? = id.value?.let { receipts.load(it) }?.asImageBitmap()
+
+    /** Takes the photo off the entry; Undo for 10 seconds brings it back. */
+    fun removeReceipt() {
+        val eid = id.value ?: return
+        if (!receipts.removeKeepingCopy(eid)) return
+        receipt.value = receipt.value.copy(has = false, reading = null)
+        undo.post("Receipt removed") { receipts.restoreRemoved(eid); receipt.value = receipt.value.copy(has = receipts.has(eid)) }
+    }
+
+    /** One tapped suggestion: the receipt's total as the entry's amount. Same rules as typing it (above zero, sign kept). */
+    fun useReceiptAmount(paise: Long) {
+        if (paise <= 0) return
+        edit { e -> e.copy(amount = if (e.amount < 0) -paise else paise, originalAmount = null, originalCurrency = null, exchangeRate = null) }
+    }
+
+    /** One tapped suggestion: the receipt's date, keeping the entry's time of day. */
+    fun useReceiptDate(day: java.time.LocalDate) {
+        val e = ui.value.entry ?: return
+        val zone = clock.zone()
+        val time = java.time.Instant.ofEpochMilli(e.dateMs).atZone(zone).toLocalTime()
+        setDate(day.atTime(time).atZone(zone).toInstant().toEpochMilli())
+    }
 
     val ui: StateFlow<DetailUi> = id.filterNotNull().flatMapLatest { eid ->
         combine(ledger.observe(eid), ledger.observeHistory(eid), accounts.observeAll(), categories.observeAll(), ledger.observeAll()) { e, h, a, c, all ->
@@ -68,7 +157,9 @@ class EntryDetailViewModel @Inject constructor(
         viewModelScope.launch {
             val removed = ledger.delete(listOf(e.id))
             ledger.add(built)
-            undo.post("Split into ${built.size} lines") { ledger.delete(built.map { it.id }); ledger.restoreDeleted(removed) }
+            // The photo belongs to the whole payment; it goes to the first line, and back again on Undo.
+            receipts.move(e.id, built[0].id)
+            undo.post("Split into ${built.size} lines") { ledger.delete(built.map { it.id }); ledger.restoreDeleted(removed); receipts.move(built[0].id, e.id) }
             onDone()
         }
         return true

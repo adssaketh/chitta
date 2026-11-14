@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Only the camera's temporary picture (cache/receipt_tmp) can be shared with the camera app; nothing else is reachable through this provider. -->
+<paths>
+    <cache-path name="receipt_tmp" path="receipt_tmp/" />
+</paths>

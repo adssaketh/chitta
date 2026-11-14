@@ -1,6 +1,9 @@
 package com.mansaketh.chitta.ui.detail
 
 import android.app.DatePickerDialog
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -26,7 +29,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
-private enum class Edit { None, Title, Amount, Category, Account, Note, Date, Delete, Repeat, Split }
+private enum class Edit { None, Title, Amount, Category, Account, Note, Date, Delete, Repeat, Split, Receipt, ReceiptView }
 
 /** Entry detail (PDF p.15): stamps, editable rows, History, and Duplicate / Pin / Delete. */
 @Composable
@@ -39,6 +42,9 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
     val zone = remember { ZoneId.systemDefault() }
     var edit by remember { mutableStateOf(Edit.None) }
     var impact by remember { mutableStateOf<com.mansaketh.chitta.core.domain.DeleteImpact?>(null) }
+    val receipt by vm.receipt.collectAsState()
+    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok -> if (ok) vm.attachCaptured() }
+    val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) vm.attachReceipt(uri) }
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
@@ -76,6 +82,7 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
                             Text("Part of a split of ${IndianFormat.rupees(Paise(Math.abs(e.amount) + ui.siblings.sumOf { Math.abs(it.amount) }), alwaysShowPaise = true)}. Other lines:", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
                             ui.siblings.forEach { s -> ValueRow(categoryName(s.categoryId, ui.categories), IndianFormat.rupees(Paise(Math.abs(s.amount)), alwaysShowPaise = true)) }
                         }
+                        ValueRow("Receipt", when { receipt.busy -> "Reading the photo…"; receipt.has -> "Photo attached"; else -> "None" }, onClick = { edit = Edit.Receipt })
                         ValueRow("History", "${ui.history.size} ${if (ui.history.size == 1) "version" else "versions"}", onClick = onHistory)
                         Spacer(Modifier.height(Dimens.Gap4))
                         Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
@@ -120,7 +127,35 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
                 { lines -> vm.split(lines) { edit = Edit.None; onBack() } }, { edit = Edit.None },
             )
             Edit.Repeat -> if (plan != null) com.mansaketh.chitta.ui.plan.RepeatSheet(e, zone, { r, len, end -> plan.repeatEntry(e, r, len, end); edit = Edit.None }, { edit = Edit.None })
+            Edit.Receipt -> ReceiptSheet(
+                has = receipt.has,
+                onCamera = {
+                    edit = Edit.None
+                    try { camera.launch(vm.newCaptureUri()) } catch (ex: Exception) { vm.setReceiptNotice("No camera app was found on this phone. You can choose a photo from the gallery instead.") }
+                },
+                onGallery = {
+                    edit = Edit.None
+                    try { gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) } catch (ex: Exception) { vm.setReceiptNotice("No gallery app was found on this phone.") }
+                },
+                onView = { edit = Edit.ReceiptView },
+                onReadAgain = { edit = Edit.None; vm.readAgain() },
+                onRemove = { edit = Edit.None; vm.removeReceipt() },
+                onClose = { edit = Edit.None },
+            )
+            Edit.ReceiptView -> ReceiptViewer(load = { vm.receiptImage() }, onClose = { edit = Edit.Receipt })
             Edit.None -> Unit
+        }
+        // Suggestions and messages from the receipt come up by themselves when the reading finishes.
+        if (e != null && edit == Edit.None) {
+            val reading = receipt.reading
+            val notice = receipt.notice
+            when {
+                reading != null -> ReceiptReadingSheet(
+                    reading, e, canEdit = !Totals.isNeutral(e), zone = zone,
+                    onUseAmount = vm::useReceiptAmount, onUseDate = vm::useReceiptDate, onUseTitle = vm::setTitle, onClose = vm::closeReading,
+                )
+                notice != null -> ReceiptNoticeSheet(notice, vm::clearReceiptNotice)
+            }
         }
     }
 }

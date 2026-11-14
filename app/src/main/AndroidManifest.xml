@@ -78,5 +78,14 @@
             android:name=".intake.PingInboxProvider"
             android:authorities="${applicationId}.pinginbox"
             android:exported="true" />
+
+        <!-- Lets the camera app write one receipt picture into the app's cache (DECISIONS D153). Not exported: only the app hands out addresses. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.receipts"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/receipt_paths" />
+        </provider>
     </application>
 </manifest>

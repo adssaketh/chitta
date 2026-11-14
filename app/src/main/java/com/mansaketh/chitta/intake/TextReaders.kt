@@ -80,6 +80,14 @@ object TextReaders {
         if (zoneAmount != null) best.copy(amountPaise = zoneAmount, amountUnconfirmed = false) else best
     }
 
+    /**
+     * The text of a shop receipt photo, read twice (as it is, and with more contrast) so that [ReceiptParser] can take the better of the two.
+     * A reading that failed is an empty string. The picture is the one already stored on the phone; nothing is sent anywhere.
+     */
+    suspend fun readReceiptTexts(bitmap: Bitmap): List<String> = withContext(Dispatchers.Default) {
+        listOf(recognise(bitmap), recognise(enhanced(bitmap)))
+    }
+
     /** The PDF needs a password, or the one given was wrong. The password is used in memory only and never stored. */
     class PdfPasswordRequired(val wrong: Boolean) : IntakeFormatException(if (wrong) "That password did not open the PDF." else "That PDF has a password.")
 
