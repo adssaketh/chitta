@@ -1,5 +1,9 @@
 # Changelog
 
+## Tab swipe reliability and shared label/value rows (14 Nov 2026) - on branch `phase-ui-polish`
+- Swiping between tabs now watches the touch before lists and rows react, decides left/right by which way the finger moves more, and also accepts a short quick flick (24 dp at speed) as well as a 56 dp drag. Before, a slightly diagonal swipe was often taken by the list and lost, so about one in five needed a second try. A tab strip that scrolls sideways still wins over the swipe.
+- The label/value row used in Quick Add, Settings and the detail screens uses the shared row spacing (12 dp above and below, 16 dp between label and value); long values are cut after two lines instead of squeezing the label.
+
 ## Settings: theme, vibrations, diagnostics (14 Nov 2026) - on branch `phase-ui-polish`
 - Settings > Look and feel: Theme (follow the phone, Paper, Ink; now remembered) and a Vibrations switch that turns off every tap, keypad and swipe buzz.
 - Settings > Help > Diagnostics: shows errors the app recorded (crashes, failed Drive backup, receipt clean-up) with the app and Android version; Share sends it as text, Clear empties it.

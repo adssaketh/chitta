@@ -19,7 +19,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Modifier
@@ -168,19 +167,16 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
             val tabOrder = tabLayout.slots.map { it.key } + MORE
             Box(
                 Modifier.weight(1f).nestedScroll(fabScroll).pointerInput(tab, top, tabOrder) {
-                    // A horizontal swipe on a main tab moves to the next or previous tab. A child that scrolls sideways (a tab strip) takes the drag first.
+                    // A sideways swipe on a main tab moves to the next or previous tab (see detectTabSwipe).
                     if (top != null) return@pointerInput
-                    val threshold = 72.dp.toPx()
-                    var total = 0f
-                    detectHorizontalDragGestures(
-                        onDragStart = { total = 0f },
-                        onDragEnd = {
-                            val i = tabOrder.indexOf(tab)
-                            if (i >= 0 && total < -threshold && i < tabOrder.lastIndex) { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.SegmentTick); tabChoice = tabOrder[i + 1]; stack = emptyList() }
-                            else if (i >= 0 && total > threshold && i > 0) { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.SegmentTick); tabChoice = tabOrder[i - 1]; stack = emptyList() }
-                        },
-                        onHorizontalDrag = { _, dx -> total += dx },
-                    )
+                    detectTabSwipe { direction ->
+                        val i = tabOrder.indexOf(tab)
+                        val target = if (i < 0) null else tabOrder.getOrNull(i - direction)
+                        if (target != null) {
+                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.SegmentTick)
+                            tabChoice = target; stack = emptyList()
+                        }
+                    }
                 },
             ) {
                 when {

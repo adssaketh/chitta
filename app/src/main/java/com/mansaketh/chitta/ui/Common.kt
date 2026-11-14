@@ -148,12 +148,15 @@ fun ValueRow(label: String, value: String, onClick: (() -> Unit)? = null, modifi
         Row(
             Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin)
                 .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
-                .padding(vertical = Dimens.Gap2),
+                .padding(vertical = Dimens.RowPadV),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(label, style = ChittaTheme.type.body, color = ChittaTheme.colors.inkMuted)
-            Spacer(Modifier.weight(1f))
-            Text(value, style = ChittaTheme.type.body, color = ChittaTheme.colors.ink)
+            // Label first at its own width (never wider than 200 dp); the value takes the rest, right-aligned, and is cut after two lines.
+            Text(label, style = ChittaTheme.type.body, color = ChittaTheme.colors.inkMuted, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 200.dp))
+            Text(
+                value, style = ChittaTheme.type.body, color = ChittaTheme.colors.ink, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.weight(1f).padding(start = Dimens.TitleAmountGap),
+            )
             if (onClick != null) {
                 Spacer(Modifier.width(Dimens.Gap2))
                 Icon(ChittaIcons.CaretRight, contentDescription = null, tint = ChittaTheme.colors.inkMuted, modifier = Modifier.size(16.dp))
