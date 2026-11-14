@@ -30,12 +30,12 @@ abstract class ChittaDatabase : RoomDatabase() {
 
     companion object {
         /** The schema number. Restore points and backup files are checked against it. */
-        const val VERSION = 5
+        const val VERSION = 6
         const val FILE_NAME = "chitta.db"
 
         fun open(context: Context): ChittaDatabase =
             Room.databaseBuilder(context.applicationContext, ChittaDatabase::class.java, FILE_NAME)
-                .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5)
+                .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5, Migrations.V5_TO_V6)
                 .build()
     }
 }

@@ -62,4 +62,30 @@ class UiPrefs @Inject constructor(@ApplicationContext context: Context) {
     private val _nwInstalments = MutableStateFlow(p.getBoolean("nwInstalments", true))
     val netWorthInstalments: StateFlow<Boolean> = _nwInstalments
     fun setNetWorthInstalments(v: Boolean) { _nwInstalments.value = v; p.edit().putBoolean("nwInstalments", v).apply() }
+
+    /** Whether mutual funds count in Net worth. On by default (D120). */
+    private val _nwFunds = MutableStateFlow(p.getBoolean("nwFunds", true))
+    val netWorthFunds: StateFlow<Boolean> = _nwFunds
+    fun setNetWorthFunds(v: Boolean) { _nwFunds.value = v; p.edit().putBoolean("nwFunds", v).apply() }
+
+    /** Whether NPS counts in Net worth, as its own line. On by default (D120). */
+    private val _nwNps = MutableStateFlow(p.getBoolean("nwNps", true))
+    val netWorthNps: StateFlow<Boolean> = _nwNps
+    fun setNetWorthNps(v: Boolean) { _nwNps.value = v; p.edit().putBoolean("nwNps", v).apply() }
+
+    /** Daily fund price fetch (a background job plus a refresh when the app opens). On by default (D118). */
+    private val _fundPricesAuto = MutableStateFlow(p.getBoolean("fundPricesAuto", true))
+    val fundPricesAuto: StateFlow<Boolean> = _fundPricesAuto
+    fun setFundPricesAuto(v: Boolean) { _fundPricesAuto.value = v; p.edit().putBoolean("fundPricesAuto", v).apply() }
+
+    /** The last price fetch: when it last worked, when it last tried, and what to tell the person. Device state, not part of the book. */
+    private val _priceStatus = MutableStateFlow(FundPriceStatus(p.getLong("fpOkMs", 0L), p.getLong("fpTryMs", 0L), p.getString("fpNote", null)))
+    val fundPriceStatus: StateFlow<FundPriceStatus> = _priceStatus
+    fun setFundPriceStatus(v: FundPriceStatus) {
+        _priceStatus.value = v
+        p.edit().putLong("fpOkMs", v.okMs).putLong("fpTryMs", v.tryMs).apply { if (v.note == null) remove("fpNote") else putString("fpNote", v.note) }.apply()
+    }
 }
+
+/** [okMs] and [tryMs] are 0 until a fetch has worked or been tried. [note] is the plain-words result of the last try. */
+data class FundPriceStatus(val okMs: Long = 0L, val tryMs: Long = 0L, val note: String? = null)

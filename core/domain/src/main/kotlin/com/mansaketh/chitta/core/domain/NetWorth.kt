@@ -3,6 +3,7 @@ package com.mansaketh.chitta.core.domain
 import com.mansaketh.chitta.core.model.Account
 import com.mansaketh.chitta.core.model.FixedDeposit
 import com.mansaketh.chitta.core.model.LoanTerms
+import com.mansaketh.chitta.core.model.MutualFund
 import com.mansaketh.chitta.core.model.Objective
 import com.mansaketh.chitta.core.model.ObjectiveKind
 import com.mansaketh.chitta.core.model.Transaction
@@ -21,21 +22,36 @@ import java.time.ZoneId
  *  - [deposits]: open fixed deposits at today's value, only when the person switched that on ([NetWorthExtras.includeDeposits]); [depositCount] says how many.
  *  - instalment loans (loans with terms): when [NetWorthExtras.includeInstalments] is on, what is still to pay by the schedule (interest and GST included,
  *    as the Plan screen shows it) replaces that loan's plain figure in [owedToYou] / [youOwe], so nothing is counted twice.
- * Not included yet: mutual funds and other assets (Phase 8 Should items). A credit card kept as an account already counts through its negative
+ *  - [funds] and [nps] (Phase 8d): mutual funds and NPS at units times the latest price, each only when its switch is on. They are separate lines and are
+ *    never added into each other. A fund with no price has no value and is left out; [fundCount] and [npsCount] say how many were counted, and
+ *    [fundsPriceDate] / [npsPriceDate] give the oldest price date among them. Prices have no history here, so they are counted in today's
+ *    figure only: [NetWorth.series] leaves them out of earlier months.
+ * Not included yet: other assets. A credit card kept as an account already counts through its negative
  * balance; card dues read from SMS feed the card cockpit, not Net worth, so the same purchase is never counted twice.
  */
 data class NetWorthFigures(
     val accounts: Paise, val owedToYou: Paise, val youOwe: Paise, val otherCurrencyAccounts: Int,
     val deposits: Paise = Paise.ZERO, val depositCount: Int = 0,
+    val funds: Paise = Paise.ZERO, val fundCount: Int = 0, val fundsPriceDate: String? = null,
+    val nps: Paise = Paise.ZERO, val npsCount: Int = 0, val npsPriceDate: String? = null,
 ) {
-    val total: Paise get() = accounts + deposits + owedToYou - youOwe
+    val total: Paise get() = accounts + deposits + funds + nps + owedToYou - youOwe
 }
 
-/** Loan terms and deposits, and which of them Net worth counts. Deposits are off until switched on; instalment balances are on. */
+/**
+ * Loan terms, deposits, mutual funds and NPS schemes, and which of them Net worth counts. Deposits are off until switched on; instalment
+ * balances, mutual funds and NPS are on. [funds] holds mutual fund rows and [npsSchemes] NPS scheme rows (the two are never mixed).
+ */
 data class NetWorthExtras(
     val terms: List<LoanTerms> = emptyList(), val deposits: List<FixedDeposit> = emptyList(),
     val includeDeposits: Boolean = false, val includeInstalments: Boolean = true,
-) { companion object { val NONE = NetWorthExtras() } }
+    val funds: List<MutualFund> = emptyList(), val npsSchemes: List<MutualFund> = emptyList(),
+    val includeFunds: Boolean = true, val includeNps: Boolean = true,
+) {
+    /** The same extras without fund and NPS rows, for months before today (no price history exists). */
+    fun withoutHoldings(): NetWorthExtras = copy(funds = emptyList(), npsSchemes = emptyList())
+    companion object { val NONE = NetWorthExtras() }
+}
 
 /** One point of the net-worth-over-time chart: the figures at the end of [month], or now for the current month. */
 data class NetWorthPoint(val month: YearMonth, val asOfMs: Long, val figures: NetWorthFigures)
@@ -72,7 +88,13 @@ object NetWorth {
         }
         val open = if (extras.includeDeposits) extras.deposits.filter { !it.closed && it.startMs <= asOfMs } else emptyList()
         val deposits = open.fold(Paise.ZERO) { a, d -> a + FixedDeposits.currentValue(d, asOfMs, zone) }
-        return NetWorthFigures(balance, owed, owe, accounts.count { !isRupee(it) }, deposits, open.size)
+        val fundRows = if (extras.includeFunds) extras.funds.filter { MutualFunds.value(it) != null } else emptyList()
+        val npsRows = if (extras.includeNps) extras.npsSchemes.filter { MutualFunds.value(it) != null } else emptyList()
+        return NetWorthFigures(
+            balance, owed, owe, accounts.count { !isRupee(it) }, deposits, open.size,
+            funds = fundRows.fold(Paise.ZERO) { a, f -> a + MutualFunds.value(f)!! }, fundCount = fundRows.size, fundsPriceDate = fundRows.mapNotNull { it.navDate }.minOrNull(),
+            nps = npsRows.fold(Paise.ZERO) { a, f -> a + MutualFunds.value(f)!! }, npsCount = npsRows.size, npsPriceDate = npsRows.mapNotNull { it.navDate }.minOrNull(),
+        )
     }
 
     /**
@@ -99,7 +121,8 @@ object NetWorth {
         return (months - 1 downTo 0).map { back ->
             val ym = current.minusMonths(back.toLong())
             val asOf = if (back == 0) nowMs else Periods.startOfDay(ym.plusMonths(1).atDay(1), zone) - 1
-            NetWorthPoint(ym, asOf, at(asOf, entries, accounts, objectives, extras, zone))
+            // Funds and NPS have no price history, so only today's point counts them (never today's price against an old month).
+            NetWorthPoint(ym, asOf, at(asOf, entries, accounts, objectives, if (back == 0) extras else extras.withoutHoldings(), zone))
         }
     }
 }

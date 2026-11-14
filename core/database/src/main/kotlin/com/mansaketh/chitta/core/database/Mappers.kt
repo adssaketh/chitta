@@ -92,7 +92,7 @@ fun FixedDepositEntity.toModel() = FixedDeposit(id, bank, fdNumber, principalPai
 fun CardDue.toEntity() = CardDueEntity(id, card, kind, amount, dateMs, note, updatedAtMs)
 fun CardDueEntity.toModel() = CardDue(id, card, kind, amountPaise, dateMs, note, updatedAtMs)
 
-fun MutualFund.toEntity() = MutualFundEntity(id, name, isin, schemeCode, units, investedPaise, source, unitsAsOfMs, navText, navDate, note, updatedAtMs, folio, groupId)
-fun MutualFundEntity.toModel() = MutualFund(id, name, isin, schemeCode, units, investedPaise, source, unitsAsOfMs, navText, navDate, note, updatedAtMs, folio, groupId)
+fun MutualFund.toEntity() = MutualFundEntity(id, name, isin, schemeCode, units, investedPaise, source, unitsAsOfMs, navText, navDate, note, updatedAtMs, folio, groupId, sipAmountPaise, sipDay, sipUnits, sipInvestedPaise, sipCount, sipThrough)
+fun MutualFundEntity.toModel() = MutualFund(id, name, isin, schemeCode, units, investedPaise, source, unitsAsOfMs, navText, navDate, note, updatedAtMs, folio, groupId, sipAmountPaise, sipDay, sipUnits, sipInvestedPaise, sipCount, sipThrough)
 fun NpsAccount.toEntity() = NpsAccountEntity(id, name, netContributionsPaise, asOfMs, note, updatedAtMs)
 fun NpsAccountEntity.toModel() = NpsAccount(id, name, netContributionsPaise, asOfMs, note, updatedAtMs)

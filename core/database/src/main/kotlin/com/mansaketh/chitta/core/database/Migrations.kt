@@ -40,6 +40,18 @@ object Migrations {
         }
     }
 
+    /** Phase 8d: the optional monthly SIP on a fund and its estimated units. Nothing is dropped; every fund starts with no SIP and no estimate. */
+    val V5_TO_V6 = object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `mutual_fund` ADD COLUMN `sipAmountPaise` INTEGER")
+            db.execSQL("ALTER TABLE `mutual_fund` ADD COLUMN `sipDay` INTEGER")
+            db.execSQL("ALTER TABLE `mutual_fund` ADD COLUMN `sipUnits` TEXT NOT NULL DEFAULT '0'")
+            db.execSQL("ALTER TABLE `mutual_fund` ADD COLUMN `sipInvestedPaise` INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE `mutual_fund` ADD COLUMN `sipCount` INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE `mutual_fund` ADD COLUMN `sipThrough` TEXT NOT NULL DEFAULT ''")
+        }
+    }
+
     /** Phase 5: the day of month a monthly or yearly bill belongs on, so a bill on the 31st survives short months. Nothing is dropped. */
     val V2_TO_V3 = object : Migration(2, 3) {
         override fun migrate(db: SupportSQLiteDatabase) {

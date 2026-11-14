@@ -122,6 +122,8 @@ object CasImport {
                 units = h.units.stripTrailingZeros().toPlainString(), investedPaise = h.investedPaise, source = MutualFund.SOURCE_CAS,
                 unitsAsOfMs = importedAtMs, navText = h.nav.stripTrailingZeros().toPlainString(), navDate = h.navDate.toString(),
                 note = old?.note ?: "", updatedAtMs = importedAtMs, folio = h.folio, groupId = "",
+                // The statement has the real units, so a SIP estimate starts again from the statement's date (Phase 8d). The SIP itself stays.
+                sipAmountPaise = old?.sipAmountPaise, sipDay = old?.sipDay, sipThrough = if (old?.sipAmountPaise != null) h.navDate.toString() else "",
             )
             if (old == null) add += fund else update += fund
         }

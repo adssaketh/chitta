@@ -1,0 +1,26 @@
+Scheme Code;ISIN Div Payout/ ISIN Growth;ISIN Div Reinvestment;Scheme Name;Plan;Option;Net Asset Value;Date
+
+Open Ended Schemes(Children’s Fund - Childrens' Fund)
+
+Axis Mutual Fund
+
+135762;INF846K01WO1;-;Axis Children's Fund;Direct Plan;Growth Option;31.0814;13-Nov-2026
+135765;INF846K01WP8;-;Axis Children's Fund;Direct Plan;IDCW Option;28.6316;13-Nov-2026
+135759;INF846K01WJ1;-;Axis Children's Fund;Regular Plan;Growth Option;27.0280;13-Nov-2026
+135760;INF846K01WK9;-;Axis Children's Fund;Regular Plan;IDCW Option;24.9355;13-Nov-2026
+999001;INF000TEST01;-;Sample Missing Price Fund;Direct Plan;Growth;N.A.;13-Nov-2026
+999002;INF000TEST02;-;Sample Bad Date Fund;Direct Plan;Growth;10.5;31-Foo-2026
+135764;INF846K01WR4;-;Axis Children's Fund;Direct Plan;Growth Option;31.6758;13-Nov-2026
+135763;INF846K01WS2;INF846K01WQ6;Axis Children's Fund;Direct Plan;IDCW Option;28.6857;13-Nov-2026
+135766;INF846K01WM5;-;Axis Children's Fund;Regular Plan;Growth Option;27.0247;13-Nov-2026
+135761;INF846K01WN3;INF846K01WL7;Axis Children's Fund;Regular Plan;IDCW Option;24.9130;13-Nov-2026
+122639;INF879O01027;-;Parag Parikh Flexi Cap Fund;Direct Plan;Growth;94.8149;12-Nov-2026
+153964;-;INF879O01308;Parag Parikh Flexi Cap Fund;Direct Plan;Monthly IDCW Payout;94.8150;12-Nov-2026
+122640;INF879O01019;-;Parag Parikh Flexi Cap Fund;Regular Plan;Growth;86.2892;12-Nov-2026
+153965;-;INF879O01324;Parag Parikh Flexi Cap Fund;Regular Plan;Monthly IDCW Payout;86.2892;12-Nov-2026
+154477;INF2JJD01193;-;Abakkus Large & Mid Cap Fund;Direct Plan;Growth;10.0150;13-Nov-2026
+154478;INF2JJD01201;-;Abakkus Large & Mid Cap Fund;Regular Plan;Growth;9.9740;13-Nov-2026
+150685;INF109KC12K1;-;ICICI PRUDENTIAL TRANSPORTATION AND LOGISTICS FUND;Direct Plan;Growth;23.79;13-Nov-2026
+150687;INF109KC13K9;INF109KC14K7;ICICI PRUDENTIAL TRANSPORTATION AND LOGISTICS FUND;Direct Plan;IDCW;20.29;13-Nov-2026
+150684;INF109KC19J8;-;ICICI PRUDENTIAL TRANSPORTATION AND LOGISTICS FUND;Regular Plan;Growth;22.66;13-Nov-2026
+150686;INF109KC10K5;INF109KC11K3;ICICI PRUDENTIAL TRANSPORTATION AND LOGISTICS FUND;Regular Plan;IDCW;19.21;13-Nov-2026

@@ -119,6 +119,24 @@ Total 4,175.10
         assertEquals("2026-11-12", p.update.single().navDate)
     }
 
+    @Test fun aStatementImportKeepsTheSipAndTheSchemeLinkButDropsTheEstimate() {
+        val r = CasSummary.read(sample) as CasReading.Ready
+        val old = MutualFund(
+            "a", "Sample Alpha Equity Fund - Direct Plan -Growth Option", "INF000A00000", "122639", "1", null, MutualFund.SOURCE_CAS, 0, null, null, "", null, "111111", "",
+            sipAmountPaise = 500_000, sipDay = 5, sipUnits = "99.000", sipInvestedPaise = 500_000, sipCount = 1, sipThrough = "2026-11-05",
+        )
+        val p = CasImport.plan(listOf(old), r.holdings, 1_000L) { "x" }
+        val u = p.update.single()
+        assertEquals("122639", u.schemeCode); assertEquals("INF000A00000", u.isin)
+        assertEquals(500_000L, u.sipAmountPaise); assertEquals(5, u.sipDay)
+        // The statement has the real units, so the estimate starts again from the statement's own date.
+        assertEquals("0", u.sipUnits); assertEquals(0L, u.sipInvestedPaise); assertEquals(0, u.sipCount); assertEquals("2026-11-12", u.sipThrough)
+        // A fund with no SIP gets no SIP date.
+        var k = 0
+        val plain = CasImport.plan(emptyList(), r.holdings, 1_000L) { "y${k++}" }
+        assertEquals("", plain.add.first().sipThrough)
+    }
+
     @Test fun anNpsSchemeIsNeverTouchedByAStatementImport() {
         val r = CasSummary.read(sample) as CasReading.Ready
         val nps = MutualFund("n", "Some NPS Scheme E", "", "", "5", null, MutualFund.SOURCE_CAS, 0, null, null, "", null, "", "acc1")

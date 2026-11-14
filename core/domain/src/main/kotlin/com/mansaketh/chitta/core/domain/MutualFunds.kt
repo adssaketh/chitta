@@ -26,15 +26,27 @@ object MutualFunds {
     /** Units go stale after this many days without an import (master section 8). */
     const val STALE_AFTER_DAYS = 35L
 
-    /** Units as a decimal, or null when the text is not a positive number. */
+    /** Units as typed or imported, as a decimal, or null when the text is not a positive number. The SIP estimate is not in this. */
     fun units(f: MutualFund): BigDecimal? = f.units.trim().toBigDecimalOrNull()?.takeIf { it.signum() > 0 }
+
+    /** The estimated units the SIP added since the last import or edit (zero when none). */
+    fun sipUnits(f: MutualFund): BigDecimal = f.sipUnits.trim().toBigDecimalOrNull()?.takeIf { it.signum() > 0 } ?: BigDecimal.ZERO
+
+    /** Units used for value: the typed or imported units plus the SIP estimate. Null when the typed units are not a positive number. */
+    fun totalUnits(f: MutualFund): BigDecimal? = units(f)?.add(sipUnits(f))
+
+    /** What was put in, counting the SIP instalments in the estimate. Null when there is no average price: a gain is never guessed. */
+    fun invested(f: MutualFund): Long? = f.investedPaise?.plus(f.sipInvestedPaise)
+
+    /** True when the figures include estimated SIP units. */
+    fun hasEstimate(f: MutualFund): Boolean = f.sipCount > 0 && sipUnits(f).signum() > 0
 
     /** The price per unit, or null when none has been fetched or it is not a positive number. */
     fun nav(f: MutualFund): BigDecimal? = f.navText?.trim()?.toBigDecimalOrNull()?.takeIf { it.signum() > 0 }
 
     /** Units x price, rounded half-even to the paisa. Null with no price. */
     fun value(f: MutualFund): Paise? {
-        val u = units(f) ?: return null
+        val u = totalUnits(f) ?: return null
         val n = nav(f) ?: return null
         return Paise(u.multiply(n).multiply(BigDecimal(100)).setScale(0, RoundingMode.HALF_EVEN).longValueExact())
     }
@@ -42,7 +54,7 @@ object MutualFunds {
     /** Value minus what was put in. Null when there is no price or no average price. */
     fun gain(f: MutualFund): Paise? {
         val v = value(f) ?: return null
-        val inv = f.investedPaise ?: return null
+        val inv = invested(f) ?: return null
         return v - Paise(inv)
     }
 

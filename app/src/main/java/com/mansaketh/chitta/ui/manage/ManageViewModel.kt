@@ -37,6 +37,12 @@ data class ManageUi(
     val npsSchemes: List<MutualFund> = emptyList(),
     val nwDeposits: Boolean = false,
     val nwInstalments: Boolean = true,
+    /** Phase 8d: the fund and NPS Net worth switches, the daily price fetch switch, and what the last fetch said. */
+    val nwFunds: Boolean = true,
+    val nwNps: Boolean = true,
+    val pricesAuto: Boolean = true,
+    val priceStatus: com.mansaketh.chitta.data.FundPriceStatus = com.mansaketh.chitta.data.FundPriceStatus(),
+    val pricesRunning: Boolean = false,
     val nowMs: Long = 0L,
     val zone: java.time.ZoneId = java.time.ZoneId.systemDefault(),
 )
@@ -52,10 +58,12 @@ class ManageViewModel @Inject constructor(
     private val assets: AssetsRepository,
     private val prefs: com.mansaketh.chitta.data.UiPrefs,
     private val fetcher: RateFetcher,
+    private val prices: com.mansaketh.chitta.data.FundPriceService,
     private val actions: EntryActions,
     private val undo: UndoCenter,
     private val ids: IdSource,
     private val clock: Clock,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val appContext: android.content.Context,
 ) : ViewModel() {
     private val entries = ledger.observeAll().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     private val titles = titleRepo.observeAll().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -68,7 +76,13 @@ class ManageViewModel @Inject constructor(
 
     private val assetsFlow = combine(assets.observeDeposits(), assets.observeCardDues(), assets.observeFunds(), assets.observeNps()) { d, du, f, n -> Assets(d, du, f, n) }
 
-    val ui: StateFlow<ManageUi> = combine(base, assetsFlow, prefs.netWorthDeposits, prefs.netWorthInstalments) { b, a, nd, ni ->
+    private val pricesRunning = MutableStateFlow(false)
+
+    private data class FundSwitches(val funds: Boolean, val nps: Boolean, val auto: Boolean, val status: com.mansaketh.chitta.data.FundPriceStatus, val running: Boolean)
+
+    private val fundSwitches = combine(prefs.netWorthFunds, prefs.netWorthNps, prefs.fundPricesAuto, prefs.fundPriceStatus, pricesRunning) { f, n, auto, st, run -> FundSwitches(f, n, auto, st, run) }
+
+    val ui: StateFlow<ManageUi> = combine(base, assetsFlow, prefs.netWorthDeposits, prefs.netWorthInstalments, fundSwitches) { b, a, nd, ni, fs ->
         val d = a.deposits; val du = a.dues
         val now = clock.nowMs()
         val today = java.time.Instant.ofEpochMilli(now).atZone(clock.zone()).toLocalDate()
@@ -76,7 +90,7 @@ class ManageViewModel @Inject constructor(
         val cards = b.accounts.mapNotNull { acc ->
             cardSetup(acc)?.let { acc.id to com.mansaketh.chitta.core.domain.Cards.figures(it, b.entries, today, clock.zone(), CardDues.flowsFor(acc, du, b.entries)) }
         }.toMap()
-        ManageUi(b.accounts, b.categories, Balances.balances(b.entries), b.rates, b.overrides, loading = false, cards = cards, deposits = d, dues = du, funds = a.funds.filter { !it.isNps }, nps = a.nps, npsSchemes = a.funds.filter { it.isNps }, nwDeposits = nd, nwInstalments = ni, nowMs = now, zone = clock.zone())
+        ManageUi(b.accounts, b.categories, Balances.balances(b.entries), b.rates, b.overrides, loading = false, cards = cards, deposits = d, dues = du, funds = a.funds.filter { !it.isNps }, nps = a.nps, npsSchemes = a.funds.filter { it.isNps }, nwDeposits = nd, nwInstalments = ni, nwFunds = fs.funds, nwNps = fs.nps, pricesAuto = fs.auto, priceStatus = fs.status, pricesRunning = fs.running, nowMs = now, zone = clock.zone())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ManageUi())
 
     // ---- fixed deposits (Phase 8b)
@@ -95,14 +109,55 @@ class ManageViewModel @Inject constructor(
 
     fun setNetWorthDeposits(v: Boolean) = prefs.setNetWorthDeposits(v)
     fun setNetWorthInstalments(v: Boolean) = prefs.setNetWorthInstalments(v)
+    fun setNetWorthFunds(v: Boolean) = prefs.setNetWorthFunds(v)
+    fun setNetWorthNps(v: Boolean) = prefs.setNetWorthNps(v)
+
+    // ---- fund prices (Phase 8d)
+    /** Fetches the price file now. The screen shows the result from the saved status. */
+    fun refreshPrices() = viewModelScope.launch {
+        if (pricesRunning.value) return@launch
+        pricesRunning.value = true
+        try { prices.refresh() } finally { pricesRunning.value = false }
+    }
+
+    fun setFundPricesAuto(v: Boolean) {
+        prefs.setFundPricesAuto(v)
+        com.mansaketh.chitta.data.FundPriceScheduler.sync(appContext, v)
+    }
+
+    /** The schemes to offer for a fund (from the saved price file), best first. Empty before the first fetch. */
+    suspend fun priceCandidates(f: MutualFund): List<com.mansaketh.chitta.core.intake.AmfiScheme> = prices.candidates(f)
+
+    /** Links the fund to the chosen scheme and prices it. Undo restores the fund as it was. */
+    fun linkFund(f: MutualFund, scheme: com.mansaketh.chitta.core.intake.AmfiScheme) = viewModelScope.launch {
+        prices.link(f, scheme)
+        undo.post("Fund linked to ${scheme.name}") { assets.saveFund(f) }
+    }
 
     // ---- mutual funds (Phase 8c)
-    /** Saves a new or edited fund; Undo puts the old one back (or removes the new one). */
+    /**
+     * Saves a new or edited fund; Undo puts the old one back (or removes the new one).
+     * SIP bookkeeping (Phase 8d, D122): the estimate belongs to the units, so typing new units or a new "units as of" date drops the estimate and
+     * counts instalments from that date; a SIP set for the first time counts from today (nothing is ever credited back in time).
+     */
     fun saveFund(entered: MutualFund) = viewModelScope.launch {
-        val f = if (entered.id.isEmpty()) entered.copy(id = ids.newId()) else entered
-        val old = ui.value.funds.firstOrNull { it.id == f.id }
+        val base = if (entered.id.isEmpty()) entered.copy(id = ids.newId()) else entered
+        val old = ui.value.funds.firstOrNull { it.id == base.id } ?: ui.value.npsSchemes.firstOrNull { it.id == base.id }
+        val today = Periods.date(clock.nowMs(), clock.zone())
+        val f = when {
+            base.isNps -> base
+            base.sipAmountPaise != null && (old == null || old.sipAmountPaise == null) -> Sip.reset(base, today)
+            old != null && (unitsDiffer(old.units, base.units) || old.unitsAsOfMs != base.unitsAsOfMs) -> Sip.reset(base, Periods.date(base.unitsAsOfMs, clock.zone()))
+            else -> base
+        }
         assets.saveFund(f.copy(updatedAtMs = clock.nowMs()))
         undo.post(if (old == null) "Mutual fund added" else "Mutual fund saved") { if (old == null) assets.deleteFund(f.id) else assets.saveFund(old) }
+    }
+
+    /** "100.500" and "100.5" are the same units; only a different number counts as new units. */
+    private fun unitsDiffer(a: String, b: String): Boolean {
+        val x = a.trim().toBigDecimalOrNull(); val y = b.trim().toBigDecimalOrNull()
+        return if (x == null || y == null) a != b else x.compareTo(y) != 0
     }
 
     fun deleteFund(id: String) = viewModelScope.launch {
@@ -119,6 +174,8 @@ class ManageViewModel @Inject constructor(
         val oldUpdated = ui.value.funds.filter { f -> plan.update.any { it.id == f.id } }
         assets.replaceFunds(plan.remove.map { it.id }, plan.add + plan.update)
         undo.post("Statement imported") { assets.replaceFunds(plan.add.map { it.id }, oldUpdated + plan.remove) }
+        // Best effort: link the new funds to AMFI schemes and price them now. A failure only leaves the statement's own prices.
+        prices.refresh()
     }
 
     // ---- NPS (Phase 8c)
