@@ -57,7 +57,7 @@ fun InsightsScreen(vm: InsightsViewModel, onOpenEntry: (String) -> Unit) {
     val c = ChittaTheme.colors
 
     Column(Modifier.fillMaxSize()) {
-        com.mansaketh.chitta.core.design.components.ScreenTitle("Insights", com.mansaketh.chitta.core.design.icons.ChittaIcons.Insights, Modifier.padding(horizontal = Dimens.Margin, vertical = Dimens.Gap3))
+        com.mansaketh.chitta.core.design.components.ScreenTitle("Insights", com.mansaketh.chitta.core.design.icons.ChittaIcons.Insights, Modifier.padding(horizontal = Dimens.Margin))
         TextTabs(listOf("Current", "History", "Net worth", "Review"), tab, { tab = it }, Modifier.padding(horizontal = Dimens.Margin))
         HairlineRule()
         when {

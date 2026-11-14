@@ -6,6 +6,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -76,6 +77,21 @@ class ChittaType internal constructor() {
         fontFamily = ChittaFonts.PlexMono, fontSize = 11.sp, lineHeight = 16.sp,
         fontWeight = FontWeight.Medium, letterSpacing = 0.1.em,
     )
+
+    // Roles. Screens pick a style by role, never by size. These are names for the styles above:
+    // no size or weight changes.
+    val screenTitle get() = headline
+    val barTitle get() = title
+    val sectionHeading get() = title
+    val link = hanken(13.sp, 16.sp, FontWeight.Medium).copy(textDecoration = TextDecoration.Underline)
+    val heroNumber get() = amountHero
+    val figure get() = amountLarge
+
+    /** The next sizes down from [figure], tried in order when a figure does not fit its column. */
+    val figureSteps: List<TextStyle> get() = listOf(amount, amountRow)
+    val rowTitle get() = body
+    val rowMeta get() = label
+    val rowAmount get() = amountRow
 
     /** The font a rupee sign is drawn in wherever it sits inside interface text. */
     val rupeeFamily: FontFamily = ChittaFonts.fraunces(500, 16.sp)

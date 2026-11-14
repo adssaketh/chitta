@@ -1,15 +1,17 @@
 package com.mansaketh.chitta.core.design.components
 
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -27,6 +29,9 @@ private const val MASK = "₹ ••••"
  * column of amounts lines up on its right edge. (Fraunces has no tabular figures; this is how the
  * "tabular lining figures" rule is met. See DECISIONS.md.)
  *
+ * [fallbackStyles] are smaller styles tried in order when the amount does not fit the width it is
+ * given, so a long figure steps down instead of running over its neighbour.
+ *
  * Hide-amounts mode masks the figure. TalkBack reads "rupees 1200", not the grouped text.
  */
 @Composable
@@ -38,6 +43,7 @@ fun AmountText(
     tone: AmountTone = AmountTone.Neutral,
     alwaysShowPaise: Boolean = false,
     roundToRupee: Boolean = false,
+    fallbackStyles: List<TextStyle> = emptyList(),
 ) {
     val hidden = ChittaTheme.hideAmounts
     val body = when {
@@ -52,6 +58,7 @@ fun AmountText(
         modifier = modifier.clearAndSetSemantics { contentDescription = spoken },
         style = style,
         color = tint,
+        fallbackStyles = fallbackStyles,
     )
 }
 
@@ -72,9 +79,20 @@ fun AmountEntryText(
     )
 }
 
+/** What the last measure pass decided; the draw pass reads it. Plain fields, not snapshot state. */
+private class TabularPlan {
+    var glyphs: List<TextLayoutResult> = emptyList()
+    var cells: IntArray = IntArray(0)
+    var baseline: Float = 0f
+}
+
 /**
- * Draws [text] with every ASCII digit centred in a slot as wide as the widest digit of [style].
+ * Draws [text] with every ASCII digit centred in a slot as wide as the widest digit of the style used.
  * Other characters (comma, point, rupee sign, plus, minus) keep their own width.
+ *
+ * The first style in [style] + [fallbackStyles] whose width fits the width on offer is used; if none
+ * fits, the last one is. The text reports its first baseline, so a label, an amount and a stamp in one
+ * row can all sit on the same line (`Modifier.alignByBaseline()`).
  */
 @Composable
 fun TabularText(
@@ -82,24 +100,55 @@ fun TabularText(
     modifier: Modifier = Modifier,
     style: TextStyle,
     color: Color,
+    fallbackStyles: List<TextStyle> = emptyList(),
 ) {
     val measurer = rememberTextMeasurer()
-    val density = LocalDensity.current
-    val slot = remember(style, density) {
-        ('0'..'9').maxOf { measurer.measure(it.toString(), style).size.width }
-    }
-    val glyphs = remember(text, style, density) { text.map { measurer.measure(it.toString(), style) } }
-    val widths = remember(glyphs, slot) {
-        glyphs.mapIndexed { i, g -> if (text[i] in '0'..'9') slot else g.size.width }
-    }
-    val totalWidth = widths.sum()
-    val height = glyphs.maxOfOrNull { it.size.height } ?: 0
-    Canvas(modifier.size(with(density) { totalWidth.toDp() }, with(density) { height.toDp() })) {
-        var x = 0f
-        glyphs.forEachIndexed { i, g ->
-            val cell = widths[i]
-            drawText(g, color = color, topLeft = Offset(x + (cell - g.size.width) / 2f, 0f))
-            x += cell
+    val plan = remember { TabularPlan() }
+    val styles = remember(style, fallbackStyles) { listOf(style) + fallbackStyles }
+    Layout(
+        content = {},
+        modifier = modifier.drawBehind {
+            var x = 0f
+            plan.glyphs.forEachIndexed { i, g ->
+                val cell = plan.cells[i]
+                drawText(
+                    g,
+                    color = color,
+                    topLeft = Offset(x + (cell - g.size.width) / 2f, plan.baseline - g.firstBaseline),
+                )
+                x += cell
+            }
+        },
+    ) { _, constraints ->
+        var chosen: Pair<List<TextLayoutResult>, IntArray>? = null
+        for ((index, candidate) in styles.withIndex()) {
+            val measured = measureTabular(measurer, text, candidate)
+            chosen = measured
+            val fits = !constraints.hasBoundedWidth || measured.second.sum() <= constraints.maxWidth
+            if (fits || index == styles.lastIndex) break
         }
+        val (glyphs, cells) = chosen ?: (emptyList<TextLayoutResult>() to IntArray(0))
+        val baseline = glyphs.maxOfOrNull { it.firstBaseline } ?: 0f
+        val height = glyphs.maxOfOrNull { (baseline - it.firstBaseline) + it.size.height } ?: 0f
+        plan.glyphs = glyphs
+        plan.cells = cells
+        plan.baseline = baseline
+        val width = cells.sum().coerceIn(constraints.minWidth, constraints.maxWidth.coerceAtLeast(constraints.minWidth))
+        layout(
+            width = width,
+            height = height.toInt().coerceIn(constraints.minHeight, constraints.maxHeight.coerceAtLeast(constraints.minHeight)),
+            alignmentLines = mapOf(FirstBaseline to baseline.toInt()),
+        ) {}
     }
+}
+
+private fun measureTabular(
+    measurer: TextMeasurer,
+    text: String,
+    style: TextStyle,
+): Pair<List<TextLayoutResult>, IntArray> {
+    val slot = ('0'..'9').maxOf { measurer.measure(it.toString(), style).size.width }
+    val glyphs = text.map { measurer.measure(it.toString(), style) }
+    val cells = IntArray(glyphs.size) { i -> if (text[i] in '0'..'9') slot else glyphs[i].size.width }
+    return glyphs to cells
 }

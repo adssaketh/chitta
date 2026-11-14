@@ -43,7 +43,14 @@ fun HairlineRule(modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth().height(Dimens.Hairline).background(ChittaTheme.colors.rule))
 }
 
-/** A section title: Hanken Grotesk Medium (never heavier), sentence case, an optional action on the right. */
+/**
+ * A section title: Hanken Grotesk Medium (never heavier), sentence case, an optional action on the right.
+ *
+ * The heading is as tall as its text, followed by [Dimens.HeadingGap] before whatever comes next (a rule
+ * or the first content). Only a heading with an action keeps the 48 dp touch height, because the action
+ * needs it; the action's own padding supplies the air under the text in that case.
+ * Space above the heading is the screen's job: use [Section], which adds [Dimens.SectionGap].
+ */
 @Composable
 fun SectionHeader(
     title: String,
@@ -51,24 +58,109 @@ fun SectionHeader(
     action: String? = null,
     onAction: (() -> Unit)? = null,
 ) {
+    val hasAction = action != null && onAction != null
     Row(
-        modifier.fillMaxWidth().heightIn(min = Dimens.TouchTarget),
+        modifier
+            .fillMaxWidth()
+            .then(if (hasAction) Modifier.heightIn(min = Dimens.TouchTarget) else Modifier.padding(bottom = Dimens.HeadingGap)),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(title.rupeeAware(), style = ChittaTheme.type.title, color = ChittaTheme.colors.ink, modifier = Modifier.semantics { heading() })
-        if (action != null && onAction != null) {
+        Text(title.rupeeAware(), style = ChittaTheme.type.sectionHeading, color = ChittaTheme.colors.ink, modifier = Modifier.semantics { heading() })
+        if (hasAction) {
             Text(
-                action,
-                style = ChittaTheme.type.labelMedium,
+                action.orEmpty(),
+                style = ChittaTheme.type.link,
                 color = ChittaTheme.colors.ink,
-                textDecoration = TextDecoration.Underline,
                 modifier = Modifier
                     .heightIn(min = Dimens.TouchTarget)
-                    .clickable(role = Role.Button, onClick = onAction)
-                    .padding(horizontal = Dimens.Gap2, vertical = Dimens.Gap3),
+                    .clickable(role = Role.Button, onClick = onAction!!)
+                    .padding(horizontal = Dimens.InlineGap, vertical = Dimens.HeadingGap),
             )
         }
+    }
+}
+
+/**
+ * One section of a screen: [Dimens.SectionGap] above, the heading, [Dimens.HeadingGap], an optional rule,
+ * then the content. Every screen uses this instead of building its own gaps, so the rhythm is the same
+ * everywhere. Set [first] on the first section under a title or tab rule: it gets [Dimens.HeadingGap]
+ * above instead of the full section gap.
+ */
+@Composable
+fun Section(
+    title: String,
+    modifier: Modifier = Modifier,
+    first: Boolean = false,
+    rule: Boolean = false,
+    action: String? = null,
+    onAction: (() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(modifier.fillMaxWidth().padding(top = if (first) Dimens.HeadingGap else Dimens.SectionGap)) {
+        SectionHeader(title, action = action, onAction = onAction)
+        if (rule) HairlineRule()
+        content()
+    }
+}
+
+/**
+ * The one list row: [title] (and an optional [meta] line) on the left, an optional [trailing] amount or
+ * value on the right, an optional [leading] icon or date. [Dimens.RowPadV] top and bottom, at least 56 dp
+ * (68 dp with a meta line, [minHeight] to override). The title and meta are limited to [titleMaxLines] and
+ * [metaMaxLines] with an ellipsis, so rows keep an even height, and the trailing value always has
+ * [Dimens.TitleAmountGap] before it. A rule closes the row unless [rule] is false.
+ */
+@Composable
+fun ListRow(
+    title: String,
+    modifier: Modifier = Modifier,
+    meta: String? = null,
+    leading: (@Composable () -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null,
+    onClick: (() -> Unit)? = null,
+    titleMaxLines: Int = 1,
+    metaMaxLines: Int = 1,
+    minHeight: androidx.compose.ui.unit.Dp = if (meta == null) Dimens.RowMin else Dimens.RowTall,
+    rule: Boolean = true,
+) {
+    Column(modifier.fillMaxWidth()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = minHeight)
+                .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
+                .padding(vertical = Dimens.RowPadV),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (leading != null) {
+                leading()
+                Box(Modifier.width(Dimens.Gap4))
+            }
+            Column(Modifier.weight(1f)) {
+                Text(
+                    title.rupeeAware(),
+                    style = ChittaTheme.type.rowTitle,
+                    color = ChittaTheme.colors.ink,
+                    maxLines = titleMaxLines,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
+                if (meta != null) {
+                    Text(
+                        meta.rupeeAware(),
+                        style = ChittaTheme.type.rowMeta,
+                        color = ChittaTheme.colors.inkMuted,
+                        maxLines = metaMaxLines,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            if (trailing != null) {
+                Box(Modifier.width(Dimens.TitleAmountGap))
+                trailing()
+            }
+        }
+        if (rule) HairlineRule()
     }
 }
 
@@ -102,13 +194,20 @@ fun SheetSurface(
     }
 }
 
-/** A main-screen title with its bottom-bar icon beside it. The icon is decoration: the title carries the meaning. */
+/**
+ * A main-screen title with its bottom-bar icon beside it. The icon is decoration: the title carries the meaning.
+ * Every main tab uses this with no extra vertical padding: the row is [Dimens.TitleBarMin] tall, so the
+ * titles sit on the same line on every tab. Left and right margins belong to the screen.
+ */
 @Composable
 fun ScreenTitle(title: String, icon: ImageVector, modifier: Modifier = Modifier) {
-    Row(modifier.semantics(mergeDescendants = true) { heading() }, verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier.heightIn(min = Dimens.TitleBarMin).semantics(mergeDescendants = true) { heading() },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Icon(icon, contentDescription = null, tint = ChittaTheme.colors.ink, modifier = Modifier.size(Dimens.IconSize))
-        Box(Modifier.width(Dimens.Gap2))
-        Text(title, style = ChittaTheme.type.headline, color = ChittaTheme.colors.ink)
+        Box(Modifier.width(Dimens.InlineGap))
+        Text(title, style = ChittaTheme.type.screenTitle, color = ChittaTheme.colors.ink)
     }
 }
 
@@ -216,12 +315,12 @@ fun ChittaBottomNav(
                 Column(
                     Modifier
                         .weight(1f)
-                        .heightIn(min = 64.dp)
+                        .heightIn(min = Dimens.NavBarMin)
                         .semantics { selected = isSelected }
                         .combinedClickable(role = Role.Tab, onClick = { onSelect(item.key) }, onLongClick = onLongPress),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Box(Modifier.width(24.dp).height(2.dp).background(if (isSelected) c.ink else c.background))
+                    Box(Modifier.width(Dimens.MarkerWidth).height(Dimens.MarkerHeight).background(if (isSelected) c.ink else c.background))
                     Box(Modifier.height(Dimens.Gap2))
                     Icon(item.icon, contentDescription = null, tint = tint, modifier = Modifier.size(Dimens.IconSize))
                     Box(Modifier.height(Dimens.Gap1))
@@ -276,7 +375,7 @@ fun EmptyState(
     onAction: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier.fillMaxWidth().padding(vertical = Dimens.SectionGap), verticalArrangement = Arrangement.spacedBy(Dimens.Gap4)) {
+    Column(modifier.fillMaxWidth().padding(top = Dimens.HeadingGap, bottom = Dimens.SectionGap), verticalArrangement = Arrangement.spacedBy(Dimens.Gap4)) {
         Text(message, style = ChittaTheme.type.body, color = ChittaTheme.colors.inkMuted)
         ChittaButton(actionLabel, onAction, style = ButtonStyle.Quiet)
     }
@@ -291,7 +390,7 @@ fun ErrorState(
     modifier: Modifier = Modifier,
     retryLabel: String = "Try again",
 ) {
-    Column(modifier.fillMaxWidth().padding(vertical = Dimens.SectionGap), verticalArrangement = Arrangement.spacedBy(Dimens.Gap3)) {
+    Column(modifier.fillMaxWidth().padding(top = Dimens.HeadingGap, bottom = Dimens.SectionGap), verticalArrangement = Arrangement.spacedBy(Dimens.Gap3)) {
         Text(whatFailed, style = ChittaTheme.type.bodyMedium, color = ChittaTheme.colors.warningText)
         Text(savedStatus, style = ChittaTheme.type.body, color = ChittaTheme.colors.inkMuted)
         Box(Modifier.height(Dimens.Gap1))

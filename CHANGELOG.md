@@ -1,5 +1,13 @@
 # Changelog
 
+## UI polish pass: step 1, shared spacing and components (14 Nov 2026) - on branch `phase-ui-polish`, not yet built or checked on a phone
+- `Dimens`: spacing scale (`Space1` to `Space12`) and role tokens (`HeadingGap` 12, `RowPadV` 12, `RowLedger` 64, `InlineGap`, `FigureGap`, `TitleAmountGap`, `TitleBarMin`, `FabInset` 96, `EndInset` 32, `SheetMaxFraction`, `NavBarMin`, marker size). Old `Gap` names are aliases.
+- `Type`: role names (`screenTitle`, `sectionHeading`, `link`, `figure`, `figureSteps`, `rowTitle`, `rowMeta`, `rowAmount`...). No size or weight changed.
+- `SectionHeader` is now as tall as its text, with 12 dp under it; only a heading with an action keeps the 48 dp touch height. This removes the big gap between headings and their rules on every screen at once. New `Section` (gap, heading, optional rule) and `ListRow` (one-line title and meta limited with an ellipsis, 12 dp padding, 16 dp before the amount).
+- `AmountText` / `TabularText` report their first baseline (so a label, an amount and a stamp can share one line) and take `fallbackStyles`: a figure steps down a size when it does not fit its column.
+- Main-tab titles keep their icons. `ScreenTitle` is now a 56 dp row; the extra vertical padding on Plan, Insights and More is removed so all four titles sit on the same line.
+- Not done yet: screens do not use `Section`, `ListRow` or the fallback styles yet (steps 2 to 9). Component snapshots need re-recording.
+
 ## UI polish pass: audit (14 Nov 2026) - on branch `phase-ui-polish`, awaiting approval
 - Added `UI_AUDIT.md`: every screen's spacing, heading and clipping problems, the conflicts with the design PDF, three possible bugs (reported, not fixed) and the proposed spacing and type tokens. No screen code changed.
 

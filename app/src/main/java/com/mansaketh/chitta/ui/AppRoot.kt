@@ -241,7 +241,7 @@ private fun tabIcon(k: TabKey) = when (k) {
 @Composable
 private fun MoreScreen(order: List<MoreItem>, open: (MoreItem) -> Unit, onGallery: (() -> Unit)?) {
     Column(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin)) {
-        com.mansaketh.chitta.core.design.components.ScreenTitle("More", ChittaIcons.More, Modifier.padding(vertical = Dimens.Gap3))
+        com.mansaketh.chitta.core.design.components.ScreenTitle("More", ChittaIcons.More)
         order.forEach { ValueRow(it.label, "", onClick = { open(it) }) }
         if (onGallery != null) ValueRow("Design gallery", "Debug builds only", onClick = onGallery)
     }
