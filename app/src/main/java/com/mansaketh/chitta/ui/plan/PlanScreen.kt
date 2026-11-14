@@ -59,7 +59,7 @@ fun PlanScreen(vm: PlanViewModel, tab: Int, onTab: (Int) -> Unit, onOpen: (Strin
     LaunchedEffect(Unit) { vm.runAutoPay() }
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = Dimens.Margin, vertical = Dimens.Gap3), verticalAlignment = Alignment.CenterVertically) {
-            Text("Plan", style = ChittaTheme.type.headline, color = ChittaTheme.colors.ink, modifier = Modifier.weight(1f))
+            com.mansaketh.chitta.core.design.components.ScreenTitle("Plan", com.mansaketh.chitta.core.design.icons.ChittaIcons.Plan, Modifier.weight(1f))
             IconAction(com.mansaketh.chitta.core.design.icons.ChittaIcons.Bell, "Bills and reminders", { reminders = true })
         }
         TextTabs(PLAN_TABS, tab, onTab, Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin))

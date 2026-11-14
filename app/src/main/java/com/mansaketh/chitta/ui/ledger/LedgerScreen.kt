@@ -62,7 +62,7 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
                 }
             } else {
                 Row(Modifier.fillMaxWidth().padding(start = Dimens.Margin, end = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Ledger", style = ChittaTheme.type.headline, color = c.ink, modifier = Modifier.weight(1f))
+                    com.mansaketh.chitta.core.design.components.ScreenTitle("Ledger", ChittaIcons.Ledger, Modifier.weight(1f))
                     IconAction(ChittaIcons.Filter, "Filter by account or category", onClick = { picker = "menu"  })
                     IconAction(ChittaIcons.Search, if (searching) "Close search" else "Search", onClick = { searching = !searching; if (!searching) vm.setText("")  })
                 }

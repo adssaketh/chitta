@@ -102,12 +102,23 @@ fun SheetSurface(
     }
 }
 
+/** A main-screen title with its bottom-bar icon beside it. The icon is decoration: the title carries the meaning. */
+@Composable
+fun ScreenTitle(title: String, icon: ImageVector, modifier: Modifier = Modifier) {
+    Row(modifier.semantics(mergeDescendants = true) { heading() }, verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, contentDescription = null, tint = ChittaTheme.colors.ink, modifier = Modifier.size(Dimens.IconSize))
+        Box(Modifier.width(Dimens.Gap2))
+        Text(title, style = ChittaTheme.type.headline, color = ChittaTheme.colors.ink)
+    }
+}
+
 /** Top bar: optional back arrow, a title, actions on the right. Plain, no elevation. */
 @Composable
 fun ChittaTopBar(
     title: String,
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
+    titleIcon: ImageVector? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     Row(
@@ -121,6 +132,10 @@ fun ChittaTopBar(
             IconAction(ChittaIcons.ArrowLeft, "Back", onBack)
         } else {
             Box(Modifier.width(Dimens.Gap4))
+        }
+        if (titleIcon != null) {
+            Icon(titleIcon, contentDescription = null, tint = ChittaTheme.colors.ink, modifier = Modifier.size(Dimens.IconSize))
+            Box(Modifier.width(Dimens.Gap2))
         }
         Text(
             title,

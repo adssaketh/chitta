@@ -62,7 +62,7 @@ fun HomeScreen(
     val c = ChittaTheme.colors
 
     Column(Modifier.fillMaxSize()) {
-        ChittaTopBar("Home", actions = {
+        ChittaTopBar("Home", titleIcon = ChittaIcons.Home, actions = {
             IconAction(ChittaIcons.Gear, "Customise Home", onCustomise)
             HideAmountsAction(hidden, onToggleHide)
         })
