@@ -48,7 +48,7 @@ class HouseholdStoreTest {
 
     // ---- other members' entries stay out of everything that is mine
 
-    @Test fun membersEntriesAndAccountsAreHiddenFromOwnLists() = runBlocking {
+    @Test fun membersEntriesAndAccountsAreHiddenFromOwnLists() = runBlocking<Unit> {
         accounts.save(acct("a1"))
         store.ensurePlaceholders(mapOf("sis" to "Sis"), "INR", 5L)
         ledger.add(listOf(e("mine", owner = "me")))
@@ -62,13 +62,13 @@ class HouseholdStoreTest {
         assertEquals(listOf("a1"), BookRepository(db).readAll().accounts.map { it.id })
     }
 
-    @Test fun aMembersEntryCanBeReadForItsDetailEvenThoughItIsNotInOwnLists() = runBlocking {
+    @Test fun aMembersEntryCanBeReadForItsDetailEvenThoughItIsNotInOwnLists() = runBlocking<Unit> {
         store.ensurePlaceholders(mapOf("sis" to "Sis"), "INR", 5L)
         store.apply(listOf(e("theirs", owner = "sis", account = "hh_sis", synced = 1L)), emptyList(), emptyList(), "me")
         assertNotNull(ledger.get("theirs"))
     }
 
-    @Test fun placeholderAccountIsCreatedOnceAndKeepsUpWithTheNameAndCurrency() = runBlocking {
+    @Test fun placeholderAccountIsCreatedOnceAndKeepsUpWithTheNameAndCurrency() = runBlocking<Unit> {
         store.ensurePlaceholders(mapOf("sis" to "Sis"), "INR", 5L)
         store.ensurePlaceholders(mapOf("sis" to "Sister"), "USD", 6L)
         val p = db.accounts().getPlaceholders()
@@ -80,7 +80,7 @@ class HouseholdStoreTest {
 
     // ---- the upload queue
 
-    @Test fun newEntriesAreClaimedAndWaitUntilUploaded() = runBlocking {
+    @Test fun newEntriesAreClaimedAndWaitUntilUploaded() = runBlocking<Unit> {
         ledger.add(listOf(e("a"), e("b", owner = "")))
         assertEquals(1, store.claimNew("me"))
         assertEquals(listOf("a"), store.waiting("me", 10).map { it.id }, "a personal entry is never uploaded")
@@ -90,7 +90,7 @@ class HouseholdStoreTest {
         assertEquals(50L, ledger.get("a")!!.householdSyncedAtMs)
     }
 
-    @Test fun anEntryEditedWhileItWasUploadingStaysWaiting() = runBlocking {
+    @Test fun anEntryEditedWhileItWasUploadingStaysWaiting() = runBlocking<Unit> {
         ledger.add(listOf(e("a", owner = "me")))
         val sent = store.waiting("me", 10).single()
         ledger.update(listOf(sent.copy(name = "Milk and bread"))) // edited while the upload was in flight
@@ -98,7 +98,7 @@ class HouseholdStoreTest {
         assertEquals(listOf("a"), store.waiting("me", 10).map { it.id })
     }
 
-    @Test fun everyLocalEditMakesASyncedEntryWaitAgain() = runBlocking {
+    @Test fun everyLocalEditMakesASyncedEntryWaitAgain() = runBlocking<Unit> {
         ledger.add(listOf(e("a", owner = "me")))
         store.markSynced(store.waiting("me", 10).single(), 50L)
         assertEquals(emptyList(), store.waiting("me", 10))
@@ -106,7 +106,7 @@ class HouseholdStoreTest {
         assertEquals(listOf("a"), store.waiting("me", 10).map { it.id })
     }
 
-    @Test fun anUploadedEntryThatIsDeletedAndUndoneGoesUpAgain() = runBlocking {
+    @Test fun anUploadedEntryThatIsDeletedAndUndoneGoesUpAgain() = runBlocking<Unit> {
         ledger.add(listOf(e("a", owner = "me")))
         store.markSynced(store.waiting("me", 10).single(), 50L)
         val gone = ledger.delete(listOf("a"))
@@ -116,7 +116,7 @@ class HouseholdStoreTest {
         assertEquals(listOf("a"), store.waiting("me", 10).map { it.id })
     }
 
-    @Test fun deletionsComeFromTheHistoryAfterTheCursorOnly() = runBlocking {
+    @Test fun deletionsComeFromTheHistoryAfterTheCursorOnly() = runBlocking<Unit> {
         ledger.add(listOf(e("a", owner = "me"), e("b", owner = "me")))
         ledger.delete(listOf("a"))
         val cursor = now
@@ -126,7 +126,7 @@ class HouseholdStoreTest {
 
     // ---- choosing what to share
 
-    @Test fun shareExistingClaimsNewAndPersonalEntriesButNotOthers() = runBlocking {
+    @Test fun shareExistingClaimsNewAndPersonalEntriesButNotOthers() = runBlocking<Unit> {
         store.ensurePlaceholders(mapOf("sis" to "Sis"), "INR", 5L)
         ledger.add(listOf(e("new"), e("personal", owner = "")))
         store.apply(listOf(e("theirs", owner = "sis", account = "hh_sis", synced = 1L)), listOf(e("old", owner = "me", synced = 5L)), emptyList(), "me")
@@ -137,7 +137,7 @@ class HouseholdStoreTest {
         assertEquals("sis", ledger.get("theirs")!!.ownerUid)
     }
 
-    @Test fun onlyNewKeepsEntriesAlreadyOnThePhonePersonal() = runBlocking {
+    @Test fun onlyNewKeepsEntriesAlreadyOnThePhonePersonal() = runBlocking<Unit> {
         ledger.add(listOf(e("new"), e("shared", owner = "me")))
         assertEquals(1, store.keepExistingPersonal())
         assertEquals("", ledger.get("new")!!.ownerUid)
@@ -147,7 +147,7 @@ class HouseholdStoreTest {
 
     // ---- what arrives
 
-    @Test fun aMembersEntryIsRemovedWhenTheyDeleteItButMyOwnIsNeverRemovedFromHere() = runBlocking {
+    @Test fun aMembersEntryIsRemovedWhenTheyDeleteItButMyOwnIsNeverRemovedFromHere() = runBlocking<Unit> {
         store.ensurePlaceholders(mapOf("sis" to "Sis"), "INR", 5L)
         store.apply(listOf(e("theirs", owner = "sis", account = "hh_sis", synced = 1L)), listOf(e("mine", owner = "me", synced = 5L)), emptyList(), "me")
         store.apply(emptyList(), emptyList(), listOf("theirs", "mine"), "me")
@@ -155,7 +155,7 @@ class HouseholdStoreTest {
         assertNotNull(ledger.get("mine"))
     }
 
-    @Test fun anEntryThatArrivesIsNotSentBack() = runBlocking {
+    @Test fun anEntryThatArrivesIsNotSentBack() = runBlocking<Unit> {
         store.ensurePlaceholders(mapOf("sis" to "Sis"), "INR", 5L)
         store.apply(listOf(e("theirs", owner = "sis", account = "hh_sis", synced = 1L)), listOf(e("mine", owner = "me", synced = 2L)), emptyList(), "me")
         assertEquals(emptyList(), store.waiting("me", 10))
@@ -164,7 +164,7 @@ class HouseholdStoreTest {
 
     // ---- leaving
 
-    @Test fun leavingKeepsMyEntriesAsPersonalAndRemovesOnlyWhatCameFromMembers() = runBlocking {
+    @Test fun leavingKeepsMyEntriesAsPersonalAndRemovesOnlyWhatCameFromMembers() = runBlocking<Unit> {
         accounts.save(acct("a1"))
         store.ensurePlaceholders(mapOf("sis" to "Sis"), "INR", 5L)
         ledger.add(listOf(e("personal", owner = "")))
@@ -177,7 +177,7 @@ class HouseholdStoreTest {
         assertEquals(setOf("a1"), accounts.observeAllWithMembers().first().map { it.id }.toSet())
     }
 
-    @Test fun countsForTheHouseholdPage() = runBlocking {
+    @Test fun countsForTheHouseholdPage() = runBlocking<Unit> {
         store.ensurePlaceholders(mapOf("sis" to "Sis"), "INR", 5L)
         ledger.add(listOf(e("b", owner = "me"), e("c", owner = "")))
         store.apply(listOf(e("theirs", owner = "sis", account = "hh_sis", synced = 1L)), listOf(e("a", owner = "me", synced = 5L)), emptyList(), "me")

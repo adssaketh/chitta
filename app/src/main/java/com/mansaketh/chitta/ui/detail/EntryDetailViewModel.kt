@@ -144,7 +144,9 @@ class EntryDetailViewModel @Inject constructor(
     }
 
     val ui: StateFlow<DetailUi> = id.filterNotNull().flatMapLatest { eid ->
-        combine(ledger.observe(eid), ledger.observeHistory(eid), accountsWithMembers, categories.observeAll(), ledger.observeAll(), householdView.lens) { e, h, a, c, all, lens ->
+        combine(combine(ledger.observe(eid), ledger.observeHistory(eid), accountsWithMembers, categories.observeAll(), ledger.observeAll()) { e, h, a, c, all -> arrayOf<Any?>(e, h, a, c, all) }, householdView.lens) { parts, lens ->
+            @Suppress("UNCHECKED_CAST")
+            val e = parts[0] as Transaction?; val h = parts[1] as List<EntryVersion>; val a = parts[2] as List<Account>; val c = parts[3] as List<Category>; val all = parts[4] as List<Transaction>
             val twin = e?.pairedTransactionId?.let { ledger.get(it) }
             DetailUi(
                 e, twin, a, c, h, siblings = e?.let { Splits.siblings(it, all) } ?: emptyList(), loading = false,
