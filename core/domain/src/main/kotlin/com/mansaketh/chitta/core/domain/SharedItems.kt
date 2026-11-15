@@ -242,7 +242,8 @@ object SharedItems {
         if (d.bank.isBlank() || d.principal <= 0L) return null
         if (rate.signum() < 0 || rate > BigDecimal(MAX_RATE_PCT)) return null
         if (d.maturityMs <= d.startMs) return null
-        if (d.maturityAmount != null && d.maturityAmount < d.principal) return null
+        val stated = d.maturityAmount
+        if (stated != null && stated < d.principal) return null
         return d.copy(id = current.id, accountId = current.accountId, smsId = current.smsId, fromSms = current.fromSms, updatedAtMs = atMs)
     }
 
