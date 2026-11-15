@@ -9,6 +9,7 @@ import com.mansaketh.chitta.core.design.gallery.GalleryIcons
 import com.mansaketh.chitta.core.design.gallery.GalleryKeypad
 import com.mansaketh.chitta.core.design.gallery.GalleryLedger
 import com.mansaketh.chitta.core.design.gallery.GalleryNav
+import com.mansaketh.chitta.core.design.gallery.GalleryRows
 import com.mansaketh.chitta.core.design.gallery.GalleryStates
 import com.mansaketh.chitta.core.design.gallery.GalleryType
 import org.junit.Rule
@@ -29,6 +30,7 @@ class ComponentSnapshotTest {
     @Test fun type() = rule.snapshotBothThemes("type") { GalleryType() }
     @Test fun amounts() = rule.snapshotBothThemes("amounts") { GalleryAmounts() }
     @Test fun ledger() = rule.snapshotBothThemes("ledger") { GalleryLedger() }
+    @Test fun rows() = rule.snapshotBothThemes("rows") { GalleryRows() }
     @Test fun controls() = rule.snapshotBothThemes("controls") { GalleryControls() }
     @Test fun charts() = rule.snapshotBothThemes("charts") { GalleryCharts() }
     @Test fun keypad() = rule.snapshotBothThemes("keypad") { GalleryKeypad() }

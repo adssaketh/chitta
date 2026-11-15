@@ -2,7 +2,6 @@ package com.mansaketh.chitta.core.design.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,6 +52,8 @@ data class LedgerEntry(
     val id: String = "",
     /** In multi-select mode: ticked rows show an ink check in place of the category glyph. */
     val selected: Boolean = false,
+    /** Flags such as "Split" or "Possible duplicate", drawn as [TagChip]s under the category line (D263). */
+    val tags: List<String> = emptyList(),
 )
 
 /**
@@ -114,15 +115,15 @@ fun LedgerRow(
     val stacked = LocalDensity.current.fontScale >= 1.5f
     val glyph: @Composable () -> Unit = {
         if (entry.selected) {
-            Box(Modifier.size(32.dp).clip(CircleShape).background(c.ink), contentAlignment = Alignment.Center) {
-                Icon(ChittaIcons.Check, contentDescription = "Selected", tint = c.background, modifier = Modifier.size(20.dp))
+            Box(Modifier.size(Dimens.GlyphCircle).clip(CircleShape).background(c.ink), contentAlignment = Alignment.Center) {
+                Icon(ChittaIcons.Check, contentDescription = "Selected", tint = c.background, modifier = Modifier.size(Dimens.GlyphIcon))
             }
         } else {
             Box(
-                Modifier.size(32.dp).clip(CircleShape).background(entry.categoryColor.copy(alpha = 0.16f)),
+                Modifier.size(Dimens.GlyphCircle).clip(CircleShape).background(entry.categoryColor.copy(alpha = 0.16f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(entry.glyph, contentDescription = null, tint = entry.categoryColor, modifier = Modifier.size(20.dp))
+                Icon(entry.glyph, contentDescription = null, tint = entry.categoryColor, modifier = Modifier.size(Dimens.GlyphIcon))
             }
         }
     }
@@ -134,12 +135,20 @@ fun LedgerRow(
                 Text(entry.category, style = ChittaTheme.type.rowMeta, color = c.inkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                 if (entry.stamp != null) Stamp(entry.stamp, tone = entry.stampTone)
             }
+            // Tags sit on their own line so the category and stamp keep their room; only flagged rows are taller.
+            if (entry.tags.isNotEmpty()) {
+                FlowRow(
+                    Modifier.padding(top = Dimens.Space1),
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.InlineGap),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.Space1),
+                ) { entry.tags.forEach { TagChip(it) } }
+            }
         }
     }
     val base = modifier
         .fillMaxWidth()
         .heightIn(min = Dimens.RowLedger)
-        .combinedClickable(role = Role.Button, onClick = onClick, onLongClick = { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress); onLongClick() })
+        .pressCombinedClickable(role = Role.Button, onLongClick = { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress); onLongClick() }, onClick = onClick)
         .padding(vertical = Dimens.RowPadV)
     if (stacked) {
         Column(base, verticalArrangement = Arrangement.spacedBy(Dimens.Gap1)) {
@@ -223,8 +232,8 @@ fun LedgerBar(
             Text(label, style = ChittaTheme.type.body, color = c.ink)
             AmountText(amount, style = ChittaTheme.type.amountSmall)
         }
-        Box(Modifier.fillMaxWidth().height(8.dp).background(c.rule)) {
-            Box(Modifier.fillMaxWidth(shown).height(8.dp).background(if (accent) c.sindoor else c.ink))
+        Box(Modifier.fillMaxWidth().height(Dimens.BarHeight).background(c.rule)) {
+            Box(Modifier.fillMaxWidth(shown).height(Dimens.BarHeight).background(if (accent) c.sindoor else c.ink))
         }
     }
 }

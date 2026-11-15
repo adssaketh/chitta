@@ -86,14 +86,17 @@ fun ChittaButton(
         ButtonStyle.Quiet -> c.ink
     }
     val shown = if (enabled) 1f else 0.4f
+    val source = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     Row(
         modifier
+            .pressScale(source)
             .fillMaxWidth()
             .heightIn(min = Dimens.ButtonHeight)
             .clip(Shapes.Control)
             .background(fill.copy(alpha = fill.alpha * shown))
-            .then(if (style == ButtonStyle.Quiet) Modifier.border(1.dp, c.mark, Shapes.Control) else Modifier)
-            .clickable(enabled = enabled, role = Role.Button, onClick = once)
+            .then(if (style == ButtonStyle.Quiet) Modifier.border(Dimens.Hairline, c.mark, Shapes.Control) else Modifier)
+            .focusRing(source, Shapes.Control)
+            .clickable(interactionSource = source, indication = null, enabled = enabled, role = Role.Button, onClick = once)
             .padding(horizontal = Dimens.Gap6, vertical = Dimens.Gap3),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
@@ -148,7 +151,7 @@ fun IconAction(
         modifier
             .size(Dimens.TouchTarget)
             .clip(CircleShape)
-            .clickable(role = Role.Button, onClick = onClick),
+            .pressClickable(role = Role.Button, shape = CircleShape, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, contentDescription = description, tint = tint, modifier = Modifier.size(Dimens.IconSize))

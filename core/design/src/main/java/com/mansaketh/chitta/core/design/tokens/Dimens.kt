@@ -89,6 +89,32 @@ object Dimens {
     val MarginColumn = 56.dp
 
     val Hairline = 1.dp
+
+    /** Outline drawn around a focused row or button. */
+    val FocusRing = 2.dp
+
+    /** Small icon beside a label (tabs, carets). */
+    val IconSmall = 16.dp
+
+    /** A category glyph: a soft circle with the icon inside. */
+    val GlyphCircle = 32.dp
+    val GlyphIcon = 20.dp
+
+    /** The coloured dot before a chip label. */
+    val Dot = 8.dp
+
+    /** Height of a horizontal ledger bar. */
+    val BarHeight = 8.dp
+
+    /** The grab handle at the top of a sheet. */
+    val SheetHandleWidth = 32.dp
+    val SheetHandleHeight = 4.dp
+
+    /** The widest a label may grow in a label-and-value row before it wraps. */
+    val LabelMaxWidth = 200.dp
+
+    /** A tag's side padding; its text line supplies the height. */
+    val TagPadH = Space2
 }
 
 object Shapes {
@@ -97,6 +123,9 @@ object Shapes {
 
     /** Bottom-sheet top corners. */
     val Sheet = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+
+    /** Tags (Split, Possible duplicate): hairline outline, small corners, never a pill. */
+    val Tag = RoundedCornerShape(4.dp)
 
     /** Stamps are outlined labels, not pills. */
     val Stamp = RoundedCornerShape(2.dp)

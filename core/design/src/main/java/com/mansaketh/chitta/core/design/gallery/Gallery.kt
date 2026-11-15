@@ -40,6 +40,7 @@ import com.mansaketh.chitta.core.design.components.ChittaButton
 import com.mansaketh.chitta.core.design.components.ChittaField
 import com.mansaketh.chitta.core.design.components.ChittaTopBar
 import com.mansaketh.chitta.core.design.components.EmptyState
+import com.mansaketh.chitta.core.design.components.ExpandGroup
 import com.mansaketh.chitta.core.design.components.ErrorState
 import com.mansaketh.chitta.core.design.components.GaugeBar
 import com.mansaketh.chitta.core.design.components.HairlineRule
@@ -49,6 +50,8 @@ import com.mansaketh.chitta.core.design.components.KeypadKey
 import com.mansaketh.chitta.core.design.components.LedgerBar
 import com.mansaketh.chitta.core.design.components.LedgerDay
 import com.mansaketh.chitta.core.design.components.LedgerEntry
+import com.mansaketh.chitta.core.design.components.LedgerRow
+import com.mansaketh.chitta.core.design.components.ListRow
 import com.mansaketh.chitta.core.design.components.LoadingPlaceholder
 import com.mansaketh.chitta.core.design.components.MonthHeader
 import com.mansaketh.chitta.core.design.components.MonthRule
@@ -186,6 +189,25 @@ fun GalleryLedger() = GallerySection("Ledger") {
 }
 
 @Composable
+fun GalleryRows() = GallerySection("Rows, tags and groups") {
+    val c = ChittaTheme.colors
+    Column {
+        // A flagged ledger row: tags sit on their own line (D263).
+        LedgerRow(LedgerEntry("Zomato", "Eating out · Saketh - Axis", ChittaIcons.Receipt, c.category[2], Paise.rupees(412), tags = listOf("Possible duplicate", "Split")))
+        HairlineRule()
+        ListRow("Groceries budget", meta = "7 days left", onClick = {}, trailing = { AmountText(Paise.rupees(530), style = ChittaTheme.type.amountSmall) })
+        ListRow("A very long account name that has to be cut with an ellipsis so the amount keeps its room", onClick = {}, trailing = { AmountText(Paise.rupees(1_23_456), style = ChittaTheme.type.amountSmall) })
+        ExpandGroup("Look and feel", summary = "Theme, vibration, animations", icon = ChittaIcons.Gear, initiallyExpanded = true) {
+            ListRow("Theme", onClick = {}, trailing = { Text("Follow the phone", style = ChittaTheme.type.body, color = c.ink) })
+            ListRow("Vibration strength", onClick = {}, trailing = { Text("Medium", style = ChittaTheme.type.body, color = c.ink) })
+        }
+        ExpandGroup("Backup and restore", summary = "Synced 2 min ago", icon = ChittaIcons.Download) {
+            ListRow("Restore points", onClick = {})
+        }
+    }
+}
+
+@Composable
 fun GalleryControls() = GallerySection("Controls") {
     var text by remember { mutableStateOf("") }
     Column(verticalArrangement = Arrangement.spacedBy(Dimens.Gap3)) {
@@ -303,7 +325,7 @@ fun ComponentGallery(
                 ChittaButton(m.name, { onModeChange(m) }, Modifier.weight(1f), style = if (m == mode) ButtonStyle.Primary else ButtonStyle.Quiet)
             }
         }
-        GalleryColors(); GalleryType(); GalleryAmounts(); GalleryLedger(); GalleryControls()
+        GalleryColors(); GalleryType(); GalleryAmounts(); GalleryLedger(); GalleryRows(); GalleryControls()
         GalleryCharts(); GalleryKeypad(); GalleryNav(); GalleryStates(); GalleryIcons()
         Box(Modifier.height(Dimens.SectionGap))
     }

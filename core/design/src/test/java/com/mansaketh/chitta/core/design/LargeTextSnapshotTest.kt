@@ -3,6 +3,7 @@ package com.mansaketh.chitta.core.design
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.mansaketh.chitta.core.design.gallery.GalleryControls
 import com.mansaketh.chitta.core.design.gallery.GalleryLedger
+import com.mansaketh.chitta.core.design.gallery.GalleryRows
 import com.mansaketh.chitta.core.design.gallery.GalleryNav
 import org.junit.Rule
 import org.junit.Test
@@ -19,6 +20,7 @@ class LargeTextSnapshotTest {
     @get:Rule val rule = createComposeRule()
 
     @Test fun ledgerAt200Percent() = rule.snapshotBothThemes("ledger_200", fontScale = 2f) { GalleryLedger() }
+    @Test fun rowsAt200Percent() = rule.snapshotBothThemes("rows_200", fontScale = 2f) { GalleryRows() }
     @Test fun controlsAt200Percent() = rule.snapshotBothThemes("controls_200", fontScale = 2f) { GalleryControls() }
     @Test fun navigationAt200Percent() = rule.snapshotBothThemes("navigation_200", fontScale = 2f) { GalleryNav() }
 }

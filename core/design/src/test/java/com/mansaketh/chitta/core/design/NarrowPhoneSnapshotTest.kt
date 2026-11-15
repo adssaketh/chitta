@@ -6,6 +6,7 @@ import com.mansaketh.chitta.core.design.gallery.GalleryControls
 import com.mansaketh.chitta.core.design.gallery.GalleryKeypad
 import com.mansaketh.chitta.core.design.gallery.GalleryLedger
 import com.mansaketh.chitta.core.design.gallery.GalleryNav
+import com.mansaketh.chitta.core.design.gallery.GalleryRows
 import com.mansaketh.chitta.core.design.gallery.GalleryStates
 import org.junit.Rule
 import org.junit.Test
@@ -26,6 +27,7 @@ class NarrowPhoneSnapshotTest {
     @get:Rule val rule = createComposeRule()
 
     @Test fun ledger() = rule.snapshotBothThemes("narrow_ledger", fontScale = 1.3f) { GalleryLedger() }
+    @Test fun rows() = rule.snapshotBothThemes("narrow_rows", fontScale = 1.3f) { GalleryRows() }
     @Test fun controls() = rule.snapshotBothThemes("narrow_controls", fontScale = 1.3f) { GalleryControls() }
     @Test fun charts() = rule.snapshotBothThemes("narrow_charts", fontScale = 1.3f) { GalleryCharts() }
     @Test fun keypad() = rule.snapshotBothThemes("narrow_keypad", fontScale = 1.3f) { GalleryKeypad() }

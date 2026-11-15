@@ -28,7 +28,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.size
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
@@ -74,7 +73,7 @@ fun SectionHeader(
                 color = ChittaTheme.colors.ink,
                 modifier = Modifier
                     .heightIn(min = Dimens.TouchTarget)
-                    .clickable(role = Role.Button, onClick = onAction!!)
+                    .pressClickable(role = Role.Button, onClick = onAction!!)
                     .padding(horizontal = Dimens.InlineGap, vertical = Dimens.HeadingGap),
             )
         }
@@ -130,7 +129,7 @@ fun ListRow(
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = minHeight)
-                .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
+                .then(if (onClick != null) Modifier.pressClickable(role = Role.Button, onClick = onClick) else Modifier)
                 .padding(vertical = Dimens.RowPadV),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -186,8 +185,8 @@ fun SheetSurface(
         Box(
             Modifier
                 .align(Alignment.CenterHorizontally)
-                .width(32.dp)
-                .height(4.dp)
+                .width(Dimens.SheetHandleWidth)
+                .height(Dimens.SheetHandleHeight)
                 .clip(Shapes.Stamp)
                 .background(c.mark),
         )
@@ -367,7 +366,7 @@ fun UndoBar(
             textDecoration = TextDecoration.Underline,
             modifier = Modifier
                 .heightIn(min = Dimens.TouchTarget)
-                .clickable(role = Role.Button, onClick = onUndo)
+                .pressClickable(role = Role.Button, onClick = onUndo)
                 .padding(horizontal = Dimens.Gap4, vertical = Dimens.Gap3),
         )
     }
@@ -422,4 +421,4 @@ fun LoadingPlaceholder(modifier: Modifier = Modifier, lines: Int = 4) {
 
 /** A bordered text surface, used by fields. */
 internal fun Modifier.fieldBorder(focused: Boolean, color: androidx.compose.ui.graphics.Color, focusColor: androidx.compose.ui.graphics.Color) =
-    border(if (focused) 2.dp else 1.dp, if (focused) focusColor else color, Shapes.Control)
+    border(if (focused) Dimens.FocusRing else Dimens.Hairline, if (focused) focusColor else color, Shapes.Control)

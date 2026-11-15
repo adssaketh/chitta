@@ -4,6 +4,10 @@ import android.database.ContentObserver
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.compositionLocalOf
@@ -39,3 +43,17 @@ fun rememberMotionEnabled(): Boolean {
 
 private fun readMotion(resolver: android.content.ContentResolver): Boolean =
     Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) != 0f
+
+/**
+ * Named motion specs, so every screen moves the same way. All of them are skipped when [rememberMotionEnabled] is false.
+ * Press: a tiny shrink on a spring plus a faint tint. Expand: an ease-out of about 250 ms (master section 3: 150 to 300 ms).
+ */
+object Motion {
+    const val PressScale = 0.98f
+    const val PressTintAlpha = 0.08f
+    const val ExpandMillis = 250
+    val ExpandEasing = CubicBezierEasing(0.2f, 0.8f, 0.2f, 1f)
+
+    fun <T> pressSpring() = spring<T>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
+    fun <T> expandTween() = tween<T>(durationMillis = ExpandMillis, easing = ExpandEasing)
+}
