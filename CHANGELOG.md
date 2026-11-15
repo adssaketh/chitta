@@ -1,9 +1,9 @@
 # Changelog
 
 ## Release slimming (15 Nov 2026) - on branch `phase-9c-release-slim`
-- Release APK leaves out files the app never reads: the post-quantum cipher tables inside Bouncy Castle (about 4 MB packed), pdfbox's Chinese/Japanese/Korean font maps, stray `.proto` and licence files, and the unused legacy launcher PNGs (minSdk 26 always uses the adaptive icon).
+- Release APK leaves out files the app never reads: the post-quantum cipher tables inside Bouncy Castle (about 4 MB packed), stray `.proto` and licence files, and the unused legacy launcher PNGs (minSdk 26 always uses the adaptive icon).
 - Not removed: the receipt text reader (ML Kit, about 11.8 MB), which is the largest part of the APK and a shipped feature.
-- A PDF that uses a CJK font will no longer give text. Statements read here are English.
+- PDF reading is untouched: all pdfbox font maps stay in.
 
 ## Phase 9c part 2, step 2: sync between phones (15 Nov 2026) - on branch `phase-9c-sync-2`
 - Settings > Backup and restore > "Sync between phones": Sync now, a status line (Up to date / N waiting / Syncing), last synced, waiting count, last error.
