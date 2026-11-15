@@ -99,9 +99,9 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
             Text(
                 if (useKeyboard) "Use the keypad" else "Use the phone keyboard",
                 style = ChittaTheme.type.link, color = c.ink,
-                modifier = Modifier.align(Alignment.End).heightIn(min = 48.dp)
+                modifier = Modifier.align(Alignment.End).heightIn(min = Dimens.TouchTarget)
                     .clickable(role = androidx.compose.ui.semantics.Role.Button) { useKeyboard = !useKeyboard }
-                    .padding(top = 16.dp),
+                    .padding(top = Dimens.CardInner),
             )
             Spacer(Modifier.height(Dimens.Gap3))
             Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2), modifier = Modifier.fillMaxWidth()) {

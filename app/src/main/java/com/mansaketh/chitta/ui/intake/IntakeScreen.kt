@@ -157,7 +157,7 @@ private fun stillApplies(reason: IntakeReason, ch: IntakeChoice): Boolean = when
 private fun Logo(brandKey: String, sender: String) {
     val context = LocalContext.current
     val bitmap by produceState<Bitmap?>(null, brandKey, sender) { value = PingBridge.logo(context, brandKey.ifEmpty { null }, sender) }
-    bitmap?.let { Image(it.asImageBitmap(), contentDescription = null, modifier = Modifier.size(32.dp)) } ?: Spacer(Modifier.size(0.dp))
+    bitmap?.let { Image(it.asImageBitmap(), contentDescription = null, modifier = Modifier.size(Dimens.GlyphCircle)) } ?: Spacer(Modifier)
 }
 
 @Composable
@@ -183,7 +183,7 @@ private fun ReviewStep(vm: IntakeViewModel, s: IntakeStage.Review) {
             if (missingCategory > 0) ChittaButton("Set a category for $missingCategory ${if (missingCategory == 1) "row" else "rows"} without one", { bulk = true }, style = ButtonStyle.Quiet)
         }
         if (s.choices.isEmpty()) Text("Nothing to look at.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(Dimens.Margin))
-        LazyColumn(Modifier.weight(1f).padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = 8.dp)) {
+        LazyColumn(Modifier.weight(1f).padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.InlineGap)) {
             itemsIndexed(s.choices) { i, ch ->
                 val r = ch.candidate.row
                 Row(

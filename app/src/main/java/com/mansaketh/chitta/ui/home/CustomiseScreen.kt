@@ -53,7 +53,7 @@ fun CustomiseScreen(vm: HomeViewModel, onBack: () -> Unit) {
                 Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowTall), verticalAlignment = Alignment.CenterVertically) {
                     androidx.compose.material3.Icon(
                         sectionIcon(cfg.section), contentDescription = null, tint = if (cfg.visible) c.ink else c.inkMuted,
-                        modifier = Modifier.padding(end = Dimens.Gap3).size(20.dp),
+                        modifier = Modifier.padding(end = Dimens.Gap3).size(Dimens.GlyphIcon),
                     )
                     Text(
                         cfg.section.title + if (cfg.visible) "" else "  (off)", style = if (cfg.visible) ChittaTheme.type.bodyMedium else ChittaTheme.type.body,

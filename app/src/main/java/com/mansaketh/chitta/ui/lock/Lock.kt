@@ -64,7 +64,7 @@ fun LockScreen(onUnlock: () -> Unit, message: String? = null) {
         Modifier.fillMaxSize().background(c.background).statusBarsPadding().navigationBarsPadding().padding(Dimens.Margin),
         verticalArrangement = Arrangement.Center,
     ) {
-        AppIcon(80.dp)
+        AppIcon(Dimens.LogoLarge)
         Spacer(Modifier.height(Dimens.Gap4))
         Text("Paddhu Pusthakam", style = ChittaTheme.type.headline, color = c.ink)
         Spacer(Modifier.height(Dimens.Gap3))

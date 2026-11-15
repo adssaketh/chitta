@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -28,6 +29,7 @@ import com.mansaketh.chitta.core.design.components.AmountText
 import com.mansaketh.chitta.core.design.components.ChittaTopBar
 import com.mansaketh.chitta.core.design.components.GaugeBar
 import com.mansaketh.chitta.core.design.components.HairlineRule
+import com.mansaketh.chitta.core.design.components.pressClickable
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.tokens.Dimens
@@ -97,12 +99,12 @@ private fun MonthRow(month: YearMonth, canGoLater: Boolean, onEarlier: () -> Uni
         Icon(
             // The icon set has only a right-pointing caret; turned half a circle it points left.
             ChittaIcons.CaretRight, contentDescription = "Earlier month", tint = c.ink,
-            modifier = Modifier.size(Dimens.TouchTarget).rotate(180f).clickable(role = Role.Button, onClick = onEarlier).padding(14.dp),
+            modifier = Modifier.size(Dimens.TouchTarget).rotate(180f).pressClickable(role = Role.Button, shape = CircleShape, onClick = onEarlier).padding(Dimens.Space3),
         )
         Text("$name · shared entries only", style = ChittaTheme.type.label, color = c.inkMuted)
         Icon(
             ChittaIcons.CaretRight, contentDescription = "Later month", tint = if (canGoLater) c.ink else c.rule,
-            modifier = Modifier.size(Dimens.TouchTarget).then(if (canGoLater) Modifier.clickable(role = Role.Button, onClick = onLater) else Modifier).padding(14.dp),
+            modifier = Modifier.size(Dimens.TouchTarget).then(if (canGoLater) Modifier.pressClickable(role = Role.Button, shape = CircleShape, onClick = onLater) else Modifier).padding(Dimens.Space3),
         )
     }
 }

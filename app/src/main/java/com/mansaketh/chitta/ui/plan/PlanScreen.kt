@@ -335,7 +335,7 @@ private fun CalendarTab(vm: PlanViewModel, ui: PlanUi) {
         cells.chunked(7).forEach { week ->
             Row(Modifier.fillMaxWidth()) {
                 week.forEach { d ->
-                    Box(Modifier.weight(1f).heightIn(min = 52.dp).then(if (d != null && d.items.isNotEmpty()) Modifier.clickable(role = Role.Button, onClickLabel = "Show bills") { day = d } else Modifier)) {
+                    Box(Modifier.weight(1f).heightIn(min = Dimens.CalendarCell).then(if (d != null && d.items.isNotEmpty()) Modifier.clickable(role = Role.Button, onClickLabel = "Show bills") { day = d } else Modifier)) {
                         if (d != null) Column {
                             Text(d.date.dayOfMonth.toString(), style = ChittaTheme.type.body, color = c.ink)
                             if (d.items.isNotEmpty()) Text(d.items.take(3).joinToString("") { glyph(it) }, style = ChittaTheme.type.label, color = if (d.items.any { it.status == BillStatus.Overdue }) c.warningText else c.inkMuted)

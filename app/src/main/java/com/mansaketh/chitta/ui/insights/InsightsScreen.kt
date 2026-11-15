@@ -241,7 +241,7 @@ private fun CurrentTab(ui: InsightsUi, onRange: () -> Unit, onAccounts: () -> Un
                     Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).let { m -> if (sl.categoryId != null) m.clickable(role = Role.Button, onClickLabel = "Open $name") { onDrill(sl.categoryId!!) } else m },
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.Gap3),
                 ) {
-                    Box(Modifier.size(12.dp).background(if (sl.categoryId == null) c.inkMuted else c.category[i % c.category.size]))
+                    Box(Modifier.size(Dimens.Space3).background(if (sl.categoryId == null) c.inkMuted else c.category[i % c.category.size]))
                     Text("$name · ${sl.percent}%", style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.weight(1f))
                     com.mansaketh.chitta.core.design.components.AmountText(sl.amount)
                 }

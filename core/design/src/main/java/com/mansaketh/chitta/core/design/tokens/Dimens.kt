@@ -110,6 +110,18 @@ object Dimens {
     val SheetHandleWidth = 32.dp
     val SheetHandleHeight = 4.dp
 
+    /** App logo on the lock screen and in More; the Home budget ring and the net-worth trend line. */
+    val LogoSmall = 64.dp
+    val LogoLarge = 80.dp
+    val RingSmall = 120.dp
+    val TrendHeight = 80.dp
+
+    /** One day cell of the bill calendar. */
+    val CalendarCell = 52.dp
+
+    /** The width of a quiet Close button over a full-screen picture. */
+    val CloseWidth = 120.dp
+
     /** The widest a label may grow in a label-and-value row before it wraps. */
     val LabelMaxWidth = 200.dp
 

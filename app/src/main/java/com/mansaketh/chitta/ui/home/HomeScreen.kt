@@ -74,7 +74,7 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(month.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH) + " in review", style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.weight(1f))
-                    Icon(ChittaIcons.CaretRight, contentDescription = null, tint = c.inkMuted, modifier = Modifier.size(16.dp))
+                    Icon(ChittaIcons.CaretRight, contentDescription = null, tint = c.inkMuted, modifier = Modifier.size(Dimens.IconSmall))
                 }
                 HairlineRule()
             }
@@ -113,7 +113,7 @@ fun HomeScreen(
                         Spacer(Modifier.height(Dimens.HeadingGap))
                     }
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.FigureGap)) {
-                        BudgetRing(hero.ring, diameter = 120.dp, animate = true)
+                        BudgetRing(hero.ring, diameter = Dimens.RingSmall, animate = true)
                         RingLegend(Paise((hero.summary.spent.value - hero.sinking.covered.value).coerceAtLeast(0)), hero.billsDue + hero.sinking.reserved, hero.safe, Modifier.weight(1f))
                     }
                     Spacer(Modifier.height(Dimens.SectionGap))
@@ -217,7 +217,7 @@ fun HomeScreen(
                         }
                         is SectionData.NetWorthData -> {
                             AmountText(data.now.total, style = ChittaTheme.type.amountLarge, roundToRupee = true)
-                            if (data.series.size >= 2) TrendLine(data.series.map { it.figures.total.value }, "Net worth over the last ${data.series.size} months", height = 80.dp)
+                            if (data.series.size >= 2) TrendLine(data.series.map { it.figures.total.value }, "Net worth over the last ${data.series.size} months", height = Dimens.TrendHeight)
                         }
                         is SectionData.GoalsData -> if (data.rows.isEmpty()) Muted("No goals yet.") else data.rows.forEach { (g, p) ->
                             Column(Modifier.fillMaxWidth().clickable(role = Role.Button) { onOpenGoal(g.id) }.padding(vertical = Dimens.RowPadV)) {

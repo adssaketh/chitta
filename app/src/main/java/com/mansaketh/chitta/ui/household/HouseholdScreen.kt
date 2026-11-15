@@ -282,7 +282,7 @@ private fun MemberRow(m: HouseholdMember, mine: Boolean, tappable: Boolean, onCl
                 }
                 Text(Households.memberLine(m), style = ChittaTheme.type.label, color = c.inkMuted)
             }
-            if (tappable) Icon(ChittaIcons.CaretRight, contentDescription = null, tint = c.inkMuted, modifier = Modifier.size(16.dp))
+            if (tappable) Icon(ChittaIcons.CaretRight, contentDescription = null, tint = c.inkMuted, modifier = Modifier.size(Dimens.IconSmall))
         }
         HairlineRule()
     }

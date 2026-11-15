@@ -167,6 +167,6 @@ fun ReceiptViewer(load: suspend () -> ImageBitmap?, onClose: () -> Unit) {
             )
         }
         if (failed) Text("The photo could not be opened.", style = ChittaTheme.type.body, color = Color.White, modifier = Modifier.align(Alignment.Center))
-        ChittaButton("Close", onClose, modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(Dimens.Margin).width(120.dp), style = ButtonStyle.Quiet)
+        ChittaButton("Close", onClose, modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(Dimens.Margin).width(Dimens.CloseWidth), style = ButtonStyle.Quiet)
     }
 }

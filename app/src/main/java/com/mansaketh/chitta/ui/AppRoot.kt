@@ -315,7 +315,7 @@ private fun tabIcon(k: TabKey) = when (k) {
 private fun MoreRow(label: String, meta: String?, onClick: () -> Unit) {
     com.mansaketh.chitta.core.design.components.ListRow(
         title = label, meta = meta, onClick = onClick, minHeight = Dimens.RowMin,
-        trailing = { androidx.compose.material3.Icon(ChittaIcons.CaretRight, contentDescription = null, tint = ChittaTheme.colors.inkMuted, modifier = Modifier.size(16.dp)) },
+        trailing = { androidx.compose.material3.Icon(ChittaIcons.CaretRight, contentDescription = null, tint = ChittaTheme.colors.inkMuted, modifier = Modifier.size(Dimens.IconSmall)) },
     )
 }
 
@@ -338,7 +338,7 @@ private fun MoreScreen(order: List<MoreItem>, open: (MoreItem) -> Unit, onGaller
 @Composable
 private fun AppMark(modifier: Modifier = Modifier) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        com.mansaketh.chitta.ui.lock.AppIcon(64.dp)
+        com.mansaketh.chitta.ui.lock.AppIcon(Dimens.LogoSmall)
         Spacer(Modifier.height(Dimens.Gap2))
         Text("Paddhu Pusthakam", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted)
     }

@@ -180,7 +180,7 @@ private fun ReviewStep(vm: CsvImportViewModel, s: CsvStage.Review) {
             Text("Rows that look like something you already have, or need a category or account, start unticked. Tap a row to change it.", style = ChittaTheme.type.label, color = c.inkMuted)
             if (missingCategory > 0) ChittaButton("Set a category for $missingCategory ${if (missingCategory == 1) "row" else "rows"} without one", { bulk = true }, style = ButtonStyle.Quiet)
         }
-        LazyColumn(Modifier.weight(1f).padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = 8.dp)) {
+        LazyColumn(Modifier.weight(1f).padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.InlineGap)) {
             itemsIndexed(s.choices) { i, ch ->
                 val r = ch.row
                 Row(
