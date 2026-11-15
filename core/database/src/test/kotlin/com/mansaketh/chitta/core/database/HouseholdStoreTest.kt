@@ -119,7 +119,7 @@ class HouseholdStoreTest {
     @Test fun deletionsComeFromTheHistoryAfterTheCursorOnly() = runBlocking<Unit> {
         ledger.add(listOf(e("a", owner = "me"), e("b", owner = "me")))
         ledger.delete(listOf("a"))
-        val cursor = now
+        val cursor = now - 1 // the clock hands out now, then adds one: the last time used
         ledger.delete(listOf("b"))
         assertEquals(listOf("b"), store.deletedSince(cursor).map { it.entryId })
     }
