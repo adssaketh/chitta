@@ -32,6 +32,8 @@ import androidx.fragment.app.FragmentActivity
 import com.mansaketh.chitta.core.design.components.ButtonStyle
 import com.mansaketh.chitta.core.design.components.ChittaButton
 import com.mansaketh.chitta.core.design.components.ChittaTopBar
+import com.mansaketh.chitta.core.design.components.ExpandGroup
+import com.mansaketh.chitta.core.design.icons.ChittaIcons
 import com.mansaketh.chitta.core.design.components.HairlineRule
 import com.mansaketh.chitta.core.design.components.SectionHeader
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
@@ -101,11 +103,11 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
             }
             if (ui.busy) Text("Working. Keep this screen open.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2))
 
-            SectionHeader("Look and feel")
-            HairlineRule()
-            ValueRow("Theme", themeLabel(theme), onClick = { sheet = "theme" })
-            ValueRow("Vibration strength", com.mansaketh.chitta.ui.VibrationLevel.of(vibrate).label, onClick = { sheet = "vibration" })
-            ValueRow("Animations", if (animations) "On" else "Off", onClick = { sheet = "animations" })
+            ExpandGroup("Look and feel", summary = "Theme, vibration, animations", icon = ChittaIcons.Gear, initiallyExpanded = true) {
+                ValueRow("Theme", themeLabel(theme), onClick = { sheet = "theme" })
+                ValueRow("Vibration strength", com.mansaketh.chitta.ui.VibrationLevel.of(vibrate).label, onClick = { sheet = "vibration" })
+                ValueRow("Animations", if (animations) "On" else "Off", onClick = { sheet = "animations" })
+            }
 
             Spacer(Modifier.height(Dimens.SectionGap))
             SectionHeader("Security")
@@ -127,35 +129,34 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
                 style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2),
             )
 
-            Spacer(Modifier.height(Dimens.SectionGap))
-            SectionHeader("Backup and restore")
-            HairlineRule()
-            ValueRow("Google Drive backup", "", onClick = { onOpen("cloud-backup") })
-            ValueRow("Sync between phones", "", onClick = { onOpen("sync") })
-            ValueRow("Restore points", "${ui.points.size}", onClick = { vm.refreshPoints(); onOpen("restore-points") })
-            ValueRow("Make a restore point now", "", onClick = { vm.makePoint() })
-            ValueRow("Save a backup file", "", onClick = { saveBackup.launch(RestorePoints.exportName(System.currentTimeMillis(), zone)) })
-            ValueRow("Bring back a backup file", "", onClick = { openBackup.launch(arrayOf("*/*")) })
-            Text(
-                "A restore point is a copy of your book kept on this phone: one a day, and one before every restore, CSV import and delete. " +
-                    "Receipt photos stay on this phone and are not in restore points or backup files.",
-                style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2),
-            )
+            Spacer(Modifier.height(Dimens.Space6))
+            ExpandGroup("Backup and restore", summary = "Drive, sync, restore points, backup files", icon = ChittaIcons.Download) {
+                ValueRow("Google Drive backup", "", onClick = { onOpen("cloud-backup") })
+                ValueRow("Sync between phones", "", onClick = { onOpen("sync") })
+                ValueRow("Restore points", "${ui.points.size}", onClick = { vm.refreshPoints(); onOpen("restore-points") })
+                ValueRow("Make a restore point now", "", onClick = { vm.makePoint() })
+                ValueRow("Save a backup file", "", onClick = { saveBackup.launch(RestorePoints.exportName(System.currentTimeMillis(), zone)) })
+                ValueRow("Bring back a backup file", "", onClick = { openBackup.launch(arrayOf("*/*")) })
+                Text(
+                    "A restore point is a copy of your book kept on this phone: one a day, and one before every restore, CSV import and delete. " +
+                        "Receipt photos stay on this phone and are not in restore points or backup files.",
+                    style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2),
+                )
+            }
 
-            Spacer(Modifier.height(Dimens.SectionGap))
-            SectionHeader("Import and export")
-            HairlineRule()
-            ValueRow("Rules", "", onClick = { onOpen("rules") })
-            ValueRow("Automation", "", onClick = { onOpen("automation") })
-            ValueRow("Bank messages and UPI", if (waiting > 0) "$waiting waiting" else "", onClick = { onOpen("intake") })
-            ValueRow("Import entries from CSV", "", onClick = { onOpen("csv-import") })
-            ValueRow("Export entries to CSV", "", onClick = { sheet = "csv-account" })
-            ValueRow("Bring over your Paddhu book", "", onClick = { onOpen("import") })
+            ExpandGroup("Import and export", summary = if (waiting > 0) "$waiting bank messages waiting" else "Rules, automation, CSV, your Paddhu book", icon = ChittaIcons.Transfer) {
+                ValueRow("Rules", "", onClick = { onOpen("rules") })
+                ValueRow("Automation", "", onClick = { onOpen("automation") })
+                ValueRow("Bank messages and UPI", if (waiting > 0) "$waiting waiting" else "", onClick = { onOpen("intake") })
+                ValueRow("Import entries from CSV", "", onClick = { onOpen("csv-import") })
+                ValueRow("Export entries to CSV", "", onClick = { sheet = "csv-account" })
+                ValueRow("Bring over your Paddhu book", "", onClick = { onOpen("import") })
+            }
 
-            Spacer(Modifier.height(Dimens.SectionGap))
-            SectionHeader("Help")
-            HairlineRule()
-            ValueRow("Diagnostics", com.mansaketh.chitta.diagnostics.Diagnostics.count().let { if (it == 0) "No errors" else "$it recorded" }, onClick = { sheet = "diagnostics" })
+            val errorCount = com.mansaketh.chitta.diagnostics.Diagnostics.count()
+            ExpandGroup("Help", summary = if (errorCount == 0) "Diagnostics: no errors" else "Diagnostics: $errorCount recorded", icon = ChittaIcons.Info) {
+                ValueRow("Diagnostics", if (errorCount == 0) "No errors" else "$errorCount recorded", onClick = { sheet = "diagnostics" })
+            }
 
             Spacer(Modifier.height(Dimens.SectionGap))
             SectionHeader("Data")
