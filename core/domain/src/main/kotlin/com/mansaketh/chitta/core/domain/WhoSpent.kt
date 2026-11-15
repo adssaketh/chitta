@@ -2,6 +2,7 @@ package com.mansaketh.chitta.core.domain
 
 import com.mansaketh.chitta.core.model.Category
 import com.mansaketh.chitta.core.model.Transaction
+import com.mansaketh.chitta.core.model.TransactionKind
 import com.mansaketh.chitta.core.money.Paise
 import java.time.YearMonth
 import java.time.ZoneId
@@ -25,6 +26,10 @@ object WhoSpent {
     /** The calendar month as a [Period] in [zone]. */
     fun monthPeriod(month: YearMonth, zone: ZoneId): Period =
         Period(month.atDay(1).atStartOfDay(zone).toInstant().toEpochMilli(), month.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant().toEpochMilli())
+
+    /** An entry that [Totals.of] adds up: moving money, not a transfer or correction, not lent or borrowed. */
+    private fun counted(t: Transaction): Boolean =
+        Balances.countsTowardBalance(t) && !Totals.isNeutral(t) && t.kind != TransactionKind.LENT && t.kind != TransactionKind.BORROWED
 
     /** True when an entry belongs to the shared ledger: somebody's uid is on it and it is not marked private. */
     fun isShared(t: Transaction): Boolean = !t.ownerUid.isNullOrEmpty() && !t.isPrivate
@@ -52,7 +57,7 @@ object WhoSpent {
                 },
                 isMe = uid == myUid,
                 spent = amount,
-                entryCount = byUid[uid].orEmpty().count { !Totals.isNeutral(it) && Balances.countsTowardBalance(it) },
+                entryCount = byUid[uid].orEmpty().count { counted(it) },
                 percent = if (total.value > 0) mulDivRound(amount.value, 100, total.value).toInt() else null,
             )
         }.sortedWith(compareByDescending<MemberSpend> { it.spent.value }.thenBy { it.name }.thenBy { it.uid })
