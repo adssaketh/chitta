@@ -68,6 +68,7 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
     val ui by vm.ui.collectAsState()
     val theme by vm.themeMode.collectAsState()
     val vibrate by vm.vibration.collectAsState()
+    val animations by vm.animations.collectAsState()
     val c = ChittaTheme.colors
     val context = LocalContext.current
     val activity = context as? FragmentActivity
@@ -104,6 +105,7 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
             HairlineRule()
             ValueRow("Theme", themeLabel(theme), onClick = { sheet = "theme" })
             ValueRow("Vibration strength", com.mansaketh.chitta.ui.VibrationLevel.of(vibrate).label, onClick = { sheet = "vibration" })
+            ValueRow("Animations", if (animations) "On" else "Off", onClick = { sheet = "animations" })
 
             Spacer(Modifier.height(Dimens.SectionGap))
             SectionHeader("Security")
@@ -166,6 +168,11 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
     }
 
     when (sheet) {
+        "animations" -> ChoiceSheet(
+            "Animations",
+            listOf(Choice("On", true, selected = animations), Choice("Off", false, selected = !animations)),
+            { vm.setAnimations(it); sheet = null }, { sheet = null },
+        )
         "vibration" -> ChoiceSheet(
             "Vibration strength",
             com.mansaketh.chitta.ui.VibrationLevel.entries.map { Choice(it.label, it.key, selected = it.key == vibrate) },

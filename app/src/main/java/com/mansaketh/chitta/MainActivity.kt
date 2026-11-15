@@ -105,6 +105,7 @@ class MainActivity : FragmentActivity() {
         setContent {
             val themeName by uiPrefs.themeMode.collectAsState()
             val vibrationKey by uiPrefs.vibration.collectAsState()
+            val animationsOn by uiPrefs.animations.collectAsState()
             val mode = when (themeName) { "paper" -> ThemeMode.Paper; "ink" -> ThemeMode.Ink; else -> ThemeMode.System }
             var hide by rememberSaveable { mutableStateOf(security.hideAmounts.value) }
             // Kept on the phone so the home-screen widgets can mask too.
@@ -121,7 +122,10 @@ class MainActivity : FragmentActivity() {
             }
             val realHaptics = androidx.compose.ui.platform.LocalHapticFeedback.current
             val haptics = remember(vibrationKey, realHaptics) { com.mansaketh.chitta.ui.ChittaHaptics(this@MainActivity, com.mansaketh.chitta.ui.VibrationLevel.of(vibrationKey), realHaptics) }
-            androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalHapticFeedback provides haptics) {
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.ui.platform.LocalHapticFeedback provides haptics,
+                com.mansaketh.chitta.core.design.theme.LocalAnimationsOn provides animationsOn,
+            ) {
             ChittaTheme(mode = mode, hideAmounts = hide) {
                 val vms = com.mansaketh.chitta.ui.AppViewModels(root, ledger, quickAdd, detail, manage, imports, plan, home, insights, settings, csvImport, intake, rules, automation, assets, cloud, household)
                 if (locked) {

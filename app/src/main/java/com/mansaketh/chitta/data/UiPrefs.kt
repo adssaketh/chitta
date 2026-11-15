@@ -63,6 +63,11 @@ class UiPrefs @Inject constructor(@ApplicationContext context: Context) {
     val vibration: StateFlow<String> = _vibration
     fun setVibration(v: String) { _vibration.value = v; p.edit().putString("vibration", v).apply() }
 
+    /** The person's own animations switch, apart from the phone's "Remove animations" (master section 7). On by default. */
+    private val _animations = MutableStateFlow(p.getBoolean("animations", true))
+    val animations: StateFlow<Boolean> = _animations
+    fun setAnimations(on: Boolean) { _animations.value = on; p.edit().putBoolean("animations", on).apply() }
+
     /** Whether open fixed deposits count in Net worth. Off until switched on (D101). */
     private val _nwDeposits = MutableStateFlow(p.getBoolean("nwDeposits", false))
     val netWorthDeposits: StateFlow<Boolean> = _nwDeposits

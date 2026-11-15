@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
@@ -71,12 +72,26 @@ fun accountName(id: String, accounts: List<Account>): String = accounts.firstOrN
 fun sheetMax(fraction: Float): androidx.compose.ui.unit.Dp =
     (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * fraction).dp
 
-/** A dimmed backdrop with [content] sitting at the bottom as a sheet. Tapping the backdrop dismisses. */
+/**
+ * A dimmed backdrop with [content] sitting at the bottom as a sheet. Tapping the backdrop dismisses. The sheet rises on a spring with
+ * no bounce and the backdrop fades in (master section 3, Motion); with animations off it appears at once.
+ */
 @Composable
 fun BottomOverlay(onDismiss: () -> Unit, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    val motion = com.mansaketh.chitta.core.design.theme.rememberMotionEnabled()
+    val rise = androidx.compose.runtime.remember { androidx.compose.animation.core.Animatable(if (motion) 0f else 1f) }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        if (motion) rise.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy, stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow))
+    }
     Box(Modifier.fillMaxSize()) {
-        Box(Modifier.fillMaxSize().background(ChittaTheme.colors.scrim).clickable(role = Role.Button, onClickLabel = "Close", onClick = onDismiss))
-        Column(Modifier.align(Alignment.BottomCenter).imePadding().navigationBarsPadding()) {
+        Box(
+            Modifier.fillMaxSize().graphicsLayer { alpha = rise.value.coerceIn(0f, 1f) }
+                .background(ChittaTheme.colors.scrim).clickable(role = Role.Button, onClickLabel = "Close", onClick = onDismiss),
+        )
+        Column(
+            Modifier.align(Alignment.BottomCenter).imePadding().navigationBarsPadding()
+                .graphicsLayer { translationY = (1f - rise.value.coerceIn(0f, 1f)) * size.height },
+        ) {
             SheetSurface(modifier, content = content)
         }
     }

@@ -7,6 +7,8 @@
 - Performance: `LargeBookTest` builds 10,000 entries over 30 months and times Ledger grouping and search, the Insights summary and category totals, and the duplicate scan, with loose limits. Timings are printed in the CI log. Scroll speed and cold start still need your phone.
 - Snapshots: a 360 dp, 130% text run of the shared components in both themes (`NarrowPhoneSnapshotTest`).
 - Anti-slop audit: no gradients, blur, shadows, emoji, banned fonts or heavy weights found in the code. Uppercase text only in `Stamp`.
+- Settings > Look and feel > Animations On/Off: your own switch, apart from the phone's setting. Off (or the phone's Remove animations) turns off every animation in the app.
+- Sheets now rise on a spring with no bounce and the backdrop fades in (one place: `BottomOverlay`). Odometer-rolling totals were not wanted.
 - Not done: whole-app screen snapshots. Screens read their view models directly, so drawing one needs a stateless version of each first (see D246).
 
 ## Phase 9c step 1: transfers inside categories (B2) and the Net total check (B1) (15 Nov 2026) - on branch `phase-9c`

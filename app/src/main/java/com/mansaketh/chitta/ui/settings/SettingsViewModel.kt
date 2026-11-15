@@ -70,6 +70,8 @@ class SettingsViewModel @Inject constructor(
     fun setThemeMode(v: String) = uiPrefs.setThemeMode(v)
     val vibration: StateFlow<String> = uiPrefs.vibration
     fun setVibration(v: String) = uiPrefs.setVibration(v)
+    val animations: StateFlow<Boolean> = uiPrefs.animations
+    fun setAnimations(on: Boolean) = uiPrefs.setAnimations(on)
     /** Bank messages waiting for a look, shown next to "Bank messages and UPI". */
     val pendingIntake: kotlinx.coroutines.flow.StateFlow<Int> = intake.pendingCount
 
