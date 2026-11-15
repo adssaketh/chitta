@@ -58,6 +58,11 @@ data class Category(
     val methodAdded: MethodAdded?,
     val mainCategoryId: String?, // null = main category, set = subcategory
     val archived: Boolean = false,
+    /**
+     * New in Chitta (schema 9, D238): entries in this category are money moved between your own accounts, so they are left out of
+     * spending, income, Net total and budgets (they still change balances). For old-book categories like "Transfer to Saketh".
+     */
+    val countsAsTransfer: Boolean = false,
 )
 
 data class Transaction(

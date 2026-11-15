@@ -87,6 +87,7 @@ object Budgets {
         if (debt && !filterOn(f, BudgetFilter.INCLUDE_DEBT_AND_CREDIT)) return 0
         if (t.objectiveId != null && !filterOn(f, BudgetFilter.ADDED_TO_OBJECTIVE)) return 0
         if (t.categoryId == QuickAdd.TRANSFER_CATEGORY_ID && !filterOn(f, BudgetFilter.INCLUDE_BALANCE_CORRECTION)) return 0
+        if (!filterOn(f, BudgetFilter.INCLUDE_BALANCE_CORRECTION) && categories.any { it.countsAsTransfer && (it.id == t.categoryId || it.id == mainOf(t.categoryId, categories)) }) return 0
         return if (budget.income) t.amount else -t.amount
     }
 

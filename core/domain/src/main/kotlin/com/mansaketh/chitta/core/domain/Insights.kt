@@ -172,8 +172,9 @@ object Insights {
      */
     fun categoryTotals(entries: List<Transaction>, categories: List<Category>, period: Period, income: Boolean, filter: SummaryFilter = SummaryFilter()): List<CategoryTotal> {
         val sums = LinkedHashMap<String, Long>()
+        val transferCategories = Totals.transferCategoryIds(categories)
         for (t in inScope(entries, period, filter)) {
-            if (!countsInTotals(t) || incomeSide(t, categories) != income) continue
+            if (!countsInTotals(t, transferCategories) || incomeSide(t, categories) != income) continue
             val key = mainOf(t.categoryId, categories)
             sums[key] = Math.addExact(sums[key] ?: 0L, if (income) t.amount else -t.amount)
         }
@@ -181,14 +182,15 @@ object Insights {
     }
 
     /** What [Totals.of] counts: not neutral, not lent/borrowed, and moving money (paid when scheduled). */
-    private fun countsInTotals(t: Transaction): Boolean =
-        Balances.countsTowardBalance(t) && !Totals.isNeutral(t) && t.kind != TransactionKind.LENT && t.kind != TransactionKind.BORROWED
+    private fun countsInTotals(t: Transaction, transferCategories: Set<String>): Boolean =
+        Balances.countsTowardBalance(t) && !Totals.leavesTotals(t, transferCategories) && t.kind != TransactionKind.LENT && t.kind != TransactionKind.BORROWED
 
     /** Drill-down: one main category split by sub-category, biggest first. Entries with no sub-category are listed under the main category itself. */
     fun drill(entries: List<Transaction>, categories: List<Category>, period: Period, mainId: String, income: Boolean, filter: SummaryFilter = SummaryFilter()): List<CategoryTotal> {
         val sums = LinkedHashMap<String, Long>()
+        val transferCategories = Totals.transferCategoryIds(categories)
         for (t in inScope(entries, period, filter)) {
-            if (!countsInTotals(t) || incomeSide(t, categories) != income || mainOf(t.categoryId, categories) != mainId) continue
+            if (!countsInTotals(t, transferCategories) || incomeSide(t, categories) != income || mainOf(t.categoryId, categories) != mainId) continue
             val own = categories.firstOrNull { it.id == t.categoryId }
             val key = t.subCategoryId ?: if (own?.mainCategoryId != null) own.id else mainId
             sums[key] = Math.addExact(sums[key] ?: 0L, if (income) t.amount else -t.amount)
@@ -197,11 +199,13 @@ object Insights {
     }
 
     /** The entries behind one category bar (or one sub-category), newest first, for the drill-down list. */
-    fun entriesOf(entries: List<Transaction>, categories: List<Category>, period: Period, categoryId: String, income: Boolean, filter: SummaryFilter = SummaryFilter()): List<Transaction> =
-        inScope(entries, period, filter).filter { t ->
-            countsInTotals(t) && incomeSide(t, categories) == income &&
+    fun entriesOf(entries: List<Transaction>, categories: List<Category>, period: Period, categoryId: String, income: Boolean, filter: SummaryFilter = SummaryFilter()): List<Transaction> {
+        val transferCategories = Totals.transferCategoryIds(categories)
+        return inScope(entries, period, filter).filter { t ->
+            countsInTotals(t, transferCategories) && incomeSide(t, categories) == income &&
                 (mainOf(t.categoryId, categories) == categoryId || t.categoryId == categoryId || t.subCategoryId == categoryId)
         }.sortedWith(compareByDescending<Transaction> { it.dateMs }.thenBy { it.id })
+    }
 
     /**
      * Biggest changes against the comparison period: spending by main category now and before, ordered by the size of the change in rupees,

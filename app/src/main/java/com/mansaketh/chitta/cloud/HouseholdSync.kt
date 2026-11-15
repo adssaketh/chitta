@@ -441,7 +441,7 @@ class HouseholdSync @Inject constructor(
             val remote = change.document.data.let { HouseholdWire.categoryFromDocument(it) } ?: continue
             val mine = byId[remote.id]
             if (mine != null && (HouseholdWire.sameCategoryContent(mine, remote) || !HouseholdSharing.remoteIsNewer(remote.modifiedAtMs, mine.modifiedAtMs))) continue
-            writes += remote.copy(methodAdded = mine?.methodAdded ?: remote.methodAdded)
+            writes += remote.copy(methodAdded = mine?.methodAdded ?: remote.methodAdded, countsAsTransfer = mine?.countsAsTransfer ?: remote.countsAsTransfer)
         }
         if (writes.isEmpty()) return
         store.saveCategories(writes)

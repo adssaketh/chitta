@@ -273,6 +273,9 @@ class ManageViewModel @Inject constructor(
         categoryRepo.save(c.copy(iconName = key?.let { com.mansaketh.chitta.core.domain.IconSearch.nameFor(it) }, emojiIconName = null, modifiedAtMs = clock.nowMs()))
     }
 
+    /** D238: switches "Counts as a transfer" for a main category (its subcategories follow). Entries keep their category; only the totals change. */
+    fun setCountsAsTransfer(c: Category, on: Boolean) = viewModelScope.launch { categoryRepo.save(c.copy(countsAsTransfer = on, modifiedAtMs = clock.nowMs())) }
+
     fun archiveCategory(c: Category, archived: Boolean) = viewModelScope.launch { categoryRepo.save(c.copy(archived = archived, modifiedAtMs = clock.nowMs())) }
 
     fun move(c: Category, up: Boolean) = viewModelScope.launch {

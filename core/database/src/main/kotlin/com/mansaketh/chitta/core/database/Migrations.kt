@@ -69,6 +69,18 @@ object Migrations {
         }
     }
 
+    /**
+     * Phase 9c (D238): a category can be marked "Counts as a transfer". Every category starts off; then categories the old book named
+     * "Transfer from ..." or "Transfer to ..." are switched on, because those entries moved money between your own accounts and were
+     * being counted as spending and income. Nothing is dropped; the person can switch any of them off in Categories.
+     */
+    val V8_TO_V9 = object : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `category` ADD COLUMN `countsAsTransfer` INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("UPDATE `category` SET `countsAsTransfer` = 1 WHERE lower(trim(`name`)) LIKE 'transfer from %' OR lower(trim(`name`)) LIKE 'transfer to %'")
+        }
+    }
+
     /** Phase 5: the day of month a monthly or yearly bill belongs on, so a bill on the 31st survives short months. Nothing is dropped. */
     val V2_TO_V3 = object : Migration(2, 3) {
         override fun migrate(db: SupportSQLiteDatabase) {

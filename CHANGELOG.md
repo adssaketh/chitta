@@ -1,5 +1,13 @@
 # Changelog
 
+## Phase 9c step 1: transfers inside categories (B2) and the Net total check (B1) (15 Nov 2026) - on branch `phase-9c`
+- Categories > a category > "Counts as a transfer: On/Off". When on, its entries (and its subcategories' entries) still change balances but no longer count as spending or income. They are left out of money in and out, the Net total, the Ledger's day totals, category bars, the Spending and Income tabs, Who spent how much, widgets and budgets.
+- Categories named "Transfer from ..." or "Transfer to ..." are switched on when the app updates its database (schema 8 to 9) and when a Paddhu backup is imported. Check Categories and turn off any that are not transfers.
+- Net total itself does not change: a transfer out and a transfer in cancel. Money in and money out fall by the same amount.
+- Not changed: subscription suggestions, duplicate checks, sinking funds and rules still see these entries as ordinary.
+- B1: the code draws a minus for a negative Net total (tested). Please look at the Insights Net total without mark-up.
+- Tests: `TransferCategoriesTest` (10), `MigrationTest` (schema 9), importer pre-mark test. Domain tests run locally; the rest run in CI.
+
 ## Phase 9b step 5b: Members edit shared items (15 Nov 2026) - on branch `phase-9b-step5b`
 - When an owner turns on "Let them edit the details", the people they share with get an "Edit details" button on the shared deposit or loan. Deposit: bank, amount, rate, dates, interest added, bank maturity amount, FD number, note. Loan: name and a note.
 - The edit goes to the server at once (it needs the connection; offline it says nothing was saved). If somebody changed the item first, it is refused and says so.

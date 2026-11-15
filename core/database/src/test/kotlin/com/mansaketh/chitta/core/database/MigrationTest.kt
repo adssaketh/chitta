@@ -57,7 +57,7 @@ class MigrationTest {
         val file = File(tmp.root, "old.db")
         createVersion(file, 1)
         val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext<Context>(), ChittaDatabase::class.java, file.absolutePath)
-            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5, Migrations.V5_TO_V6, Migrations.V6_TO_V7, Migrations.V7_TO_V8).allowMainThreadQueries().build()
+            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5, Migrations.V5_TO_V6, Migrations.V6_TO_V7, Migrations.V7_TO_V8, Migrations.V8_TO_V9).allowMainThreadQueries().build()
         try {
             val t = db.transactions().get("t1")!!
             assertEquals(-48_600L, t.amountPaise)
@@ -78,7 +78,7 @@ class MigrationTest {
         val file = File(tmp.root, "v2.db")
         createVersion(file, 2)
         val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext<Context>(), ChittaDatabase::class.java, file.absolutePath)
-            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5, Migrations.V5_TO_V6, Migrations.V6_TO_V7, Migrations.V7_TO_V8).allowMainThreadQueries().build()
+            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5, Migrations.V5_TO_V6, Migrations.V6_TO_V7, Migrations.V7_TO_V8, Migrations.V8_TO_V9).allowMainThreadQueries().build()
         try {
             val t = db.transactions().get("t1")!!
             assertEquals(-48_600L, t.amountPaise)
@@ -95,7 +95,7 @@ class MigrationTest {
         val file = File(tmp.root, "v3.db")
         createVersion(file, 3)
         val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext<Context>(), ChittaDatabase::class.java, file.absolutePath)
-            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5, Migrations.V5_TO_V6, Migrations.V6_TO_V7, Migrations.V7_TO_V8).allowMainThreadQueries().build()
+            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5, Migrations.V5_TO_V6, Migrations.V6_TO_V7, Migrations.V7_TO_V8, Migrations.V8_TO_V9).allowMainThreadQueries().build()
         try {
             val t = db.transactions().get("t1")!!
             assertEquals(-48_600L, t.amountPaise)
@@ -131,7 +131,7 @@ class MigrationTest {
         val file = File(tmp.root, "v4.db")
         createVersion(file, 4)
         val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext<Context>(), ChittaDatabase::class.java, file.absolutePath)
-            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5, Migrations.V5_TO_V6, Migrations.V6_TO_V7, Migrations.V7_TO_V8).allowMainThreadQueries().build()
+            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5, Migrations.V5_TO_V6, Migrations.V6_TO_V7, Migrations.V7_TO_V8, Migrations.V8_TO_V9).allowMainThreadQueries().build()
         try {
             assertTrue(db.misc().getFunds().isEmpty())
             val f = com.mansaketh.chitta.core.model.MutualFund("m1", "Sample", "INF000A00000", "", "100.500", 4_000_000L, "manual", 1_000L, null, null, "", null)
@@ -151,7 +151,7 @@ class MigrationTest {
         val file = File(tmp.root, "v4-assets.db")
         createVersion(file, 4)
         val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext<Context>(), ChittaDatabase::class.java, file.absolutePath)
-            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5, Migrations.V5_TO_V6, Migrations.V6_TO_V7, Migrations.V7_TO_V8).allowMainThreadQueries().build()
+            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5, Migrations.V5_TO_V6, Migrations.V6_TO_V7, Migrations.V7_TO_V8, Migrations.V8_TO_V9).allowMainThreadQueries().build()
         try {
             // Phase 8i (schema 8): the old book is intact and the two new tables start empty and work.
             assertEquals(-48_600L, db.transactions().get("t1")!!.amountPaise)
@@ -162,6 +162,35 @@ class MigrationTest {
             repo.addAsset(asset, first)
             assertEquals(asset, repo.assets().single())
             assertEquals(listOf(first), repo.assetValues("g1"))
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test fun versionFourToNineMarksOldTransferCategoriesAndKeepsEverythingElse() = runBlocking {
+        val file = File(tmp.root, "v4-transfers.db")
+        createVersion(file, 4)
+        SQLiteDatabase.openDatabase(file.absolutePath, null, SQLiteDatabase.OPEN_READWRITE).use { raw ->
+            fun cat(id: String, name: String, income: Int) =
+                raw.execSQL("INSERT INTO category (id,name,createdAtMs,sortOrder,income,archived) VALUES ('$id','$name',0,0,$income,0)")
+            cat("c1", "Transfer from Mansa", 1)
+            cat("c2", "Transfer to Saketh", 0)
+            cat("c3", "  transfer TO Home loan", 0)
+            cat("c4", "Transfers", 0)
+            cat("c5", "Transfer tools", 0)
+            cat("c6", "Food", 0)
+        }
+        val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext<Context>(), ChittaDatabase::class.java, file.absolutePath)
+            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5, Migrations.V5_TO_V6, Migrations.V6_TO_V7, Migrations.V7_TO_V8, Migrations.V8_TO_V9).allowMainThreadQueries().build()
+        try {
+            // Phase 9c (schema 9, D238): the old-book transfer categories are switched on; nothing else changes.
+            val flags = db.categories().getAll().associate { it.id to it.countsAsTransfer }
+            assertEquals(mapOf("c1" to true, "c2" to true, "c3" to true, "c4" to false, "c5" to false, "c6" to false), flags)
+            assertEquals(-48_600L, db.transactions().get("t1")!!.amountPaise)
+            // The switch can be turned off and survives a read.
+            val c1 = db.categories().getAll().first { it.id == "c1" }
+            db.categories().upsert(c1.copy(countsAsTransfer = false))
+            assertEquals(false, db.categories().getAll().first { it.id == "c1" }.countsAsTransfer)
         } finally {
             db.close()
         }

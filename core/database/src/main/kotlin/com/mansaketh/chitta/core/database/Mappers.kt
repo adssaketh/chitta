@@ -42,8 +42,8 @@ private fun String?.toInts(): List<Int>? = this?.let { Json.parseToJsonElement(i
 fun Account.toEntity() = AccountEntity(id, name, colour, iconName, createdAtMs, modifiedAtMs, sortOrder, currency, currencyFormat, decimals, homeWidgets?.map { it.code }.intsToJson(), ownerUid, archived, creditLimit, statementDay, dueDay, minimumDue, remindDaysBefore)
 fun AccountEntity.toModel() = Account(id, name, colour, iconName, createdAtMs, modifiedAtMs, sortOrder, currency, currencyFormat, decimals, homeWidgetsJson.toInts()?.mapNotNull { AccountWidget.fromCode(it) }, ownerUid, archived, creditLimitPaise, statementDay, dueDay, minimumDuePaise, remindDaysBefore)
 
-fun Category.toEntity() = CategoryEntity(id, name, colour, iconName, emojiIconName, createdAtMs, modifiedAtMs, sortOrder, income, methodAdded?.code, mainCategoryId, archived)
-fun CategoryEntity.toModel() = Category(id, name, colour, iconName, emojiIconName, createdAtMs, modifiedAtMs, sortOrder, income, MethodAdded.fromCode(methodAddedCode), mainCategoryId, archived)
+fun Category.toEntity() = CategoryEntity(id, name, colour, iconName, emojiIconName, createdAtMs, modifiedAtMs, sortOrder, income, methodAdded?.code, mainCategoryId, archived, countsAsTransfer)
+fun CategoryEntity.toModel() = Category(id, name, colour, iconName, emojiIconName, createdAtMs, modifiedAtMs, sortOrder, income, MethodAdded.fromCode(methodAddedCode), mainCategoryId, archived, countsAsTransfer)
 
 fun Transaction.toEntity() = TransactionEntity(
     id, pairedTransactionId, name, amount, currency, note, categoryId, subCategoryId, accountId, dateMs, modifiedAtMs, originalDueMs,

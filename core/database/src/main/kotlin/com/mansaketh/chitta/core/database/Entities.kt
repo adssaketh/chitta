@@ -51,6 +51,7 @@ data class CategoryEntity(
     val methodAddedCode: Int?,
     val mainCategoryId: String?,
     val archived: Boolean = false,
+    val countsAsTransfer: Boolean = false,
 )
 
 @Entity(

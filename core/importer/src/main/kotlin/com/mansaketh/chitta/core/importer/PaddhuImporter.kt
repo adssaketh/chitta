@@ -181,8 +181,12 @@ class PaddhuImporter(private val zone: ZoneId = ZoneId.of("Asia/Kolkata")) {
                 emojiIconName = r.str("emoji_icon_name"), createdAtMs = ms(r, "date_created") ?: 0L,
                 modifiedAtMs = ms(r, "date_time_modified"), sortOrder = r.int("order") ?: 0, income = r.bool("income"),
                 methodAdded = methodAdded("categories", id, r), mainCategoryId = r.str("main_category_pk"),
+                countsAsTransfer = looksLikeTransfer(r.strOrEmpty("name")),
             )
         }
+
+        /** D238: the old book kept transfers between your own accounts as ordinary categories named "Transfer from ..." or "Transfer to ...". */
+        fun looksLikeTransfer(name: String): Boolean = name.trim().lowercase().let { it.startsWith("transfer from ") || it.startsWith("transfer to ") }
 
         fun methodAdded(table: String, id: String?, r: Row): MethodAdded? {
             val code = r.int("method_added") ?: return null

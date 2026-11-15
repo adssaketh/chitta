@@ -50,6 +50,19 @@ object Totals {
     fun isNeutral(t: Transaction): Boolean = isTransfer(t) || isBalanceCorrection(t)
 
     /**
+     * Ids of the categories whose entries are money moved between your own accounts (D238): every category marked "Counts as a transfer",
+     * and the subcategories of a marked main category. They change balances but are left out of spending, income, Net total and budgets.
+     */
+    fun transferCategoryIds(categories: List<Category>): Set<String> {
+        val marked = categories.filter { it.countsAsTransfer }.map { it.id }.toSet()
+        if (marked.isEmpty()) return emptySet()
+        return categories.filter { it.id in marked || it.mainCategoryId in marked }.map { it.id }.toSet()
+    }
+
+    /** True when [t] is left out of money totals: a transfer, a balance correction, or an entry in a category marked "Counts as a transfer". */
+    fun leavesTotals(t: Transaction, transferCategories: Set<String>): Boolean = isNeutral(t) || t.categoryId in transferCategories
+
+    /**
      * Totals for the month header and the Insights summary. Transfers between own accounts and balance corrections are left out;
      * lent and borrowed entries are left out (they have their own totals); upcoming entries count once paid.
      * An entry in an income category adds to money in (a negative one reduces it); every other entry adds to
@@ -59,8 +72,9 @@ object Totals {
         val incomeCategory = categories.filter { it.income }.map { it.id }.toSet()
         var moneyIn = Paise.ZERO
         var moneyOut = Paise.ZERO
+        val transferCategories = transferCategoryIds(categories)
         for (t in entries) {
-            if (!Balances.countsTowardBalance(t) || isNeutral(t)) continue
+            if (!Balances.countsTowardBalance(t) || leavesTotals(t, transferCategories)) continue
             if (t.kind == TransactionKind.LENT || t.kind == TransactionKind.BORROWED) continue
             if (t.categoryId in incomeCategory) moneyIn += Paise(t.amount) else moneyOut -= Paise(t.amount)
         }
@@ -68,8 +82,10 @@ object Totals {
     }
 
     /** What a day's total on the rule shows: the signed net of entries that count, transfers excluded. */
-    fun dayNet(entries: List<Transaction>): Paise =
-        entries.asSequence().filter { Balances.countsTowardBalance(it) && !isNeutral(it) }
+    fun dayNet(entries: List<Transaction>, categories: List<Category>): Paise {
+        val transferCategories = transferCategoryIds(categories)
+        return entries.asSequence().filter { Balances.countsTowardBalance(it) && !leavesTotals(it, transferCategories) }
             .filter { it.kind != TransactionKind.LENT && it.kind != TransactionKind.BORROWED }
             .fold(Paise.ZERO) { acc, t -> acc + Paise(t.amount) }
+    }
 }

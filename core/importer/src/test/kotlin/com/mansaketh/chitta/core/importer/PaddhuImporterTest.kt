@@ -30,6 +30,21 @@ class PaddhuImporterTest {
         JdbcBackupSource(f).use { return assertIs(importer.read(it)) }
     }
 
+    @Test fun categoriesNamedTransferFromOrToArePreMarkedAsTransfers() {
+        // D238 (B2): the old book kept transfers between your own accounts as ordinary categories with these names.
+        val r = ready(populate = { c ->
+            TestDb.sampleBook(c)
+            TestDb.exec(c, "INSERT INTO categories VALUES ('c-tf','Transfer from Mansa',NULL,NULL,NULL,?,NULL,5,1,NULL,NULL)", T0)
+            TestDb.exec(c, "INSERT INTO categories VALUES ('c-tt','  transfer to Saketh',NULL,NULL,NULL,?,NULL,6,0,NULL,NULL)", T0)
+            TestDb.exec(c, "INSERT INTO categories VALUES ('c-tr','Transfers',NULL,NULL,NULL,?,NULL,7,0,NULL,NULL)", T0)
+        })
+        val flags = r.book.categories.associate { it.id to it.countsAsTransfer }
+        assertEquals(true, flags["c-tf"])
+        assertEquals(true, flags["c-tt"])
+        assertEquals(false, flags["c-tr"])
+        assertEquals(false, flags["c-food"])
+    }
+
     @Test fun readsEveryTableAndCountsMatch() {
         val r = ready()
         val counts = r.report.counts.associate { it.table to (it.read to it.imported) }

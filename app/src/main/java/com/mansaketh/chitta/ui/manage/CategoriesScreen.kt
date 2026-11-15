@@ -65,6 +65,7 @@ fun CategoriesScreen(vm: ManageViewModel, onBack: () -> Unit) {
                     add(Choice("Move up", "up")); add(Choice("Move down", "down"))
                     if (s.c.mainCategoryId == null) add(Choice("Add a subcategory", "sub"))
                     if (s.c.mainCategoryId == null) add(Choice("Make it a subcategory of…", "convert"))
+                    if (s.c.mainCategoryId == null) add(Choice(if (s.c.countsAsTransfer) "Counts as a transfer: On" else "Counts as a transfer: Off", "transfer", "On leaves its entries out of spending, income, Net total and budgets. Balances still change."))
                     add(Choice("Merge into…", "merge", "Moves its entries and titles, then removes it"))
                     add(Choice(if (s.c.archived) "Bring back" else "Archive", "archive", if (s.c.archived) null else "Hidden from Quick Add. Entries stay."))
                 },
@@ -77,6 +78,7 @@ fun CategoriesScreen(vm: ManageViewModel, onBack: () -> Unit) {
                         "sub" -> sheet = CatSheet.AddSub(s.c)
                         "convert" -> sheet = CatSheet.Convert(s.c)
                         "merge" -> sheet = CatSheet.Merge(s.c)
+                        "transfer" -> { vm.setCountsAsTransfer(s.c, !s.c.countsAsTransfer); sheet = CatSheet.None }
                         else -> { vm.archiveCategory(s.c, !s.c.archived); sheet = CatSheet.None }
                     }
                 },
@@ -103,7 +105,7 @@ private fun CategoryRow(cat: Category, depth: Int, count: Int, onClick: () -> Un
     Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(onClick = onClick).padding(start = (depth * 24).dp, top = Dimens.Gap2, bottom = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(cat.name, style = ChittaTheme.type.title, color = if (cat.archived) c.inkMuted else c.ink)
-            Text("$count ${if (count == 1) "entry" else "entries"}" + if (cat.archived) " · archived" else "", style = ChittaTheme.type.label, color = c.inkMuted)
+            Text("$count ${if (count == 1) "entry" else "entries"}" + (if (cat.archived) " · archived" else "") + (if (cat.countsAsTransfer) " · counts as a transfer" else ""), style = ChittaTheme.type.label, color = c.inkMuted)
         }
     }
     HairlineRule()

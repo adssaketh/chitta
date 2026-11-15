@@ -152,7 +152,7 @@ class TotalsTest {
     @Test fun dayNetMatchesTheDesignExample() {
         // PDF p.12: Thu 12 Nov, 486 + 1,840 + 212 = −2,538.
         val day = listOf(tx("s", -48_600), tx("b", -184_000), tx("u", -21_200))
-        assertEquals(Paise(-253_800), Totals.dayNet(day))
+        assertEquals(Paise(-253_800), Totals.dayNet(day, emptyList()))
     }
 }
 
