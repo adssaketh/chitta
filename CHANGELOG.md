@@ -1,5 +1,13 @@
 # Changelog
 
+## UI polish 2 (15 Nov 2026) - on branch `phase-ui-polish-2`
+- Tappable rows and buttons now show a pressed state (faint tint, 0.98 scale on a spring) and a visible focus outline. The scale is off when animations are off. Buttons, icon buttons, shared list rows, Ledger rows, choice sheets, chips, tabs and the Who-spent arrows are covered.
+- Ledger: "Split" and "Possible duplicate" are small outlined tags on their own line under the category, instead of words in the grey line.
+- Settings: Look and feel (open), Backup and restore, Import and export and Help are groups that open and close, with a turning caret and an eased open. Security, Household and Data stay as they are.
+- Spacing: remaining literal dp values in screens and shared components now come from Dimens.
+- Component gallery: new "Rows, tags and groups" section, with snapshots at 393 dp, 200% text and 360 dp / 130%.
+- Not done: see UI_AUDIT.md, "UI polish 2".
+
 ## Phase 9c part 2, step 2: sync between phones (15 Nov 2026) - on branch `phase-9c-sync-2`
 - Settings > Backup and restore > "Sync between phones": Sync now, a status line (Up to date / N waiting / Syncing), last synced, waiting count, last error.
 - Each row of the book is one Firestore document under `users/{uid}/book`. A round pulls what changed since the cursor, applies it (newer stamp wins), then pushes this phone's changes. Runs a few seconds after an edit, when the app comes to the front, and hourly in the background (WorkManager).

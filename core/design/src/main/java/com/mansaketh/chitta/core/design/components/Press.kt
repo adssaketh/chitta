@@ -24,7 +24,7 @@ import com.mansaketh.chitta.core.design.theme.rememberMotionEnabled
 import com.mansaketh.chitta.core.design.tokens.Dimens
 
 /*
- * Press, tint and focus feedback for everything tappable (UI polish 2, D263).
+ * Press, tint and focus feedback for everything tappable (UI polish 2, D265).
  * Pressed: a faint ink tint and a 0.98 scale on a spring. Focused: a 2 dp ink outline.
  * The scale is skipped when the phone's "Remove animations" or the in-app Animations switch is off; the tint is not motion, so it stays.
  * The clickable modifiers here pass indication = null because the feedback is drawn by these modifiers instead of a ripple.

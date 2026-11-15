@@ -1,7 +1,7 @@
 # UI audit: spacing, rhythm, consistency
 
 Phase: UI polish pass. Branch `phase-ui-polish`. Written 14 Nov 2026 against `main` at 2cd743b.
-Status: **audit and proposal only. No screen code has changed.** Waiting for approval.
+Status: the first polish pass (`phase-ui-polish`, merged 14 Nov 2026) built the tokens, `Section`, `ListRow` and the end-padding tokens. See "UI polish 2" at the bottom for the second pass.
 
 ## How this was done
 
@@ -183,3 +183,23 @@ No size or weight changes: these are names for what exists, so every screen pick
 1. Tokens and type roles; `Section`, `ListRow`, main-tab title, `AmountText` baseline and fit. Component snapshots updated.
 2. Home. 3. Ledger. 4. Insights and heatmap. 5. More. 6. Plan. 7. Accounts, Categories, Customise, Settings. 8. Quick Add, Review, Net worth, History, the rest. 9. Sheets and empty states.
 Each step: 360 dp and 130% snapshots in Paper and Ink, tests green, PDF page named.
+
+
+## UI polish 2 (15 Nov 2026, branch `phase-ui-polish-2`)
+
+Brief: spacing from tokens, quiet hierarchy, expandable rows, press feedback, theming check, cleanup. Decisions D263 to D267.
+
+Done
+- S1 end padding: already done in pass 1 (no 120/140/160 dp left; the 96 dp token is `FabInset`).
+- Spacing literals: 57 left at the start; layout ones moved to `Dimens` (D267). Chart drawing constants stay.
+- Press, tint and focus feedback in shared components (D265); haptic tick on expand.
+- Tags (D263), expandable groups in Settings (D264), gallery section and snapshots for all three.
+
+Not done, and why
+- Ledger rows expanding in place: changes the Ledger tap; you chose Settings groups.
+- Timeline-style Entry history rows, Home / Insights / More per-screen rhythm pass: not started. The first pass already set their spacing; a second look needs a phone check of the new rows first.
+- Whole-screen snapshots (D246): still component-level only; this chat cannot build, so a refactor of the big screens would be untested.
+- About 25 older `clickable` rows still use the default feedback.
+- Unused composables and duplicate components: none found while editing; no full sweep was made.
+- True black and accent picker: proposals only (D266). Contrast would need new Palette values and tests; the dark PDF forbids pure black.
+- Not built or run here: no Android SDK in this workspace, so nothing was compiled or tested locally. CI is the first compile and re-records the snapshots.
