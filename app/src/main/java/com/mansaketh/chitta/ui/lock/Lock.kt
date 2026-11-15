@@ -3,7 +3,17 @@ package com.mansaketh.chitta.ui.lock
 import android.content.Context
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
+import com.mansaketh.chitta.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -54,10 +64,25 @@ fun LockScreen(onUnlock: () -> Unit, message: String? = null) {
         Modifier.fillMaxSize().background(c.background).statusBarsPadding().navigationBarsPadding().padding(Dimens.Margin),
         verticalArrangement = Arrangement.Center,
     ) {
+        AppIcon(80.dp)
+        Spacer(Modifier.height(Dimens.Gap4))
         Text("Paddhu Pusthakam", style = ChittaTheme.type.headline, color = c.ink)
         Spacer(Modifier.height(Dimens.Gap3))
         Text(message ?: "Your book is locked.", style = ChittaTheme.type.body, color = c.inkMuted)
         Spacer(Modifier.height(Dimens.Gap6))
         ChittaButton("Unlock", onUnlock, style = ButtonStyle.Primary)
+    }
+}
+
+/**
+ * The launcher icon drawn from its two layers (an adaptive icon cannot be loaded as one image), cut to a rounded square the way a launcher
+ * shows it. An adaptive icon is a 108 dp canvas of which the middle 72 dp shows, so the layers are drawn 1.5 times the size of the box.
+ * Decorative: the name beside it carries the meaning, so TalkBack skips it.
+ */
+@Composable
+fun AppIcon(size: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
+    Box(modifier.size(size).clip(RoundedCornerShape(size / 4)), contentAlignment = Alignment.Center) {
+        Image(painterResource(R.mipmap.ic_launcher_background), null, Modifier.requiredSize(size * 1.5f))
+        Image(painterResource(R.mipmap.ic_launcher_foreground), null, Modifier.requiredSize(size * 1.5f))
     }
 }

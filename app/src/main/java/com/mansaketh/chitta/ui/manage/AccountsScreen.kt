@@ -180,7 +180,7 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
 @Composable
 private fun AccountRow(a: Account, balance: Paise, card: com.mansaketh.chitta.core.domain.CardFigures?, onClick: () -> Unit) {
     val c = ChittaTheme.colors
-    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(onClick = onClick).padding(vertical = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick).padding(vertical = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(a.name, style = ChittaTheme.type.title, color = c.ink)
             if ((a.currency ?: "INR") != "INR") Text(a.currency ?: "", style = ChittaTheme.type.label, color = c.inkMuted)
@@ -194,7 +194,7 @@ private fun AccountRow(a: Account, balance: Paise, card: com.mansaketh.chitta.co
 @Composable
 private fun DepositRow(d: FixedDeposit, nowMs: Long, zone: java.time.ZoneId, onClick: () -> Unit) {
     val c = ChittaTheme.colors
-    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(onClick = onClick).padding(vertical = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick).padding(vertical = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(d.bank + (if (d.fdNumber.isNotEmpty()) " \u00B7 ${d.fdNumber.takeLast(4)}" else ""), style = ChittaTheme.type.title, color = if (d.closed) c.inkMuted else c.ink)
             Text(depositLine(d, nowMs, zone), style = ChittaTheme.type.label, color = c.inkMuted)

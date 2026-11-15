@@ -303,7 +303,7 @@ private fun NpsTab(ui: ManageUi, onToggleNetWorth: (Boolean) -> Unit, onAddAccou
 private fun FundRow(f: MutualFund, nowMs: Long, zone: ZoneId, stamp: Boolean, onClick: () -> Unit) {
     val c = ChittaTheme.colors
     val value = MutualFunds.value(f)
-    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(onClick = onClick).padding(vertical = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick).padding(vertical = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(f.name, style = ChittaTheme.type.title, color = c.ink)
             Text(if (f.isNps) schemeLine(f) else fundLine(f, nowMs, zone), style = ChittaTheme.type.label, color = c.inkMuted)
@@ -563,7 +563,7 @@ private fun FundPickSheet(fund: MutualFund, load: suspend (MutualFund) -> List<A
                 style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap3),
             )
             else -> l.forEach { s ->
-                Column(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(onClick = { onPick(s) }).padding(vertical = Dimens.Gap2)) {
+                Column(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = { onPick(s) }).padding(vertical = Dimens.Gap2)) {
                     Text(s.name, style = ChittaTheme.type.body, color = c.ink)
                     Text(
                         listOf(s.plan, s.option).filter { it.isNotBlank() }.joinToString(" · ") + " · ₹${s.nav.stripTrailingZeros().toPlainString()} on ${priceDateText(s.date.toString())}",

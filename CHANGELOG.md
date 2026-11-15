@@ -1,5 +1,14 @@
 # Changelog
 
+## Phase 9c step 2: lock icon, motion, accessibility, performance and anti-slop audits (15 Nov 2026) - on branch `phase-9c-audits`
+- Lock screen: the launcher icon now sits above the name (80 dp), replacing the plain text-only mark. More uses the same drawing.
+- Motion: the tab slide, the add button and the Home ring fill now jump to their end state when the phone's "Remove animations" is on, and follow the setting while the app is open. Nothing else in the app animates.
+- TalkBack: six tappable rows (categories, accounts, assets, mutual funds) now announce as buttons.
+- Performance: `LargeBookTest` builds 10,000 entries over 30 months and times Ledger grouping and search, the Insights summary and category totals, and the duplicate scan, with loose limits. Timings are printed in the CI log. Scroll speed and cold start still need your phone.
+- Snapshots: a 360 dp, 130% text run of the shared components in both themes (`NarrowPhoneSnapshotTest`).
+- Anti-slop audit: no gradients, blur, shadows, emoji, banned fonts or heavy weights found in the code. Uppercase text only in `Stamp`.
+- Not done: whole-app screen snapshots. Screens read their view models directly, so drawing one needs a stateless version of each first (see D246).
+
 ## Phase 9c step 1: transfers inside categories (B2) and the Net total check (B1) (15 Nov 2026) - on branch `phase-9c`
 - Categories > a category > "Counts as a transfer: On/Off". When on, its entries (and its subcategories' entries) still change balances but no longer count as spending or income. They are left out of money in and out, the Net total, the Ledger's day totals, category bars, the Spending and Income tabs, Who spent how much, widgets and budgets.
 - Categories named "Transfer from ..." or "Transfer to ..." are switched on when the app updates its database (schema 8 to 9) and when a Paddhu backup is imported. Check Categories and turn off any that are not transfers.

@@ -322,3 +322,14 @@ Master section 7 lists both. Decided with the user on 13 Nov 2026: Ping already 
 | D239 | 15 Nov 2026 | The switch is a per-phone setting of the category: it is not sent to the household (categories are shared, last edit wins, D217) and a category arriving from another member keeps this phone's switch. | The household wire format is the old app's; adding a field to its documents is not needed to fix this phone's totals. | decided |
 | D240 | 15 Nov 2026 | Not changed by D238: subscription detection, duplicate detection, sinking funds, rules and bills still treat entries in a marked category as ordinary entries. | Keeps the fix to the totals the user sees. A repeating "Transfer to ..." could be suggested as a subscription; say if it is and I will leave marked categories out. | open |
 | D241 | 15 Nov 2026 | B1 (Net total drawn without a minus): not reproduced in code. `Flow.net` through `IndianFormat.rupees` gives "−₹20,000" for a loss (new test), and the Insights row draws it with the same `AmountText` as Home. Your screenshot's ₹68,778.77 may simply be a positive net, which the transfer entries do not change. | The red circle in the old screenshot hid the spot where a minus would be. Needs one look at the screen without mark-up. | open |
+
+## Phase 9c step 2 decisions (15 Nov 2026)
+
+| # | Date | Decision | Why | Status |
+|---|---|---|---|---|
+| D242 | 15 Nov 2026 | `rememberMotionEnabled()` (core/design, theme/Motion.kt) reads the system animator duration scale and watches it with a ContentObserver. Every animation asks it and jumps to its end state when it is 0. | Master section 3: motion is fully reduced when the system "remove animations" setting is on. Only three animations exist, so no wider framework. | open |
+| D243 | 15 Nov 2026 | No separate in-app animations switch yet. The master prompt lists "app animations on/off, separate from the system setting" in section 7. | Not found in the code or in your phase notes; ask whether you want it before adding a setting. | open |
+| D244 | 15 Nov 2026 | Odometer-rolling totals and spring sheets (master section 3, Motion) are not built. Sheets use Material's own motion. | Cosmetic; each needs touching every amount and sheet. Offered as a choice, not slipped in. | open |
+| D245 | 15 Nov 2026 | Performance is checked by `LargeBookTest` (pure functions, 10,000 entries, loose limits) plus a phone checklist for scroll and cold start. | CI has no phone. The limits catch an accidental slow loop, not small changes. | open |
+| D246 | 15 Nov 2026 | Whole-screen snapshots of the app's screens are not done. Home, Ledger and Insights take their view model directly, so a snapshot needs a stateless content function per screen plus sample data, and roborazzi in :app. Narrow-phone (360 dp, 130%) snapshots cover the shared components instead. | The chat workspace cannot build the app (no Android SDK), so a large refactor of the biggest screens could not be tried before CI. | open |
+

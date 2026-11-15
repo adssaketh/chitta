@@ -102,7 +102,7 @@ fun CategoriesScreen(vm: ManageViewModel, onBack: () -> Unit) {
 @Composable
 private fun CategoryRow(cat: Category, depth: Int, count: Int, onClick: () -> Unit) {
     val c = ChittaTheme.colors
-    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(onClick = onClick).padding(start = (depth * 24).dp, top = Dimens.Gap2, bottom = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick).padding(start = (depth * 24).dp, top = Dimens.Gap2, bottom = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(cat.name, style = ChittaTheme.type.title, color = if (cat.archived) c.inkMuted else c.ink)
             Text("$count ${if (count == 1) "entry" else "entries"}" + (if (cat.archived) " · archived" else "") + (if (cat.countsAsTransfer) " · counts as a transfer" else ""), style = ChittaTheme.type.label, color = c.inkMuted)

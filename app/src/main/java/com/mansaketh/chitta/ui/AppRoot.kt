@@ -116,6 +116,8 @@ private fun FirstRun(vms: AppViewModels) {
 private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, extra: (@Composable (onBack: () -> Unit) -> Unit)?) {
     // A tab is the key of a TabKey, or "more". Blank means "the first tab the person chose" (design: swappable tabs).
     var tabChoice by rememberSaveable { mutableStateOf("") }
+    // False when the phone's "Remove animations" is on: tabs and the add button then change at once.
+    val motion = com.mansaketh.chitta.core.design.theme.rememberMotionEnabled()
     val tabLayout by vms.home.prefs.tabLayout.collectAsState()
     val moreOrder by vms.home.prefs.moreOrder.collectAsState()
     val tab = tabChoice.takeIf { it == MORE || tabLayout.slots.any { s -> s.key == it } } ?: tabLayout.first.key
@@ -185,9 +187,13 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                     top == null -> AnimatedContent(
                         targetState = tab,
                         transitionSpec = {
-                            val dir = if (tabOrder.indexOf(targetState) >= tabOrder.indexOf(initialState)) 1 else -1
-                            (slideInHorizontally(tween(260, easing = FastOutSlowInEasing)) { dir * it / 8 } + fadeIn(tween(220, delayMillis = 40))) togetherWith
-                                (slideOutHorizontally(tween(260, easing = FastOutSlowInEasing)) { -dir * it / 8 } + fadeOut(tween(140)))
+                            if (!motion) {
+                                androidx.compose.animation.EnterTransition.None togetherWith androidx.compose.animation.ExitTransition.None
+                            } else {
+                                val dir = if (tabOrder.indexOf(targetState) >= tabOrder.indexOf(initialState)) 1 else -1
+                                (slideInHorizontally(tween(260, easing = FastOutSlowInEasing)) { dir * it / 8 } + fadeIn(tween(220, delayMillis = 40))) togetherWith
+                                    (slideOutHorizontally(tween(260, easing = FastOutSlowInEasing)) { -dir * it / 8 } + fadeOut(tween(140)))
+                            }
                         },
                         label = "tabs",
                     ) { shownTab -> when (shownTab) {
@@ -239,7 +245,7 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                     top == "gallery" -> extra?.invoke(::pop)
                 }
                 if (top == null && tab != MORE && tab != TabKey.Accounts.key) {
-                    val fabP by animateFloatAsState(if (fabShown.value) 1f else 0f, label = "addButton")
+                    val fabP by animateFloatAsState(if (fabShown.value) 1f else 0f, animationSpec = if (motion) androidx.compose.animation.core.spring() else androidx.compose.animation.core.snap(), label = "addButton")
                     if (fabP > 0.01f) {
                         AddButton(
                             onClick = { openAdd() }, onLongClick = { addMenu = true },
@@ -330,11 +336,7 @@ private fun MoreScreen(order: List<MoreItem>, open: (MoreItem) -> Unit, onGaller
 @Composable
 private fun AppMark(modifier: Modifier = Modifier) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(Modifier.size(64.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
-            // An adaptive icon is a 108 dp canvas of which the middle 72 dp shows, so the layers are drawn 1.5 times the size of the box.
-            androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(com.mansaketh.chitta.R.mipmap.ic_launcher_background), null, Modifier.requiredSize(96.dp))
-            androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(com.mansaketh.chitta.R.mipmap.ic_launcher_foreground), null, Modifier.requiredSize(96.dp))
-        }
+        com.mansaketh.chitta.ui.lock.AppIcon(64.dp)
         Spacer(Modifier.height(Dimens.Gap2))
         Text("Paddhu Pusthakam", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted)
     }

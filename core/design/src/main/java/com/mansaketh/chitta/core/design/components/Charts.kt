@@ -165,8 +165,10 @@ fun BudgetRing(
 ) {
     if (ticks == null) return
     val c = ChittaTheme.colors
-    val fill = remember { Animatable(if (animate) 0f else 1f) }
-    LaunchedEffect(animate) { if (animate) fill.animateTo(1f, tween(900, easing = FastOutSlowInEasing)) }
+    // With the system "Remove animations" on, the ring simply appears full.
+    val run = animate && com.mansaketh.chitta.core.design.theme.rememberMotionEnabled()
+    val fill = remember { Animatable(if (run) 0f else 1f) }
+    LaunchedEffect(run) { if (run) fill.animateTo(1f, tween(900, easing = FastOutSlowInEasing)) else fill.snapTo(1f) }
     val spoken = if (ticks.over) "Budget ring: over the budget"
     else "Budget ring: ${ticks.safePercent} percent is safe to spend"
     Box(modifier.size(diameter).clearAndSetSemantics { contentDescription = spoken }, contentAlignment = Alignment.Center) {
