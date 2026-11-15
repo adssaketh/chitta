@@ -1,5 +1,10 @@
 # Changelog
 
+## UI polish 2, part 2 (15 Nov 2026) - on branch `phase-ui-polish-3`
+- Entry history is a timeline: a thin rail with a dot per version, the action in bold with the time under it, then the entry summary, what changed, and Restore.
+- Every remaining tappable row now shows the pressed state and focus outline (Home, Insights, Plan, Accounts, Categories, Mutual funds, Assets, Household, Customise, Intake, CSV import, icon picker, Quick Add).
+- Home, Insights and More: no spacing change needed after the first pass (D270).
+
 ## UI polish 2 (15 Nov 2026) - on branch `phase-ui-polish-2`
 - Tappable rows and buttons now show a pressed state (faint tint, 0.98 scale on a spring) and a visible focus outline. The scale is off when animations are off. Buttons, icon buttons, shared list rows, Ledger rows, choice sheets, chips, tabs and the Who-spent arrows are covered.
 - Ledger: "Split" and "Possible duplicate" are small outlined tags on their own line under the category, instead of words in the grey line.

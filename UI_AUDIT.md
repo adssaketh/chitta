@@ -203,3 +203,8 @@ Not done, and why
 - Unused composables and duplicate components: none found while editing; no full sweep was made.
 - True black and accent picker: proposals only (D266). Contrast would need new Palette values and tests; the dark PDF forbids pure black.
 - Not built or run here: no Android SDK in this workspace, so nothing was compiled or tested locally. CI is the first compile and re-records the snapshots.
+
+### UI polish 2, part 2 (branch `phase-ui-polish-3`)
+- Done: timeline rows for Entry history (D268); press feedback on the remaining rows (D269).
+- Home, Insights, More: checked, no change (D270). More groups and status line (C5, M1) still undecided.
+- Still not done: Ledger rows expanding, whole-screen snapshots (D246), True black and accent (D266), a sweep for unused composables.
