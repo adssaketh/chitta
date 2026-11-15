@@ -117,6 +117,15 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
             )
 
             Spacer(Modifier.height(Dimens.SectionGap))
+            SectionHeader("Household")
+            HairlineRule()
+            ValueRow("Household", "", onClick = { onOpen("household") })
+            Text(
+                "Share chosen entries with up to 8 people, each signed in with their own Google account. Your book stays private unless you share.",
+                style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2),
+            )
+
+            Spacer(Modifier.height(Dimens.SectionGap))
             SectionHeader("Backup and restore")
             HairlineRule()
             ValueRow("Google Drive backup", "", onClick = { onOpen("cloud-backup") })

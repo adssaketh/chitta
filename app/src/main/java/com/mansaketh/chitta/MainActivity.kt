@@ -52,6 +52,7 @@ class MainActivity : FragmentActivity() {
     private val automation: com.mansaketh.chitta.ui.automation.AutomationViewModel by viewModels()
     private val assets: com.mansaketh.chitta.ui.assets.AssetsViewModel by viewModels()
     private val cloud: com.mansaketh.chitta.ui.cloud.CloudBackupViewModel by viewModels()
+    private val household: com.mansaketh.chitta.ui.household.HouseholdViewModel by viewModels()
     @Inject lateinit var signals: com.mansaketh.chitta.intake.IntakeSignals
 
     /** Leaving the screen starts the lock timer; a rotation does not (the activity is recreated, the app was never away). */
@@ -122,7 +123,7 @@ class MainActivity : FragmentActivity() {
             val haptics = remember(vibrationKey, realHaptics) { com.mansaketh.chitta.ui.ChittaHaptics(this@MainActivity, com.mansaketh.chitta.ui.VibrationLevel.of(vibrationKey), realHaptics) }
             androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalHapticFeedback provides haptics) {
             ChittaTheme(mode = mode, hideAmounts = hide) {
-                val vms = com.mansaketh.chitta.ui.AppViewModels(root, ledger, quickAdd, detail, manage, imports, plan, home, insights, settings, csvImport, intake, rules, automation, assets, cloud)
+                val vms = com.mansaketh.chitta.ui.AppViewModels(root, ledger, quickAdd, detail, manage, imports, plan, home, insights, settings, csvImport, intake, rules, automation, assets, cloud, household)
                 if (locked) {
                     // While locked nothing from the book is composed, so nothing can be read or heard from behind the lock.
                     LockScreen(onUnlock = ::askToUnlock)
