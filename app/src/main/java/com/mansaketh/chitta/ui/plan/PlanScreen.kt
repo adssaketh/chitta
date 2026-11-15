@@ -227,7 +227,7 @@ private fun BillsTab(vm: PlanViewModel, ui: PlanUi, onSheet: (String) -> Unit, o
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
         if (scheduled.isEmpty()) item { EmptyState("Bills and subscriptions you know are coming, so nothing surprises you.", "Add a bill", { onSheet("new-bill") }) }
         else item {
-            Column(Modifier.fillMaxWidth().clickable(role = Role.Button) { showTotals = true }.padding(vertical = Dimens.Gap3)) {
+            Column(Modifier.fillMaxWidth().pressClickable(role = Role.Button) { showTotals = true }.padding(vertical = Dimens.Gap3)) {
                 Text("Still to pay", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted)
                 AmountText(totals.total, style = ChittaTheme.type.amountLarge)
                 Text("About ${rupees(totals.perMonth)} a month · ${rupees(totals.perYear)} a year. Tap to see how this adds up.", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted)
@@ -335,7 +335,7 @@ private fun CalendarTab(vm: PlanViewModel, ui: PlanUi) {
         cells.chunked(7).forEach { week ->
             Row(Modifier.fillMaxWidth()) {
                 week.forEach { d ->
-                    Box(Modifier.weight(1f).heightIn(min = Dimens.CalendarCell).then(if (d != null && d.items.isNotEmpty()) Modifier.clickable(role = Role.Button, onClickLabel = "Show bills") { day = d } else Modifier)) {
+                    Box(Modifier.weight(1f).heightIn(min = Dimens.CalendarCell).then(if (d != null && d.items.isNotEmpty()) Modifier.pressClickable(role = Role.Button, onClickLabel = "Show bills") { day = d } else Modifier)) {
                         if (d != null) Column {
                             Text(d.date.dayOfMonth.toString(), style = ChittaTheme.type.body, color = c.ink)
                             if (d.items.isNotEmpty()) Text(d.items.take(3).joinToString("") { glyph(it) }, style = ChittaTheme.type.label, color = if (d.items.any { it.status == BillStatus.Overdue }) c.warningText else c.inkMuted)

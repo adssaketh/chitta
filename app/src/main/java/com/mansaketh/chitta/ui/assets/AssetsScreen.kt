@@ -140,7 +140,7 @@ private fun maskedPaise(p: Long): String = maskedRupees(Paise(p))
 @Composable
 private fun AssetRow(a: ManualAsset, latest: AssetValue?, change: Paise?, stale: Boolean, stamp: Boolean, ui: AssetsUi, onClick: () -> Unit) {
     val c = ChittaTheme.colors
-    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick).padding(vertical = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick).padding(vertical = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(a.name, style = ChittaTheme.type.title, color = c.ink)
             if (latest == null) {

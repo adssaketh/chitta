@@ -1,5 +1,6 @@
 package com.mansaketh.chitta.ui.imports
 
+import com.mansaketh.chitta.core.design.components.pressClickable
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -184,7 +185,7 @@ private fun ReviewStep(vm: CsvImportViewModel, s: CsvStage.Review) {
             itemsIndexed(s.choices) { i, ch ->
                 val r = ch.row
                 Row(
-                    Modifier.fillMaxWidth().heightIn(min = Dimens.RowTall).clickable(role = Role.Button) { rowSheet = i to "row" }.padding(vertical = Dimens.Gap2),
+                    Modifier.fillMaxWidth().heightIn(min = Dimens.RowTall).pressClickable(role = Role.Button) { rowSheet = i to "row" }.padding(vertical = Dimens.Gap2),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box24(ch.ticked)

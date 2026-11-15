@@ -1,5 +1,6 @@
 package com.mansaketh.chitta.ui.intake
 
+import com.mansaketh.chitta.core.design.components.pressClickable
 import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -187,7 +188,7 @@ private fun ReviewStep(vm: IntakeViewModel, s: IntakeStage.Review) {
             itemsIndexed(s.choices) { i, ch ->
                 val r = ch.candidate.row
                 Row(
-                    Modifier.fillMaxWidth().heightIn(min = Dimens.RowTall).clickable(role = Role.Button) { rowSheet = i to "row" }.padding(vertical = Dimens.Gap2),
+                    Modifier.fillMaxWidth().heightIn(min = Dimens.RowTall).pressClickable(role = Role.Button) { rowSheet = i to "row" }.padding(vertical = Dimens.Gap2),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     TickBox(ch.ticked)

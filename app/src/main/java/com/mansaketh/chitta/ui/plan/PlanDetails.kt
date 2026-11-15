@@ -36,7 +36,7 @@ private fun Figure(label: String, amount: Paise) {
 
 @Composable
 private fun EntryLine(t: Transaction, ui: PlanUi, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(role = Role.Button, onClick = onClick), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = Role.Button, onClick = onClick), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(t.name.ifBlank { categoryName(t.categoryId, ui.categories) }, style = ChittaTheme.type.body, color = ChittaTheme.colors.ink, maxLines = 1)
             Text(friendlyDay(t.dateMs, ui.nowMs, ui.zone) + " · " + accountName(t.accountId, ui.accounts), style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted)
@@ -218,7 +218,7 @@ fun LoanDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit: 
                 SectionHeader("Instalments")
                 rows.forEach { r ->
                     val paid = r.number in terms.paidInstalments
-                    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(role = Role.Checkbox) { vm.tick(terms, r.number, !paid) }, verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = Role.Checkbox) { vm.tick(terms, r.number, !paid) }, verticalAlignment = Alignment.CenterVertically) {
                         Text(if (paid) "✓" else "○", style = ChittaTheme.type.title, color = c.ink, modifier = Modifier.width(Dimens.Gap8))
                         Column(Modifier.weight(1f)) {
                             Text("${r.number}. ${dateText(r.dueMs, ui.zone)}", style = ChittaTheme.type.body, color = c.ink)

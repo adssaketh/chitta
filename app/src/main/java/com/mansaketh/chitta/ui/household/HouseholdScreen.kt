@@ -1,5 +1,6 @@
 package com.mansaketh.chitta.ui.household
 
+import com.mansaketh.chitta.core.design.components.pressClickable
 import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -199,7 +200,7 @@ private fun HouseholdPart(
     Text("Household", style = ChittaTheme.type.label, color = c.inkMuted)
     Text(
         snap.name, style = ChittaTheme.type.headline, color = c.ink,
-        modifier = Modifier.fillMaxWidth().then(if (iAmOwner) Modifier.clickable(role = Role.Button, onClickLabel = "Rename", onClick = onRename) else Modifier),
+        modifier = Modifier.fillMaxWidth().then(if (iAmOwner) Modifier.pressClickable(role = Role.Button, onClickLabel = "Rename", onClick = onRename) else Modifier),
     )
     Spacer(Modifier.height(Dimens.SectionGap))
 
@@ -253,7 +254,7 @@ private fun HouseholdPart(
     } else {
         Text(
             "Leave this household", style = ChittaTheme.type.body, color = c.ink, textDecoration = TextDecoration.Underline,
-            modifier = Modifier.heightIn(min = Dimens.TouchTarget).clickable(role = Role.Button, onClick = onLeave).padding(vertical = Dimens.Gap3),
+            modifier = Modifier.heightIn(min = Dimens.TouchTarget).pressClickable(role = Role.Button, onClick = onLeave).padding(vertical = Dimens.Gap3),
         )
     }
 }
@@ -271,7 +272,7 @@ private fun MemberRow(m: HouseholdMember, mine: Boolean, tappable: Boolean, onCl
     Column {
         Row(
             Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin)
-                .then(if (tappable) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
+                .then(if (tappable) Modifier.pressClickable(role = Role.Button, onClick = onClick) else Modifier)
                 .padding(vertical = Dimens.RowPadV),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -335,7 +336,7 @@ private fun InviteSheet(code: String?, placesLeft: Int, vm: HouseholdViewModel, 
                             style = Stroke(width = 1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f))),
                         )
                     }
-                    .clickable(role = Role.Button, onClickLabel = "Copy the code") {
+                    .pressClickable(role = Role.Button, onClickLabel = "Copy the code") {
                         val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                         cm.setPrimaryClip(ClipData.newPlainText("Invite code", shown))
                         copied = true
@@ -367,7 +368,7 @@ private fun InviteSheet(code: String?, placesLeft: Int, vm: HouseholdViewModel, 
             )
             Text(
                 "Stop people joining with this code", style = ChittaTheme.type.body, color = c.ink, textDecoration = TextDecoration.Underline,
-                modifier = Modifier.heightIn(min = Dimens.TouchTarget).clickable(role = Role.Button) { copied = false; vm.stopJoining() }.padding(vertical = Dimens.Gap3),
+                modifier = Modifier.heightIn(min = Dimens.TouchTarget).pressClickable(role = Role.Button) { copied = false; vm.stopJoining() }.padding(vertical = Dimens.Gap3),
             )
         }
     }
@@ -414,7 +415,7 @@ private fun ShareChoiceSheet(householdName: String, onContinue: (HouseholdSharin
 private fun ShareOption(title: String, detail: String, selected: Boolean, onClick: () -> Unit) {
     val c = ChittaTheme.colors
     Row(
-        Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(role = Role.RadioButton, onClick = onClick).padding(vertical = Dimens.Gap3),
+        Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = Role.RadioButton, onClick = onClick).padding(vertical = Dimens.Gap3),
         verticalAlignment = Alignment.Top,
     ) {
         Box(Modifier.padding(top = 2.dp).size(20.dp).border(1.5.dp, c.ink, CircleShape), contentAlignment = Alignment.Center) {

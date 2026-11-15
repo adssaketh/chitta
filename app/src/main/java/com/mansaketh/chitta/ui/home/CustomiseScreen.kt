@@ -58,7 +58,7 @@ fun CustomiseScreen(vm: HomeViewModel, onBack: () -> Unit) {
                     Text(
                         cfg.section.title + if (cfg.visible) "" else "  (off)", style = if (cfg.visible) ChittaTheme.type.bodyMedium else ChittaTheme.type.body,
                         color = if (cfg.visible) c.ink else c.inkMuted,
-                        modifier = Modifier.weight(1f).heightIn(min = Dimens.TouchTarget).clickable(role = Role.Switch, onClickLabel = if (cfg.visible) "Turn off" else "Turn on") { prefs.setHomeLayout(layout.toggle(cfg.section)) }.wrapContentHeight(Alignment.CenterVertically),
+                        modifier = Modifier.weight(1f).heightIn(min = Dimens.TouchTarget).pressClickable(role = Role.Switch, onClickLabel = if (cfg.visible) "Turn off" else "Turn on") { prefs.setHomeLayout(layout.toggle(cfg.section)) }.wrapContentHeight(Alignment.CenterVertically),
                     )
                     if (cfg.visible) {
                         if (cfg.section.usesAccounts) SmallAction("Accounts") { sheet = "acc:" + cfg.section.key }
@@ -132,7 +132,7 @@ fun CustomiseScreen(vm: HomeViewModel, onBack: () -> Unit) {
 private fun SmallAction(label: String, enabled: Boolean = true, onClick: () -> Unit) {
     Text(
         label, style = ChittaTheme.type.labelMedium, color = if (enabled) ChittaTheme.colors.ink else ChittaTheme.colors.inkMuted.copy(alpha = 0.4f),
-        modifier = Modifier.heightIn(min = Dimens.TouchTarget).clickable(enabled = enabled, role = Role.Button, onClick = onClick).padding(horizontal = Dimens.Gap2).wrapContentHeight(Alignment.CenterVertically),
+        modifier = Modifier.heightIn(min = Dimens.TouchTarget).pressClickable(enabled = enabled, role = Role.Button, onClick = onClick).padding(horizontal = Dimens.Gap2).wrapContentHeight(Alignment.CenterVertically),
     )
 }
 

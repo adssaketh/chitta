@@ -136,7 +136,7 @@ fun InsightsScreen(vm: InsightsViewModel, onOpenEntry: (String) -> Unit) {
                 }
                 items(d.entries, key = { "e-" + it.id }) { t ->
                     Row(
-                        Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(role = Role.Button) { vm.openDrill(null); onOpenEntry(t.id) }.padding(vertical = Dimens.Gap2),
+                        Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = Role.Button) { vm.openDrill(null); onOpenEntry(t.id) }.padding(vertical = Dimens.Gap2),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(Modifier.weight(1f)) {
@@ -238,7 +238,7 @@ private fun CurrentTab(ui: InsightsUi, onRange: () -> Unit, onAccounts: () -> Un
             slices.forEachIndexed { i, sl ->
                 val name = sl.categoryId?.let { categoryName(it, ui.categories) } ?: "Other"
                 Row(
-                    Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).let { m -> if (sl.categoryId != null) m.clickable(role = Role.Button, onClickLabel = "Open $name") { onDrill(sl.categoryId!!) } else m },
+                    Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).let { m -> if (sl.categoryId != null) m.pressClickable(role = Role.Button, onClickLabel = "Open $name") { onDrill(sl.categoryId!!) } else m },
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.Gap3),
                 ) {
                     Box(Modifier.size(Dimens.Space3).background(if (sl.categoryId == null) c.inkMuted else c.category[i % c.category.size]))
@@ -248,7 +248,7 @@ private fun CurrentTab(ui: InsightsUi, onRange: () -> Unit, onAccounts: () -> Un
             }
         } else
         ui.bars.forEach { bar ->
-            Box(Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = "Open ${categoryName(bar.categoryId, ui.categories)}") { onDrill(bar.categoryId) }) {
+            Box(Modifier.fillMaxWidth().pressClickable(role = Role.Button, onClickLabel = "Open ${categoryName(bar.categoryId, ui.categories)}") { onDrill(bar.categoryId) }) {
                 LedgerBar(categoryName(bar.categoryId, ui.categories), bar.amount, bar.amount.value.coerceAtLeast(0L).toFloat() / top)
             }
         }

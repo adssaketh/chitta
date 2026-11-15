@@ -100,7 +100,7 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
                 if (useKeyboard) "Use the keypad" else "Use the phone keyboard",
                 style = ChittaTheme.type.link, color = c.ink,
                 modifier = Modifier.align(Alignment.End).heightIn(min = Dimens.TouchTarget)
-                    .clickable(role = androidx.compose.ui.semantics.Role.Button) { useKeyboard = !useKeyboard }
+                    .pressClickable(role = androidx.compose.ui.semantics.Role.Button) { useKeyboard = !useKeyboard }
                     .padding(top = Dimens.CardInner),
             )
             Spacer(Modifier.height(Dimens.Gap3))

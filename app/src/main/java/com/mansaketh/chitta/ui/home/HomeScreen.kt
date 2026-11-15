@@ -70,7 +70,7 @@ fun HomeScreen(
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.FabInset)) {
             ui.reviewMonth?.let { month ->
                 Row(
-                    Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(role = Role.Button, onClickLabel = "Open the month in review", onClick = onOpenReview),
+                    Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = Role.Button, onClickLabel = "Open the month in review", onClick = onOpenReview),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(month.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH) + " in review", style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.weight(1f))
@@ -88,7 +88,7 @@ fun HomeScreen(
                 if (ui.budgetOptions.size > 1 && hero != null) {
                     Text(
                         hero.budget.name + "  ▾", style = ChittaTheme.type.labelMedium, color = c.ink,
-                        modifier = Modifier.heightIn(min = Dimens.TouchTarget).clickable(role = Role.Button, onClickLabel = "Change budget") { sheet = "budget" }.wrapContentHeight(Alignment.CenterVertically),
+                        modifier = Modifier.heightIn(min = Dimens.TouchTarget).pressClickable(role = Role.Button, onClickLabel = "Change budget") { sheet = "budget" }.wrapContentHeight(Alignment.CenterVertically),
                     )
                 }
                 Text(if (choice.hero == Hero.CashCheck) "Cash check" else "Safe to spend", style = ChittaTheme.type.label, color = c.inkMuted)
@@ -185,7 +185,7 @@ fun HomeScreen(
                 Section(cfg.section.title, rule = true) {
                     when (data) {
                         is SectionData.BudgetsData -> if (data.rows.isEmpty()) Muted("No budgets yet.") else data.rows.forEach { r ->
-                            Column(Modifier.fillMaxWidth().clickable(role = Role.Button) { onOpenBudget(r.budget.id) }.padding(vertical = Dimens.RowPadV)) {
+                            Column(Modifier.fillMaxWidth().pressClickable(role = Role.Button) { onOpenBudget(r.budget.id) }.padding(vertical = Dimens.RowPadV)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(r.budget.name, style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.weight(1f))
                                     AmountText(r.summary.left, style = ChittaTheme.type.amountRow)
@@ -220,7 +220,7 @@ fun HomeScreen(
                             if (data.series.size >= 2) TrendLine(data.series.map { it.figures.total.value }, "Net worth over the last ${data.series.size} months", height = Dimens.TrendHeight)
                         }
                         is SectionData.GoalsData -> if (data.rows.isEmpty()) Muted("No goals yet.") else data.rows.forEach { (g, p) ->
-                            Column(Modifier.fillMaxWidth().clickable(role = Role.Button) { onOpenGoal(g.id) }.padding(vertical = Dimens.RowPadV)) {
+                            Column(Modifier.fillMaxWidth().pressClickable(role = Role.Button) { onOpenGoal(g.id) }.padding(vertical = Dimens.RowPadV)) {
                                 Text(g.name, style = ChittaTheme.type.body, color = c.ink)
                                 GaugeBar(p.gauge, g.name)
                                 Text("${IndianFormat.rupeesRounded(p.saved)} of ${IndianFormat.rupeesRounded(p.target)}", style = ChittaTheme.type.label, color = c.inkMuted)
@@ -228,7 +228,7 @@ fun HomeScreen(
                             HairlineRule()
                         }
                         is SectionData.LoansData -> if (data.rows.isEmpty()) Muted("No loans yet.") else data.rows.forEach { (l, p) ->
-                            Column(Modifier.fillMaxWidth().clickable(role = Role.Button) { onOpenLoan(l.id) }.padding(vertical = Dimens.RowPadV)) {
+                            Column(Modifier.fillMaxWidth().pressClickable(role = Role.Button) { onOpenLoan(l.id) }.padding(vertical = Dimens.RowPadV)) {
                                 Text(l.name, style = ChittaTheme.type.body, color = c.ink)
                                 GaugeBar(p.gauge, l.name)
                                 Text("${IndianFormat.rupeesRounded(p.outstanding)} still to go", style = ChittaTheme.type.label, color = c.inkMuted)
@@ -266,7 +266,7 @@ fun HomeScreen(
 private fun LinkText(text: String, onClick: () -> Unit) {
     Text(
         text, style = ChittaTheme.type.link, color = ChittaTheme.colors.ink,
-        modifier = Modifier.clickable(role = Role.Button, onClick = onClick).padding(vertical = Dimens.Gap4),
+        modifier = Modifier.pressClickable(role = Role.Button, onClick = onClick).padding(vertical = Dimens.Gap4),
     )
 }
 
