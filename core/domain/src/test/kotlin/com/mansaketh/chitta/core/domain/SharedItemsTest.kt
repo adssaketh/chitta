@@ -137,4 +137,124 @@ class SharedItemsTest {
         assertFalse(SharedItems.paidChanged(500, 500))
         assertTrue(SharedItems.paidChanged(500, 600))
     }
+    // ---- step 5b: members' edits
+
+    private val ownerFd = FixedDeposit("fd1", "Axis", "X0001", 100_000_00L, "7.1", ms(2026, 1, 10), ms(2027, 1, 10), 4, null, "acc1", false, "", true, "sms9", 5L)
+    private val ownerLoan = Objective("L1", ObjectiveKind.LOAN, "Card loan", 0L, 3, null, 1L, null, 2L, null, null, false, false, false, "acc1")
+    private val ownerTerms = LoanTerms("L1", 50_000_00L, "15", 12, 4_500_00L, ms(2026, 2, 5), 500_00L, "18", false, listOf(1), "acc1", "", 9L)
+
+    @Test fun editorTravelsInThePayloadAndIsDroppedAgain() {
+        val base = SharedItems.depositPayload(ownerFd, zone)
+        assertNull(SharedItems.editorOf(base))
+        val edited = SharedItems.withEditor(base, "a")
+        assertEquals("a", SharedItems.editorOf(edited))
+        assertNull(SharedItems.editorOf(SharedItems.withoutEditor(edited)))
+        assertNull(SharedItems.editorOf(mapOf("editedBy" to "")))
+    }
+
+    @Test fun memberEditTimeIsAlwaysAfterTheCopyTheyStartedFrom() {
+        assertEquals(5_000L, SharedItems.editTime(5_000L, 4_000L))
+        assertEquals(4_001L, SharedItems.editTime(3_000L, 4_000L))   // a slow clock does not lose to the copy it started from
+    }
+
+    @Test fun newestChangeWinsBetweenOwnerAndMember() {
+        assertFalse(SharedItems.memberEditWaiting(null, 100, 100))
+        assertFalse(SharedItems.memberEditWaiting(100, 100, 100))     // same time = the owner's own change
+        assertFalse(SharedItems.memberEditWaiting(90, 100, 80))       // the owner's later edit beats the member's earlier one
+        assertTrue(SharedItems.memberEditWaiting(200, 100, 100))      // the member's later edit beats the owner's older one
+        assertFalse(SharedItems.memberEditWaiting(200, 100, 200))     // already applied and sent back
+        assertTrue(SharedItems.memberEditWaiting(200, 0, null))       // after a reinstall
+    }
+
+    @Test fun aMemberIsRefusedWhenTheServerCopyIsNewer() {
+        assertTrue(SharedItems.editStillValid(100, 100))
+        assertTrue(SharedItems.editStillValid(90, 100))
+        assertFalse(SharedItems.editStillValid(101, 100))
+    }
+
+    @Test fun anEditIsReplacedOnlyByAnotherPersonsLaterChange() {
+        assertFalse(SharedItems.editWasReplaced(null, 300, null, "a"))   // never edited
+        assertFalse(SharedItems.editWasReplaced(200, 200, "a", "a"))     // my own edit coming back
+        assertFalse(SharedItems.editWasReplaced(200, 150, null, "a"))    // older than mine
+        assertTrue(SharedItems.editWasReplaced(200, 300, null, "a"))     // the owner changed it later
+        assertTrue(SharedItems.editWasReplaced(200, 300, "b", "a"))      // another member did
+        assertFalse(SharedItems.editWasReplaced(200, 300, "a", "a"))     // a later edit of mine
+    }
+
+    @Test fun aDepositEditKeepsTheOwnersAccountAndIdentity() {
+        val edited = ownerFd.copy(id = "other", bank = "SBI", ratePct = "7.5", accountId = "theirs", note = "renewed", fromSms = false, smsId = "")
+        val out = SharedItems.applyDepositEdit(ownerFd, SharedItems.withEditor(SharedItems.depositPayload(edited, zone), "a"), zone, 777L)
+        assertNotNull(out)
+        assertEquals("fd1", out.id)
+        assertEquals("acc1", out.accountId)
+        assertEquals("SBI", out.bank)
+        assertEquals("7.5", out.ratePct)
+        assertEquals("renewed", out.note)
+        assertTrue(out.fromSms)
+        assertEquals("sms9", out.smsId)
+        assertEquals(777L, out.updatedAtMs)
+        assertEquals(100_000_00L, out.principal)
+    }
+
+    @Test fun aDepositEditThatCouldNotBeADepositIsRefused() {
+        fun bad(f: (FixedDeposit) -> FixedDeposit) = SharedItems.applyDepositEdit(ownerFd, SharedItems.depositPayload(f(ownerFd), zone), zone, 1L)
+        assertNull(bad { it.copy(bank = " ") })
+        assertNull(bad { it.copy(principal = 0L) })
+        assertNull(bad { it.copy(ratePct = "31") })
+        assertNull(bad { it.copy(ratePct = "-1") })
+        assertNull(bad { it.copy(maturityMs = it.startMs) })
+        assertNull(bad { it.copy(maturityAmount = 90_000_00L) })
+        assertNull(SharedItems.applyDepositEdit(ownerFd, mapOf("id" to "x"), zone, 1L))
+        assertNotNull(bad { it.copy(ratePct = "30", maturityAmount = 120_000_00L) })
+    }
+
+    @Test fun aLoanEditChangesNameAndTermsButNotAccountsOrAmount() {
+        val payload = SharedItems.loanPayload(ownerLoan.copy(name = "  Car loan  "), ownerTerms.copy(note = "bank said 3 EMI holiday", accountId = "theirs", paidInstalments = listOf(1, 2, 99)), 9_000_00L, zone)
+        val out = SharedItems.applyLoanEdit(ownerLoan, ownerTerms, SharedItems.withEditor(payload, "a"), zone, 888L)
+        assertNotNull(out)
+        val (o, t) = out
+        assertEquals("Car loan", o.name)
+        assertEquals(0L, o.amount)
+        assertEquals("acc1", o.accountId)
+        assertEquals(888L, o.modifiedAtMs)
+        assertEquals("bank said 3 EMI holiday", t.note)
+        assertEquals("acc1", t.accountId)
+        assertEquals("L1", t.objectiveId)
+        assertEquals(listOf(1, 2), t.paidInstalments)   // an instalment that does not exist is dropped
+        assertEquals(888L, t.updatedAtMs)
+    }
+
+    @Test fun aLoanEditWithoutUsableTermsIsRefused() {
+        fun bad(f: (LoanTerms) -> LoanTerms) = SharedItems.applyLoanEdit(ownerLoan, ownerTerms, SharedItems.loanPayload(ownerLoan, f(ownerTerms), 0L, zone), zone, 1L)
+        assertNull(bad { it.copy(emi = 0L) })
+        assertNull(bad { it.copy(principal = 0L) })
+        assertNull(bad { it.copy(months = 0) })
+        assertNull(bad { it.copy(months = 601) })
+        assertNull(bad { it.copy(annualRatePct = "101") })
+        assertNull(SharedItems.applyLoanEdit(ownerLoan, ownerTerms, mapOf("objective" to mapOf("name" to "x")), zone, 1L))
+        assertNotNull(bad { it.copy(annualRatePct = "0") })
+    }
+
+    @Test fun aBlankLoanNameKeepsTheOwnersName() {
+        val payload = SharedItems.loanPayload(ownerLoan.copy(name = "   "), ownerTerms, 0L, zone)
+        val out = SharedItems.applyLoanEdit(ownerLoan, ownerTerms, payload, zone, 1L)
+        assertNotNull(out)
+        assertEquals("Card loan", out.first.name)
+    }
+
+    @Test fun aLoanDetailsEditTouchesOnlyNameAndNote() {
+        val payload = SharedItems.loanPayload(ownerLoan, ownerTerms, 9_000_00L, zone)
+        val out = SharedItems.loanDetailsEdit(payload, "  Car loan ", " paid by cheque ")
+        val back = SharedItems.loanFromPayload("L1", out, zone)
+        assertEquals("Car loan", back.name)
+        assertEquals("paid by cheque", back.terms?.note)
+        assertEquals(ownerTerms.emi, back.terms?.emi)
+        assertEquals(ownerTerms.paidInstalments, back.terms?.paidInstalments)
+        assertEquals(9_000_00L, back.paidSoFar)
+        // the edit still applies to the owner's loan
+        val applied = SharedItems.applyLoanEdit(ownerLoan, ownerTerms, SharedItems.withEditor(out, "a"), zone, 5L)
+        assertNotNull(applied)
+        assertEquals("Car loan", applied.first.name)
+        assertEquals("paid by cheque", applied.second.note)
+    }
 }

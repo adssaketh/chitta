@@ -1,6 +1,15 @@
 # Changelog
 
-## Phase 9b step 5a: Shared loans and fixed deposits (15 Nov 2026) - on branch `phase-9b-step5a`
+## Phase 9b step 5b: Members edit shared items (15 Nov 2026) - on branch `phase-9b-step5b`
+- When an owner turns on "Let them edit the details", the people they share with get an "Edit details" button on the shared deposit or loan. Deposit: bank, amount, rate, dates, interest added, bank maturity amount, FD number, note. Loan: name and a note.
+- The edit goes to the server at once (it needs the connection; offline it says nothing was saved). If somebody changed the item first, it is refused and says so.
+- The owner's phone applies the newest change to the real deposit or loan within a few seconds. Accounts and the loan amount stay as the owner has them; a bad edit is refused and the owner's copy goes back up.
+- "Last edited by X" shows on the owner's deposit and loan detail and on members' sheets. If somebody else changes an item after your edit, your sheet says so.
+- Shared items still never count in a member's Net worth, loan totals or reminders. Only the owner can delete an item or change who sees it.
+- The loan note now shows on the owner's loan detail when there is one.
+- Not yet run on a phone; CI compile and tests pending (the chat workspace cannot build the app).
+
+## Phase 9b step 5a: Shared loans and fixed deposits (15 Nov 2026) - on `main`
 - Fixed deposit detail and instalment loan detail get a "Who sees it" row (only when you are in a household). Pick up to 7 people; nobody else sees the item. "Make private again" removes it for everyone.
 - "Let them edit the details" is stored and sent (the old app honours it). People using this app can only look for now; editing from here is step 5b.
 - Accounts > Fixed deposits and Plan > Loans each get a "Shared with you" list, view only, with a detail sheet. Shared items are never in your Net worth, loan totals, reminders or the instalment ticks.

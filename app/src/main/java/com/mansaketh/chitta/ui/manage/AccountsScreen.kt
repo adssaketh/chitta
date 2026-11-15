@@ -151,10 +151,15 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                     onToggleClosed = { vm.saveDeposit(cur.copy(closed = !cur.closed)); sheet = AccSheet.None },
                     onDelete = { vm.deleteDeposit(cur.id); sheet = AccSheet.None }, onClose = { sheet = AccSheet.None },
                     sharing = com.mansaketh.chitta.ui.household.sharingLine(vm.shared, com.mansaketh.chitta.core.domain.SharedItems.KIND_FD, cur.id), onShare = { sheet = AccSheet.DepositShare(cur) },
+                    editedBy = com.mansaketh.chitta.ui.household.editedByLine(vm.shared, com.mansaketh.chitta.core.domain.SharedItems.KIND_FD, cur.id),
                 )
             }
             is AccSheet.DepositShare -> com.mansaketh.chitta.ui.household.ShareSheet(vm.shared, com.mansaketh.chitta.core.domain.SharedItems.KIND_FD, s.d.id, s.d.bank.ifBlank { "this deposit" }) { sheet = AccSheet.Deposit(s.d) }
-            is AccSheet.SharedDeposit -> com.mansaketh.chitta.ui.household.SharedDepositSheet(s.v, ui.nowMs, ui.zone) { sheet = AccSheet.None }
+            is AccSheet.SharedDeposit -> {
+                // Looked up again each time, so an edit shows in the sheet as soon as it is saved.
+                val live = sharedViews.deposits.firstOrNull { it.docId == s.v.docId } ?: s.v
+                com.mansaketh.chitta.ui.household.SharedDepositSheet(live, vm.shared, ui.nowMs, ui.zone) { sheet = AccSheet.None }
+            }
             is AccSheet.DepositEdit -> DepositEditSheet(s.d, ui.nowMs, ui.zone, { vm.saveDeposit(it); sheet = AccSheet.None }, { sheet = AccSheet.None })
             is AccSheet.CardOwed -> {
                 var problem by remember { mutableStateOf<String?>(null) }

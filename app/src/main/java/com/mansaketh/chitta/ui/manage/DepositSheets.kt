@@ -61,6 +61,8 @@ fun DepositDetailSheet(
     d: FixedDeposit, nowMs: Long, zone: ZoneId, onEdit: () -> Unit, onToggleClosed: () -> Unit, onDelete: () -> Unit, onClose: () -> Unit,
     /** Who sees it, in words, and how to change it. Null when this person is not in a household. */
     sharing: String? = null, onShare: () -> Unit = {},
+    /** "Last edited by Asha" while a member's edit is the latest change (step 5b). */
+    editedBy: String? = null,
 ) {
     val c = ChittaTheme.colors
     var confirmDelete by remember { mutableStateOf(false) }
@@ -80,6 +82,7 @@ fun DepositDetailSheet(
         ValueRow("Booked", dateText(d.startMs, zone))
         ValueRow("Matures", dateText(d.maturityMs, zone))
         if (sharing != null) ValueRow("Who sees it", sharing, onClick = onShare)
+        editedBy?.let { Text(it, style = ChittaTheme.type.label, color = c.inkMuted) }
         Text(
             "Worked out on actual days over 365" + (if (bankFigure) ", spread evenly up to the bank's maturity amount." else "; the bank's own figure can differ a little."),
             style = ChittaTheme.type.label, color = c.inkMuted,

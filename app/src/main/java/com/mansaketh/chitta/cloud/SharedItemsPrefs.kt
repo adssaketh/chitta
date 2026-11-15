@@ -13,6 +13,9 @@ import javax.inject.Singleton
 /** What a viewer last saw of somebody's shared item: the owner's choices and the payload. Never part of the viewer's own book. */
 data class SharedCopy(val meta: SharedItems.Meta, val payload: Map<String, Any?>)
 
+/** The member whose edit the owner's phone applied last, and the `_u` of it. Shown as "Edited by" while nothing has changed here since. */
+data class SharedEditor(val uid: String, val atMs: Long)
+
 data class SharedItemsState(
     /** The items this person shares (private ones are not here), by document id. */
     val own: Map<String, SharedItems.Meta> = emptyMap(),
@@ -21,6 +24,10 @@ data class SharedItemsState(
     /** Document ids to remove from the server on the next round (made private, or deleted). */
     val removals: Set<String> = emptySet(),
     val members: Map<String, String> = emptyMap(),
+    /** Owner side: the member whose edit was applied last, by document id (step 5b). */
+    val editors: Map<String, SharedEditor> = emptyMap(),
+    /** Member side: items where somebody else's later change replaced this person's edit, until it is acknowledged (step 5b). */
+    val replaced: Set<String> = emptySet(),
     val problem: String = "",
     val lastSyncMs: Long = 0L,
 )
@@ -52,6 +59,8 @@ class SharedItemsPrefs @Inject constructor(@ApplicationContext context: Context)
             }.toMap(),
             removals = runCatching { JSONArray(p.getString("removals", "[]")).let { a -> (0 until a.length()).map { a.getString(it) }.toSet() } }.getOrDefault(emptySet()),
             members = obj("members").let { m -> m.keys().asSequence().associateWith { m.optString(it) } },
+            editors = obj("editors").let { e -> e.keys().asSequence().mapNotNull { id -> e.optJSONObject(id)?.let { o -> o.optString("uid").takeIf { u -> u.isNotEmpty() }?.let { u -> id to SharedEditor(u, o.optLong("at")) } } }.toMap() },
+            replaced = runCatching { JSONArray(p.getString("replaced", "[]")).let { a -> (0 until a.length()).map { a.getString(it) }.toSet() } }.getOrDefault(emptySet()),
             problem = p.getString("problem", "").orEmpty(), lastSyncMs = p.getLong("lastSync", 0L),
         )
     }
@@ -77,8 +86,8 @@ class SharedItemsPrefs @Inject constructor(@ApplicationContext context: Context)
 
     /** The server no longer has it: forget it here too. */
     @Synchronized fun removalDone(docId: String) {
-        val up = obj("uploaded").also { it.remove(docId) }; val paid = obj("paidSent").also { it.remove(docId) }
-        edit { putString("removals", JSONArray(_state.value.removals - docId).toString()).putString("uploaded", up.toString()).putString("paidSent", paid.toString()) }
+        val up = obj("uploaded").also { it.remove(docId) }; val paid = obj("paidSent").also { it.remove(docId) }; val ed = obj("editors").also { it.remove(docId) }
+        edit { putString("removals", JSONArray(_state.value.removals - docId).toString()).putString("uploaded", up.toString()).putString("paidSent", paid.toString()).putString("editors", ed.toString()) }
     }
 
     /** Takes the owner's choices from the server (after a reinstall). Does not touch what was sent. */
@@ -103,9 +112,40 @@ class SharedItemsPrefs @Inject constructor(@ApplicationContext context: Context)
     }
 
     @Synchronized fun removeCopies(ids: Collection<String>) {
-        val c = obj("copies"); var changed = false
+        val c = obj("copies"); val mine = obj("myEdits"); var changed = false
         for (id in ids) if (c.has(id)) { c.remove(id); changed = true }
-        if (changed) edit { putString("copies", c.toString()) }
+        for (id in ids) mine.remove(id)
+        if (changed) edit { putString("copies", c.toString()).putString("myEdits", mine.toString()).putString("replaced", JSONArray(_state.value.replaced - ids.toSet()).toString()) }
+    }
+
+    // ---- step 5b: members' edits
+
+    /** Owner side: a member's edit was applied here. The attribution lasts until the owner changes the item here. */
+    @Synchronized fun setEditor(docId: String, uid: String, atMs: Long) {
+        val e = obj("editors").put(docId, JSONObject().put("uid", uid).put("at", atMs))
+        edit { putString("editors", e.toString()) }
+    }
+
+    @Synchronized fun clearEditor(docId: String) {
+        val e = obj("editors"); if (!e.has(docId)) return
+        e.remove(docId); edit { putString("editors", e.toString()) }
+    }
+
+    /** Member side: the `_u` this person wrote for an item, so a later change by somebody else can be told apart from their own. */
+    fun myEditU(docId: String): Long? = obj("myEdits").let { if (it.has(docId)) it.optLong(docId) else null }
+
+    @Synchronized fun setMyEdit(docId: String, u: Long) {
+        val m = obj("myEdits").put(docId, u)
+        edit { putString("myEdits", m.toString()).putString("replaced", JSONArray(_state.value.replaced - docId).toString()) }
+    }
+
+    @Synchronized fun markReplaced(docId: String) {
+        val m = obj("myEdits").also { it.remove(docId) }
+        edit { putString("myEdits", m.toString()).putString("replaced", JSONArray(_state.value.replaced + docId).toString()) }
+    }
+
+    @Synchronized fun ackReplaced(docId: String) {
+        if (docId in _state.value.replaced) edit { putString("replaced", JSONArray(_state.value.replaced - docId).toString()) }
     }
 
     fun setMembers(names: Map<String, String>) {

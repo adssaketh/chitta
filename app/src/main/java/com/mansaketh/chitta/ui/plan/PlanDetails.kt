@@ -212,6 +212,8 @@ fun LoanDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit: 
                 if (!sum.fee.isZero) { Figure("Fee", sum.fee); Figure("GST on fee", sum.gstOnFee) }
                 // Only instalment loans can be shared: a loan without terms has nothing a viewer could see.
                 com.mansaketh.chitta.ui.household.sharingLine(vm.shared, SharedItems.KIND_LOAN, o.id)?.let { line -> ValueRow("Who sees it", line, onClick = { sharing = true }) }
+                com.mansaketh.chitta.ui.household.editedByLine(vm.shared, SharedItems.KIND_LOAN, o.id)?.let { Text(it, style = ChittaTheme.type.label, color = c.inkMuted) }
+                if (terms.note.isNotBlank()) ValueRow("Note", terms.note)
                 Text("Interest is worked on the balance left each month; the last instalment is adjusted so the loan ends at zero. Tick an instalment when you have paid it.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2))
                 SectionHeader("Instalments")
                 rows.forEach { r ->

@@ -184,4 +184,82 @@ object SharedItems {
 
     /** What the owner's phone sends again when the paid figure changes, so a payment recorded as an entry reaches the viewers. */
     fun paidChanged(sentPaise: Long?, nowPaise: Long): Boolean = sentPaise == null || sentPaise != nowPaise
+
+    // ---- members' edits (step 5b)
+
+    /** Who made the latest change, as a uid inside the payload. The rules let a member change only `payload` and `_u`, so it cannot be a field of its own. */
+    const val PAYLOAD_EDITED_BY = "editedBy"
+
+    fun editorOf(payload: Map<String, Any?>): String? = (payload[PAYLOAD_EDITED_BY] as? String)?.takeIf { it.isNotEmpty() }
+
+    /** The payload a member writes: the edited item and who edited it. The old app ignores the extra key. */
+    fun withEditor(payload: Map<String, Any?>, editorUid: String): Map<String, Any?> = payload + (PAYLOAD_EDITED_BY to editorUid)
+
+    /** The owner's phone sends this only while the item has not been changed here since the member's edit was applied. */
+    fun withoutEditor(payload: Map<String, Any?>): Map<String, Any?> = payload - PAYLOAD_EDITED_BY
+
+    /** A member's `_u`: their clock, but always later than the copy they started from. */
+    fun editTime(nowMs: Long, startedFromU: Long): Long = maxOf(nowMs, startedFromU + 1)
+
+    /**
+     * True when the server holds a change this phone has not seen: later than anything the owner changed here and later than what this phone
+     * sent. Same rule as the old app: the newest `_u` wins. A tie means the same change.
+     */
+    fun memberEditWaiting(serverU: Long?, ownerNewestMs: Long, sentMs: Long?): Boolean =
+        serverU != null && serverU > ownerNewestMs && serverU > (sentMs ?: 0L)
+
+    /** Whether a member who started from the copy with `_u` [startedFromU] may still write: refused when the server copy is newer. */
+    fun editStillValid(serverU: Long, startedFromU: Long): Boolean = serverU <= startedFromU
+
+    /**
+     * Which of the member's own edits the owner's newer change has replaced. [myEditU] is the `_u` the member wrote; [incomingU] and
+     * [incomingEditor] describe the copy that arrived. A change by the member themselves, or an older one, replaces nothing.
+     */
+    fun editWasReplaced(myEditU: Long?, incomingU: Long, incomingEditor: String?, myUid: String): Boolean =
+        myEditU != null && incomingU > myEditU && incomingEditor != myUid
+
+    /**
+     * What a member's loan edit changes in the shared payload: the name and the note, nothing else. Chitta's own loan editor changes only the
+     * name, so there is no screen that edits the terms. The owner's "paid so far" and everything else in the payload stays as it was.
+     */
+    fun loanDetailsEdit(payload: Map<String, Any?>, name: String, note: String): Map<String, Any?> {
+        fun asMap(v: Any?): Map<String, Any?> = (v as? Map<*, *>)?.entries?.associate { it.key.toString() to it.value }.orEmpty()
+        return payload + ("objective" to (asMap(payload["objective"]) + ("name" to name.trim()))) + ("terms" to (asMap(payload["terms"]) + ("note" to note.trim())))
+    }
+
+    private const val MAX_RATE_PCT = 30
+    private const val MAX_LOAN_RATE_PCT = 100
+    private const val MAX_MONTHS = 600
+    private const val MAX_NAME = 80
+
+    /**
+     * A member's edit applied to the owner's real deposit. The owner's account and the deposit's id stay; anything that could not be a
+     * deposit (no bank, amount of zero, rate out of range, maturity not after booking) is refused with null so a bad copy never reaches the book.
+     */
+    fun applyDepositEdit(current: FixedDeposit, payload: Map<String, Any?>, zone: ZoneId, atMs: Long): FixedDeposit? {
+        val d = depositFromPayload(payload, zone) ?: return null
+        val rate = d.ratePct.toBigDecimalOrNull() ?: return null
+        if (d.bank.isBlank() || d.principal <= 0L) return null
+        if (rate.signum() < 0 || rate > BigDecimal(MAX_RATE_PCT)) return null
+        if (d.maturityMs <= d.startMs) return null
+        if (d.maturityAmount != null && d.maturityAmount < d.principal) return null
+        return d.copy(id = current.id, accountId = current.accountId, smsId = current.smsId, fromSms = current.fromSms, updatedAtMs = atMs)
+    }
+
+    /**
+     * A member's edit applied to the owner's real loan: the name, the terms and the ticked instalments. The loan's accounts and its amount
+     * stay (the amount of an instalment loan comes from its terms, never from the server). Null when the terms could not be a loan.
+     */
+    fun applyLoanEdit(o: Objective, t: LoanTerms, payload: Map<String, Any?>, zone: ZoneId, atMs: Long): Pair<Objective, LoanTerms>? {
+        val shared = loanFromPayload(o.id, payload, zone)
+        val nt = shared.terms ?: return null
+        val rate = nt.annualRatePct.toBigDecimalOrNull() ?: return null
+        val gst = nt.gstPct.toBigDecimalOrNull() ?: return null
+        if (nt.principal <= 0L || nt.emi <= 0L || nt.months <= 0 || nt.months > MAX_MONTHS) return null
+        if (rate.signum() < 0 || rate > BigDecimal(MAX_LOAN_RATE_PCT) || gst.signum() < 0 || gst > BigDecimal(MAX_LOAN_RATE_PCT)) return null
+        val sent = ((payload["objective"] as? Map<*, *>)?.get("name") as? String)?.trim().orEmpty()
+        val name = sent.take(MAX_NAME).ifEmpty { o.name }
+        val ticks = nt.paidInstalments.filter { it in 1..nt.months }
+        return o.copy(name = name, modifiedAtMs = atMs) to nt.copy(objectiveId = t.objectiveId, paidInstalments = ticks, accountId = t.accountId, updatedAtMs = atMs)
+    }
 }

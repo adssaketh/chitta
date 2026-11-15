@@ -2,11 +2,13 @@ package com.mansaketh.chitta.cloud
 
 import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.FirebaseFirestoreException.Code
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.Source
+import com.google.firebase.firestore.Transaction
 import com.mansaketh.chitta.core.database.AssetsRepository
 import com.mansaketh.chitta.core.database.LedgerRepository
 import com.mansaketh.chitta.core.database.PlanRepository
@@ -35,6 +37,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -51,7 +54,8 @@ import kotlin.coroutines.cancellation.CancellationException
  *  - A loan's "paid so far" is worked out here, on the owner's phone, because the payments recorded as entries are not on the viewers' phones.
  *  - Two queries only, the ones the rules allow: `ownerUid == me` (read my choices back after a reinstall) and `visibleTo array-contains me`.
  *  - A viewer's copy is shown in its own list and is never part of Net worth, loan totals or reminders.
- *  - Step 5b adds members' edits. Until then a later edit found on the server (made in the old app) is not overwritten.
+ *  - Step 5b, members' edits (D230 to D235): a member writes only `payload` and `_u` in one transaction, refused when the server copy is newer
+ *    than the one they started from. The owner's phone applies a later `_u` to the real loan or deposit (newest wins, the owner's accounts stay).
  *  - Needs only the household and the Google sign-in; it does not wait for the entry-sharing choice.
  */
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
@@ -74,6 +78,7 @@ class HouseholdSharedItems @Inject constructor(
         const val OFFLINE = "Could not reach the server."
         const val NOT_SIGNED_IN = "Sign in with Google to share."
         const val FALLBACK_NAME = "Member"
+        const val NEWER = "newer copy on the server"
     }
 
     val state get() = prefs.state
@@ -84,6 +89,9 @@ class HouseholdSharedItems @Inject constructor(
 
     private val uploadLock = Mutex()
     private val kick = Channel<Unit>(Channel.CONFLATED)
+
+    /** Owner side: the newest `_u` the server showed for each of my documents (not counting my own writes still on their way). */
+    private val serverSeen = ConcurrentHashMap<String, Long>()
 
     /** Called once from the Application. Follows the household for as long as the app runs. */
     fun start(scope: CoroutineScope) {
@@ -140,6 +148,57 @@ class HouseholdSharedItems @Inject constructor(
         if (!household.state.value.inHousehold) return null
         return uploadRound(household.state.value.id, uid)
     }
+
+    /**
+     * A member's edit (step 5b). [payload] is the edited item in the old app's shape; the editor's uid is added here. One transaction writes only
+     * `payload` and `_u`, as the rules require, and is refused when the server copy is newer than the one this person started from. It needs the
+     * connection: offline nothing is saved and nothing is queued. Returns an error in words, or null when it worked.
+     */
+    suspend fun editShared(docId: String, payload: Map<String, Any?>): String? {
+        val uid = fb.uid ?: return NOT_SIGNED_IN
+        val hid = household.state.value.id
+        if (!household.state.value.inHousehold || hid.isEmpty()) return "Join or create a household first."
+        val copy = prefs.state.value.copies[docId] ?: return "This item is no longer shared with you."
+        val members = prefs.state.value.members.keys + uid
+        if (!SharedItems.canEdit(copy.meta, uid, members)) return "The owner has not let you edit this."
+        val startedFrom = copy.meta.updatedAtMs
+        val u = SharedItems.editTime(clock.nowMs(), startedFrom)
+        val written = SharedItems.withEditor(payload, uid)
+        return try {
+            val db = fb.db
+            val ref = db.document("households/$hid/sharedItems/$docId")
+            withTimeout(SERVER_TIMEOUT_MS) {
+                db.runTransaction(Transaction.Function<Boolean> { tx ->
+                    val snap = tx.get(ref)
+                    if (!snap.exists()) throw FirebaseFirestoreException("gone", Code.NOT_FOUND)
+                    if (!SharedItems.editStillValid(snap.getLong("_u") ?: 0L, startedFrom)) throw FirebaseFirestoreException(NEWER, Code.ABORTED)
+                    tx.update(ref, mapOf("payload" to written, "_u" to u))
+                    true
+                }).await()
+            }
+            prefs.putCopies(mapOf(docId to SharedCopy(copy.meta.copy(updatedAtMs = u), written)))
+            prefs.setMyEdit(docId, u)
+            null
+        } catch (e: TimeoutCancellationException) {
+            "Nothing was saved. $OFFLINE"
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Diagnostics.record("Shared item edit", e)
+            editProblem(e)
+        }
+    }
+
+    private fun editProblem(e: Throwable): String = when {
+        e is FirebaseFirestoreException && e.code == Code.ABORTED && e.message == NEWER -> "Nothing was saved. Somebody changed it first. Look at the new version, then edit again."
+        e is FirebaseFirestoreException && e.code == Code.NOT_FOUND -> "Nothing was saved. The owner has taken this item back."
+        e is FirebaseFirestoreException && e.code == Code.PERMISSION_DENIED -> "Nothing was saved. The owner no longer lets you edit this."
+        e is FirebaseFirestoreException && (e.code == Code.UNAVAILABLE || e.code == Code.DEADLINE_EXCEEDED) -> "Nothing was saved. $OFFLINE"
+        else -> "Nothing was saved. ${e.message.orEmpty()}".trim()
+    }
+
+    /** Lets the screens say the note about a replaced edit has been read. */
+    fun acknowledgeReplaced(docId: String) = prefs.ackReplaced(docId)
 
     // ---- reading the real item
 
@@ -212,18 +271,56 @@ class HouseholdSharedItems @Inject constructor(
 
         val newest = maxOf(local.updatedAtMs, meta.updatedAtMs)
         val paidMoved = local.paidPaise != null && SharedItems.paidChanged(prefs.paidSent(docId), local.paidPaise)
-        if (sent != null && newest <= sent && !paidMoved) return
+        val editSeen = SharedItems.memberEditWaiting(serverSeen[docId], newest, sent)
+        if (sent != null && newest <= sent && !paidMoved && !editSeen) return
 
-        // Somebody with edit rights (the old app) changed it later than anything here: do not overwrite it. Step 5b applies such edits.
+        // Somebody with edit rights changed it later than anything here: the newest `_u` wins, so their edit is applied to the real item.
         val server = withTimeout(SERVER_TIMEOUT_MS) { ref.get(Source.SERVER).await() }
+        var refusedEditU: Long? = null
         if (server.exists()) {
             val serverU = server.getLong("_u") ?: 0L
-            if (serverU > newest && serverU > (sent ?: 0L)) return
+            if (SharedItems.memberEditWaiting(serverU, newest, sent)) {
+                if (applyMemberEdit(docId, choice, server, serverU)) return
+                refusedEditU = serverU // could not be a real item: the owner's own copy goes back up over it
+            }
         }
-        val sendU = if (paidMoved) maxOf(newest, clock.nowMs()) else newest
-        val doc = SharedItems.metaToFields(meta.copy(updatedAtMs = sendU)) + ("payload" to local.payload)
+        val sendU = when {
+            refusedEditU != null -> SharedItems.editTime(clock.nowMs(), refusedEditU)
+            paidMoved -> maxOf(newest, clock.nowMs())
+            else -> newest
+        }
+        val editor = prefs.state.value.editors[docId]
+        val payload = when {
+            editor != null && local.updatedAtMs <= editor.atMs && refusedEditU == null -> SharedItems.withEditor(local.payload, editor.uid)
+            else -> { if (editor != null) prefs.clearEditor(docId); local.payload }
+        }
+        val doc = SharedItems.metaToFields(meta.copy(updatedAtMs = sendU)) + ("payload" to payload)
         withTimeout(SERVER_TIMEOUT_MS) { ref.set(doc).await() }
         prefs.sent(docId, sendU, local.paidPaise)
+    }
+
+    /**
+     * Writes a member's edit into the owner's real deposit or loan (never its accounts). Returns false when the edit could not be a deposit or
+     * a loan, so the caller puts the owner's own copy back instead; true when applied, or when the item is not here to apply it to.
+     */
+    private suspend fun applyMemberEdit(docId: String, choice: SharedItems.Meta, server: DocumentSnapshot, serverU: Long): Boolean {
+        @Suppress("UNCHECKED_CAST")
+        val payload = server.get("payload") as? Map<String, Any?> ?: return false
+        val zone = clock.zone()
+        if (choice.kind == SharedItems.KIND_FD) {
+            val current = assets.deposits().firstOrNull { it.id == choice.localId } ?: return true
+            assets.saveDeposit(SharedItems.applyDepositEdit(current, payload, zone, serverU) ?: return false)
+        } else {
+            val o = plan.objective(choice.localId) ?: return true
+            val t = plan.observeLoanTerms().first().firstOrNull { it.objectiveId == choice.localId } ?: return true
+            val (no, nt) = SharedItems.applyLoanEdit(o, t, payload, zone, serverU) ?: return false
+            plan.saveObjective(no)
+            plan.saveTerms(nt)
+        }
+        val editor = SharedItems.editorOf(payload)
+        if (editor != null) prefs.setEditor(docId, editor, serverU) else prefs.clearEditor(docId)
+        prefs.sent(docId, serverU, localItem(choice.kind, choice.localId)?.paidPaise)
+        return true
     }
 
     private fun friendly(e: Throwable): String = when {
@@ -269,16 +366,26 @@ class HouseholdSharedItems @Inject constructor(
         launch { watch("shared with me") { items.whereArrayContains("visibleTo", uid).snapshots().collect { applyShared(it, uid) } } }
     }
 
-    /** My own documents: read my choices back (after a reinstall), never the other way round. */
+    /**
+     * My own documents: read my choices back (after a reinstall), never the other way round. A later `_u` that changes nobody's access is a
+     * member's edit: it is noted here and a round applies it. It must not be adopted as a choice, or it would look like my own newest change.
+     */
     private fun applyOwn(snap: QuerySnapshot) {
         val st = prefs.state.value
+        var edited = false
         for (d in snap.documents) {
             val data = d.data ?: continue
             if (!SharedItems.isUsable(d.id, data) || d.id in st.removals) continue
             val meta = SharedItems.metaFromDocument(data) ?: continue
             val mine = st.own[d.id]
-            if (mine == null || meta.updatedAtMs > mine.updatedAtMs) prefs.adoptOwn(meta)
+            val sameChoice = mine != null && mine.visibleTo == meta.visibleTo && mine.membersCanEdit == meta.membersCanEdit
+            if (mine == null || (!sameChoice && meta.updatedAtMs > mine.updatedAtMs)) prefs.adoptOwn(meta)
+            if (!d.metadata.hasPendingWrites()) {
+                serverSeen[d.id] = meta.updatedAtMs
+                if (meta.updatedAtMs > (prefs.uploadedAt(d.id) ?: 0L)) edited = true
+            }
         }
+        if (edited) kick.trySend(Unit)
     }
 
     /** What others share with me. A document that is gone or no longer lists me leaves my phone; a later `_u` replaces the copy. */
@@ -294,6 +401,10 @@ class HouseholdSharedItems @Inject constructor(
             incoming[d.id] = SharedCopy(meta, payload)
         }
         val write = SharedItems.idsToWrite(held, incoming.mapValues { it.value.meta.updatedAtMs })
+        for (id in write) {
+            val copy = incoming.getValue(id)
+            if (SharedItems.editWasReplaced(prefs.myEditU(id), copy.meta.updatedAtMs, SharedItems.editorOf(copy.payload), myUid)) prefs.markReplaced(id)
+        }
         prefs.putCopies(write.associateWith { incoming.getValue(it) })
         val gone = snap.documentChanges.filter { it.type == DocumentChange.Type.REMOVED }.map { it.document.id }.toMutableSet()
         // Only a full server answer may say what is missing; the first answer from the cache can be partial.

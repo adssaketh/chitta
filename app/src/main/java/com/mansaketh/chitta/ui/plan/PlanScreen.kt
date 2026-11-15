@@ -157,7 +157,7 @@ private fun LoansTab(vm: PlanViewModel, ui: PlanUi, onOpen: (String) -> Unit, on
             val f = v.figures(ui.zone)
             PlanRow(v.loan.name, f?.left, "Shared by ${v.owner} · " + (if (v.loan.lent) "Lent" else "Borrowed") + (f?.let { " · paid ${rupees(it.repaid)} of ${rupees(it.total)}" } ?: ""), f?.gauge, "${v.loan.name} repaid", onClick = { viewingShared = v })
         }
-        if (sharedViews.loans.isNotEmpty()) item { Text("View only. These are not in your Net worth or loan totals.", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted) }
+        if (sharedViews.loans.isNotEmpty()) item { Text("These are not in your Net worth or loan totals. Tap one to open it.", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted) }
         if (open.isNotEmpty()) item { Spacer(Modifier.height(Dimens.SectionGap)); SectionHeader("Lent and borrowed once") }
         items(open, key = { it.id }) { t ->
             val lent = t.kind == TransactionKind.LENT
@@ -169,7 +169,11 @@ private fun LoansTab(vm: PlanViewModel, ui: PlanUi, onOpen: (String) -> Unit, on
         }
         item { Spacer(Modifier.height(Dimens.SectionGap)); ChittaButton("Add a loan", { onSheet("new-loan") }, style = ButtonStyle.Quiet) }
     }
-    viewingShared?.let { v -> com.mansaketh.chitta.ui.household.SharedLoanSheet(v, ui.zone) { viewingShared = null } }
+    viewingShared?.let { v ->
+        // Looked up again each time, so an edit shows in the sheet as soon as it is saved.
+        val live = sharedViews.loans.firstOrNull { it.docId == v.docId } ?: v
+        com.mansaketh.chitta.ui.household.SharedLoanSheet(live, vm.shared, ui.zone) { viewingShared = null }
+    }
     acting?.let { t ->
         val lent = t.kind == TransactionKind.LENT
         if (t.paid) ChoiceSheet(t.name.ifBlank { "Entry" }, listOf(Choice(if (lent) "Collect all" else "Settle all", "all"), Choice(if (lent) "Collect part" else "Pay part", "part"), Choice("Open the entry", "open")), { v ->
