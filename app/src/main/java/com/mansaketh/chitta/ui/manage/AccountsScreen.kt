@@ -34,6 +34,8 @@ private sealed interface AccSheet {
     data class Card(val a: Account) : AccSheet
     data class Deposit(val d: FixedDeposit) : AccSheet
     data class DepositEdit(val d: FixedDeposit?) : AccSheet
+    data class DepositShare(val d: FixedDeposit) : AccSheet
+    data class SharedDeposit(val v: com.mansaketh.chitta.ui.household.SharedDepositView) : AccSheet
     data class CardOwed(val card: String) : AccSheet
 }
 
@@ -41,6 +43,7 @@ private sealed interface AccSheet {
 @Composable
 fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Unit, onOpenFunds: () -> Unit = {}, onOpenAssets: () -> Unit = {}) {
     val ui by vm.ui.collectAsState()
+    val sharedViews = com.mansaketh.chitta.ui.household.rememberSharedViews(vm.shared, ui.zone)
     val c = ChittaTheme.colors
     var sheet by remember { mutableStateOf<AccSheet>(AccSheet.None) }
     var showArchived by remember { mutableStateOf(false) }
@@ -82,6 +85,7 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                 items(ui.deposits.sortedWith(compareBy({ it.closed }, { it.maturityMs })), key = { "fd-" + it.id }) { d ->
                     DepositRow(d, ui.nowMs, ui.zone) { sheet = AccSheet.Deposit(d) }
                 }
+                com.mansaketh.chitta.ui.household.sharedDepositSection(sharedViews.deposits, ui.nowMs, ui.zone) { sheet = AccSheet.SharedDeposit(it) }
                 if (ui.deposits.isNotEmpty()) {
                     val open = ui.deposits.count { !it.closed }
                     item {
@@ -145,8 +149,11 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                     cur, ui.nowMs, ui.zone, onEdit = { sheet = AccSheet.DepositEdit(cur) },
                     onToggleClosed = { vm.saveDeposit(cur.copy(closed = !cur.closed)); sheet = AccSheet.None },
                     onDelete = { vm.deleteDeposit(cur.id); sheet = AccSheet.None }, onClose = { sheet = AccSheet.None },
+                    sharing = com.mansaketh.chitta.ui.household.sharingLine(vm.shared, com.mansaketh.chitta.core.domain.SharedItems.KIND_FD, cur.id), onShare = { sheet = AccSheet.DepositShare(cur) },
                 )
             }
+            is AccSheet.DepositShare -> com.mansaketh.chitta.ui.household.ShareSheet(vm.shared, com.mansaketh.chitta.core.domain.SharedItems.KIND_FD, s.d.id, s.d.bank.ifBlank { "this deposit" }) { sheet = AccSheet.Deposit(s.d) }
+            is AccSheet.SharedDeposit -> com.mansaketh.chitta.ui.household.SharedDepositSheet(s.v, ui.nowMs, ui.zone) { sheet = AccSheet.None }
             is AccSheet.DepositEdit -> DepositEditSheet(s.d, ui.nowMs, ui.zone, { vm.saveDeposit(it); sheet = AccSheet.None }, { sheet = AccSheet.None })
             is AccSheet.CardOwed -> {
                 var problem by remember { mutableStateOf<String?>(null) }

@@ -1,5 +1,14 @@
 # Changelog
 
+## Phase 9b step 5a: Shared loans and fixed deposits (15 Nov 2026) - on branch `phase-9b-step5a`
+- Fixed deposit detail and instalment loan detail get a "Who sees it" row (only when you are in a household). Pick up to 7 people; nobody else sees the item. "Make private again" removes it for everyone.
+- "Let them edit the details" is stored and sent (the old app honours it). People using this app can only look for now; editing from here is step 5b.
+- Accounts > Fixed deposits and Plan > Loans each get a "Shared with you" list, view only, with a detail sheet. Shared items are never in your Net worth, loan totals, reminders or the instalment ticks.
+- A shared loan shows "Paid so far" as the owner's phone worked it out (ticked instalments plus payments recorded as entries there), as of the owner's last sync.
+- Same Firestore documents as the old app (`sharedItems`); the published rules are unchanged. Works without choosing what to share for entries.
+- Only instalment loans can be shared (a loan without terms has nothing a viewer could see), as in the old app.
+- Not yet run on a phone; CI compile and tests pending.
+
 ## Phase 9b step 4: Who spent how much and Diagnostics (15 Nov 2026) - on `main`
 - Settings > Household > "Who spent how much" (PDF p.34): the household total for a month and each member's spending with a 20-segment bar and their share. Shared entries only; private and personal entries, transfers, balance corrections and loans are left out; a refund reduces what its member spent. Arrows beside the month name switch months (not in the PDF).
 - Settings > Household > "Diagnostics": what this phone holds against what the server counts (shared entries, your Mine-only entries, members), with "Check again" and a note when entries are waiting to go up.

@@ -24,6 +24,7 @@ class ChittaApp : Application() {
     @Inject lateinit var cloudPrefs: com.mansaketh.chitta.cloud.CloudPrefs
     @Inject lateinit var cloudBackup: com.mansaketh.chitta.cloud.CloudBackupService
     @Inject lateinit var householdSync: com.mansaketh.chitta.cloud.HouseholdSync
+    @Inject lateinit var householdSharedItems: com.mansaketh.chitta.cloud.HouseholdSharedItems
 
     /** A restore staged by Settings is swapped in here, before anything can open the book (DECISIONS D69). */
     override fun attachBaseContext(base: Context) {
@@ -46,6 +47,7 @@ class ChittaApp : Application() {
         }
         // Entry sharing (Phase 9b step 3): follows the household and the sharing choice; does nothing until the person has chosen what to share.
         householdSync.start(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO))
+        householdSharedItems.start(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO))
         // The spend widget is redrawn whenever the book changes, or hide-amounts or the lock is switched, while the app is running.
         // Between runs it refreshes every 30 minutes (the shortest period Android allows), so the day's total can lag after midnight.
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default).launch {

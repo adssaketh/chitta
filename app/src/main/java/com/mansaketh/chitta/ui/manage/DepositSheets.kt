@@ -57,7 +57,11 @@ fun depositLine(d: FixedDeposit, nowMs: Long, zone: ZoneId): String {
  * say so, because a calculated one can differ by a few rupees (master section 12: say what a number is made of).
  */
 @Composable
-fun DepositDetailSheet(d: FixedDeposit, nowMs: Long, zone: ZoneId, onEdit: () -> Unit, onToggleClosed: () -> Unit, onDelete: () -> Unit, onClose: () -> Unit) {
+fun DepositDetailSheet(
+    d: FixedDeposit, nowMs: Long, zone: ZoneId, onEdit: () -> Unit, onToggleClosed: () -> Unit, onDelete: () -> Unit, onClose: () -> Unit,
+    /** Who sees it, in words, and how to change it. Null when this person is not in a household. */
+    sharing: String? = null, onShare: () -> Unit = {},
+) {
     val c = ChittaTheme.colors
     var confirmDelete by remember { mutableStateOf(false) }
     val bankFigure = FixedDeposits.isStatedByBank(d)
@@ -75,6 +79,7 @@ fun DepositDetailSheet(d: FixedDeposit, nowMs: Long, zone: ZoneId, onEdit: () ->
         ValueRow("Interest added", FixedDeposits.COMPOUNDING_NAMES[d.compoundingPerYear] ?: "${d.compoundingPerYear} times a year")
         ValueRow("Booked", dateText(d.startMs, zone))
         ValueRow("Matures", dateText(d.maturityMs, zone))
+        if (sharing != null) ValueRow("Who sees it", sharing, onClick = onShare)
         Text(
             "Worked out on actual days over 365" + (if (bankFigure) ", spread evenly up to the bank's maturity amount." else "; the bank's own figure can differ a little."),
             style = ChittaTheme.type.label, color = c.inkMuted,

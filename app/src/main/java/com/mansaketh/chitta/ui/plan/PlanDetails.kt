@@ -180,6 +180,7 @@ fun LoanDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit: 
     val terms = ui.terms.firstOrNull { it.objectiveId == id }
     var action by remember { mutableStateOf<String?>(null) }
     var deleting by remember { mutableStateOf(false) }
+    var sharing by remember { mutableStateOf(false) }
     val c = ChittaTheme.colors
     Column(Modifier.fillMaxSize()) {
         ChittaTopBar("Loan", onBack = onBack, actions = { IconAction(com.mansaketh.chitta.core.design.icons.ChittaIcons.Pencil, "Edit loan", onEdit) })
@@ -209,6 +210,8 @@ fun LoanDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit: 
                 Spacer(Modifier.height(Dimens.Gap3)); GaugeBar(p.gauge, "${o.name} repaid"); Spacer(Modifier.height(Dimens.Gap3))
                 Figure("Borrowed", sum.principal); Figure("Interest", sum.totalInterest); Figure("GST on interest", sum.gstOnInterest)
                 if (!sum.fee.isZero) { Figure("Fee", sum.fee); Figure("GST on fee", sum.gstOnFee) }
+                // Only instalment loans can be shared: a loan without terms has nothing a viewer could see.
+                com.mansaketh.chitta.ui.household.sharingLine(vm.shared, SharedItems.KIND_LOAN, o.id)?.let { line -> ValueRow("Who sees it", line, onClick = { sharing = true }) }
                 Text("Interest is worked on the balance left each month; the last instalment is adjusted so the loan ends at zero. Tick an instalment when you have paid it.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2))
                 SectionHeader("Instalments")
                 rows.forEach { r ->
@@ -238,6 +241,7 @@ fun LoanDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit: 
                     onSave = { amount, account, problem -> if (vm.repay(o, amount, account, more, problem)) action = null }, onDismiss = { action = null })
             }
         }
+        if (sharing) com.mansaketh.chitta.ui.household.ShareSheet(vm.shared, SharedItems.KIND_LOAN, o.id, o.name) { sharing = false }
         if (deleting) ConfirmSheet("Delete ${o.name}?", listOf("The ${linked.size} linked ${if (linked.size == 1) "entry stays" else "entries stay"} in your ledger but are no longer part of a loan.", "You can undo this for 10 seconds."), "Delete", { vm.deleteObjective(id); deleting = false; onBack() }, { deleting = false })
     }
 }

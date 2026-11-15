@@ -135,8 +135,10 @@ private fun LoansTab(vm: PlanViewModel, ui: PlanUi, onOpen: (String) -> Unit, on
     val done = oneTime.filter { !it.paid }.sortedByDescending { it.modifiedAtMs ?: it.dateMs }.take(5)
     var acting by remember { mutableStateOf<Transaction?>(null) }
     var partOf by remember { mutableStateOf<Transaction?>(null) }
+    val sharedViews = com.mansaketh.chitta.ui.household.rememberSharedViews(vm.shared, ui.zone)
+    var viewingShared by remember { mutableStateOf<com.mansaketh.chitta.ui.household.SharedLoanView?>(null) }
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
-        if (loans.isEmpty() && oneTime.isEmpty()) item { EmptyState("Money you lent or borrowed, kept apart from your spending.", "Add a loan", { onSheet("new-loan") }) }
+        if (loans.isEmpty() && oneTime.isEmpty() && sharedViews.loans.isEmpty()) item { EmptyState("Money you lent or borrowed, kept apart from your spending.", "Add a loan", { onSheet("new-loan") }) }
         if (loans.isNotEmpty()) item { SectionHeader("Loans") }  // first on the tab: no extra gap above
         items(loans, key = { it.id }) { o ->
             val t = termsOf[o.id]
@@ -150,6 +152,12 @@ private fun LoansTab(vm: PlanViewModel, ui: PlanUi, onOpen: (String) -> Unit, on
                 PlanRow(o.name, p.outstanding, (if (o.income) "Lent" else "Borrowed") + " · repaid ${rupees(p.repaid)} of ${rupees(p.total)}", p.gauge, "${o.name} repaid", onClick = { onOpen("loan:${o.id}") }, onLongClick = { onSheet("edit-loan:${o.id}") })
             }
         }
+        if (sharedViews.loans.isNotEmpty()) item { Spacer(Modifier.height(Dimens.SectionGap)); SectionHeader("Shared with you") }
+        items(sharedViews.loans, key = { "sl-" + it.docId }) { v ->
+            val f = v.figures(ui.zone)
+            PlanRow(v.loan.name, f?.left, "Shared by ${v.owner} · " + (if (v.loan.lent) "Lent" else "Borrowed") + (f?.let { " · paid ${rupees(it.repaid)} of ${rupees(it.total)}" } ?: ""), f?.gauge, "${v.loan.name} repaid", onClick = { viewingShared = v })
+        }
+        if (sharedViews.loans.isNotEmpty()) item { Text("View only. These are not in your Net worth or loan totals.", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted) }
         if (open.isNotEmpty()) item { Spacer(Modifier.height(Dimens.SectionGap)); SectionHeader("Lent and borrowed once") }
         items(open, key = { it.id }) { t ->
             val lent = t.kind == TransactionKind.LENT
@@ -161,6 +169,7 @@ private fun LoansTab(vm: PlanViewModel, ui: PlanUi, onOpen: (String) -> Unit, on
         }
         item { Spacer(Modifier.height(Dimens.SectionGap)); ChittaButton("Add a loan", { onSheet("new-loan") }, style = ButtonStyle.Quiet) }
     }
+    viewingShared?.let { v -> com.mansaketh.chitta.ui.household.SharedLoanSheet(v, ui.zone) { viewingShared = null } }
     acting?.let { t ->
         val lent = t.kind == TransactionKind.LENT
         if (t.paid) ChoiceSheet(t.name.ifBlank { "Entry" }, listOf(Choice(if (lent) "Collect all" else "Settle all", "all"), Choice(if (lent) "Collect part" else "Pay part", "part"), Choice("Open the entry", "open")), { v ->

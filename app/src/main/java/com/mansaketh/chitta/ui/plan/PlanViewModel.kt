@@ -41,6 +41,8 @@ data class BudgetForm(
 @HiltViewModel
 class PlanViewModel @Inject constructor(
     private val plan: PlanRepository,
+    /** Loans and deposits shared inside the household (step 5a); the screens read and set it through here. */
+    val shared: com.mansaketh.chitta.cloud.HouseholdSharedItems,
     private val ledger: LedgerRepository,
     accountRepo: AccountRepository,
     categoryRepo: CategoryRepository,

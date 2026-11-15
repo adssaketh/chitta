@@ -56,6 +56,8 @@ class ManageViewModel @Inject constructor(
     private val titleRepo: TitleRepository,
     private val ratesRepo: RatesRepository,
     private val assets: AssetsRepository,
+    /** Loans and deposits shared inside the household (step 5a); the screens read and set it through here. */
+    val shared: com.mansaketh.chitta.cloud.HouseholdSharedItems,
     private val prefs: com.mansaketh.chitta.data.UiPrefs,
     private val fetcher: RateFetcher,
     private val prices: com.mansaketh.chitta.data.FundPriceService,
