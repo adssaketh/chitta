@@ -34,8 +34,7 @@ import com.mansaketh.chitta.core.design.components.ChittaButton
 import com.mansaketh.chitta.core.design.components.ChittaTopBar
 import com.mansaketh.chitta.core.design.components.ExpandGroup
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
-import com.mansaketh.chitta.core.design.components.HairlineRule
-import com.mansaketh.chitta.core.design.components.SectionHeader
+import com.mansaketh.chitta.core.design.components.FootNote
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.tokens.Dimens
 import com.mansaketh.chitta.core.domain.ExportRange
@@ -109,27 +108,18 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
                 ValueRow("Animations", if (animations) "On" else "Off", onClick = { sheet = "animations" })
             }
 
-            Spacer(Modifier.height(Dimens.SectionGap))
-            SectionHeader("Security")
-            HairlineRule()
-            ValueRow("App lock", onOff(ui.lockEnabled), onClick = ::toggleLock)
-            if (ui.lockEnabled) ValueRow("Lock after leaving", ui.timeout.label, onClick = { sheet = "timeout" })
-            ValueRow("Hide in recent apps", onOff(ui.hideInRecents), onClick = { vm.setHideInRecents(!ui.hideInRecents) })
-            Text(
-                "The lock uses your fingerprint or face, or your phone's PIN, pattern or password. Hiding in recent apps also stops screenshots.",
-                style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2),
-            )
+            ExpandGroup("Security", summary = "App lock ${onOff(ui.lockEnabled).lowercase()}", icon = ChittaIcons.Lock) {
+                ValueRow("App lock", onOff(ui.lockEnabled), onClick = ::toggleLock)
+                if (ui.lockEnabled) ValueRow("Lock after leaving", ui.timeout.label, onClick = { sheet = "timeout" })
+                ValueRow("Hide in recent apps", onOff(ui.hideInRecents), onClick = { vm.setHideInRecents(!ui.hideInRecents) })
+                FootNote("The lock uses your fingerprint or face, or your phone's PIN, pattern or password. Hiding in recent apps also stops screenshots.")
+            }
 
-            Spacer(Modifier.height(Dimens.SectionGap))
-            SectionHeader("Household")
-            HairlineRule()
-            ValueRow("Household", "", onClick = { onOpen("household") })
-            Text(
-                "Share chosen entries with up to 8 people, each signed in with their own Google account. Your book stays private unless you share.",
-                style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2),
-            )
+            ExpandGroup("Household", summary = "Share chosen entries with others", icon = ChittaIcons.Users) {
+                ValueRow("Household", "", onClick = { onOpen("household") })
+                FootNote("Share chosen entries with up to 8 people, each signed in with their own Google account. Your book stays private unless you share.")
+            }
 
-            Spacer(Modifier.height(Dimens.Space6))
             ExpandGroup("Backup and restore", summary = "Drive, sync, restore points, backup files", icon = ChittaIcons.Download) {
                 ValueRow("Google Drive backup", "", onClick = { onOpen("cloud-backup") })
                 ValueRow("Sync between phones", "", onClick = { onOpen("sync") })
@@ -137,10 +127,9 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
                 ValueRow("Make a restore point now", "", onClick = { vm.makePoint() })
                 ValueRow("Save a backup file", "", onClick = { saveBackup.launch(RestorePoints.exportName(System.currentTimeMillis(), zone)) })
                 ValueRow("Bring back a backup file", "", onClick = { openBackup.launch(arrayOf("*/*")) })
-                Text(
+                FootNote(
                     "A restore point is a copy of your book kept on this phone: one a day, and one before every restore, CSV import and delete. " +
                         "Receipt photos stay on this phone and are not in restore points or backup files.",
-                    style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2),
                 )
             }
 
@@ -158,14 +147,10 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
                 ValueRow("Diagnostics", if (errorCount == 0) "No errors" else "$errorCount recorded", onClick = { sheet = "diagnostics" })
             }
 
-            Spacer(Modifier.height(Dimens.SectionGap))
-            SectionHeader("Data")
-            HairlineRule()
-            ValueRow("Delete everything", "", onClick = { sheet = "delete" })
-            Text(
-                "This empties the book on this phone. A restore point is made first, so you can bring it back from Restore points.",
-                style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2),
-            )
+            ExpandGroup("Data", summary = "Delete everything", icon = ChittaIcons.Trash) {
+                ValueRow("Delete everything", "", onClick = { sheet = "delete" })
+                FootNote("This empties the book on this phone. A restore point is made first, so you can bring it back from Restore points.")
+            }
         }
     }
 

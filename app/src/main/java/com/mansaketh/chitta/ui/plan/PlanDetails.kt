@@ -81,9 +81,10 @@ fun BudgetDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit
                 Figure("$verb so far".replaceFirstChar { it.uppercase() }, s.spent)
                 s.ideal?.let { Figure("On an even pace by today", it) }
                 if (!s.ended && s.dayOfPeriod >= 7) s.forecast?.let { Figure("At this pace you will have $verb", it) }
-                else if (!s.ended) Text("The forecast shows from day 7, when there is enough to go on.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2))
+                else if (!s.ended) FootNote("The forecast shows from day 7, when there is enough to go on.")
                 if (!s.ended) s.limitDay?.let { Text("At this pace the limit is reached on day $it.", style = ChittaTheme.type.label, color = c.inkMuted) }
             }
+            Spacer(Modifier.height(Dimens.SectionGap))
             SectionHeader("Where it went")
             Text(if (b.absoluteSpendingLimit) "Press and hold a category to set its goal as an amount." else "Press and hold a category to set its goal as a percentage of the budget.", style = ChittaTheme.type.label, color = c.inkMuted)
             if (lines.isEmpty()) Text("Nothing counted yet in this period.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap3))
@@ -101,6 +102,7 @@ fun BudgetDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit
                 HairlineRule()
             }
             if (history.isNotEmpty()) {
+                Spacer(Modifier.height(Dimens.SectionGap))
                 SectionHeader("Earlier periods")
                 history.forEach { (p, spent, limit) ->
                     Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin), verticalAlignment = Alignment.CenterVertically) {
@@ -160,6 +162,7 @@ fun GoalDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit: 
             o.endDateMs?.let { Text("Finish by ${dateText(it, ui.zone)}", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2)) }
             Spacer(Modifier.height(Dimens.Gap4))
             ChittaButton(if (o.income) "Add money" else "Add a payment", { adding = true })
+            Spacer(Modifier.height(Dimens.SectionGap))
             SectionHeader("Added so far")
             if (linked.isEmpty()) Text("Nothing added yet.", style = ChittaTheme.type.body, color = c.inkMuted)
             linked.forEach { EntryLine(it, ui) { onOpenEntry(it.id) } }
@@ -214,7 +217,8 @@ fun LoanDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit: 
                 com.mansaketh.chitta.ui.household.sharingLine(vm.shared, SharedItems.KIND_LOAN, o.id)?.let { line -> ValueRow("Who sees it", line, onClick = { sharing = true }) }
                 com.mansaketh.chitta.ui.household.editedByLine(vm.shared, SharedItems.KIND_LOAN, o.id)?.let { Text(it, style = ChittaTheme.type.label, color = c.inkMuted) }
                 if (terms.note.isNotBlank()) ValueRow("Note", terms.note)
-                Text("Interest is worked on the balance left each month; the last instalment is adjusted so the loan ends at zero. Tick an instalment when you have paid it.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2))
+                FootNote("Interest is worked on the balance left each month; the last instalment is adjusted so the loan ends at zero. Tick an instalment when you have paid it.")
+                Spacer(Modifier.height(Dimens.SectionGap))
                 SectionHeader("Instalments")
                 rows.forEach { r ->
                     val paid = r.number in terms.paidInstalments
@@ -230,6 +234,7 @@ fun LoanDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit: 
                 }
             }
             if (linked.isNotEmpty()) {
+                Spacer(Modifier.height(Dimens.SectionGap))
                 SectionHeader("Entries")
                 linked.forEach { EntryLine(it, ui) { onOpenEntry(it.id) } }
             }

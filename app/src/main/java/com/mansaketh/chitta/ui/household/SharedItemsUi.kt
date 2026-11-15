@@ -152,7 +152,7 @@ fun ShareSheet(shared: HouseholdSharedItems, kind: String, localId: String, item
 
 fun LazyListScope.sharedDepositSection(rows: List<SharedDepositView>, nowMs: Long, zone: ZoneId, onOpen: (SharedDepositView) -> Unit) {
     if (rows.isEmpty()) return
-    item { SectionHeader("Shared with you") }
+    item { Spacer(Modifier.height(Dimens.SectionGap)); SectionHeader("Shared with you") }
     rows.forEach { v ->
         item(key = "sfd-" + v.docId) {
             ValueRow(

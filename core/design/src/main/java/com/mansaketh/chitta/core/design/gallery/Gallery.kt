@@ -41,6 +41,7 @@ import com.mansaketh.chitta.core.design.components.ChittaField
 import com.mansaketh.chitta.core.design.components.ChittaTopBar
 import com.mansaketh.chitta.core.design.components.EmptyState
 import com.mansaketh.chitta.core.design.components.ExpandGroup
+import com.mansaketh.chitta.core.design.components.FootNote
 import com.mansaketh.chitta.core.design.components.ErrorState
 import com.mansaketh.chitta.core.design.components.GaugeBar
 import com.mansaketh.chitta.core.design.components.HairlineRule
@@ -201,6 +202,7 @@ fun GalleryRows() = GallerySection("Rows, tags and groups") {
         ExpandGroup("Look and feel", summary = "Theme, vibration, animations", icon = ChittaIcons.Gear, initiallyExpanded = true) {
             ListRow("Theme", onClick = {}, trailing = { Text("Follow the phone", style = ChittaTheme.type.body, color = c.ink) })
             ListRow("Vibration strength", onClick = {}, trailing = { Text("Medium", style = ChittaTheme.type.body, color = c.ink) })
+            FootNote("Vibration follows your phone's touch feedback setting.")
         }
         ExpandGroup("Backup and restore", summary = "Synced 2 min ago", icon = ChittaIcons.Download) {
             ListRow("Restore points", onClick = {})

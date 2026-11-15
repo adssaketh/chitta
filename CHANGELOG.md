@@ -1,5 +1,11 @@
 # Changelog
 
+## UI polish 3 (15 Nov 2026) - on branch `phase-ui-polish-4`
+- Settings: Security, Household and Data are now groups like Look and feel, so every section opens and closes the same way. Only Look and feel starts open.
+- Accounts: Move money and Exchange rates sit side by side (before, the second button was squeezed out and left a tall empty gap). The total balance now counts accounts whose currency was saved as "inr" (it showed 0.00), and the code shows in capitals.
+- Even spacing: every section heading has the same gap above it (Accounts, Plan details, Shared with you, Mutual funds). The grey notes under lists are one shared style.
+- Not changed: Quick Add compares the account currency to "INR" exactly. If an imported account is lower case there, the Currency row can show a rate it does not need. Money logic, so left for your decision.
+
 ## UI polish 2, part 2 (15 Nov 2026) - on branch `phase-ui-polish-3`
 - Entry history is a timeline: a thin rail with a dot per version, the action in bold with the time under it, then the entry summary, what changed, and Restore.
 - Every remaining tappable row now shows the pressed state and focus outline (Home, Insights, Plan, Accounts, Categories, Mutual funds, Assets, Household, Customise, Intake, CSV import, icon picker, Quick Add).

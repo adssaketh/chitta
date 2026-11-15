@@ -52,7 +52,7 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
     val live = ui.accounts.filter { !it.archived }.sortedBy { it.sortOrder }
     val archived = ui.accounts.filter { it.archived }
     // Different currencies are not added together: the total is shown only for rupee accounts, with a note when others exist.
-    val rupee = live.filter { (it.currency ?: "INR") == "INR" }
+    val rupee = live.filter { (it.currency ?: "INR").equals("INR", ignoreCase = true) }
     val total = rupee.fold(Paise.ZERO) { acc, a -> acc + (ui.balances[a.id] ?: Paise.ZERO) }
 
     Box(Modifier.fillMaxSize()) {
@@ -62,11 +62,11 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                 item {
                     Text("Total balance", style = ChittaTheme.type.label, color = c.inkMuted)
                     AmountText(total, style = ChittaTheme.type.amountHero, alwaysShowPaise = true)
-                    if (live.size != rupee.size) Text("Accounts in other currencies are listed below and not added in.", style = ChittaTheme.type.label, color = c.inkMuted)
-                    notice?.let { Text(it, style = ChittaTheme.type.label, color = c.inkMuted) }
-                    Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2), modifier = Modifier.padding(vertical = Dimens.Gap3)) {
-                        ChittaButton("Move money", onTransfer, style = ButtonStyle.Quiet, enabled = live.size >= 2)
-                        ChittaButton("Exchange rates", { sheet = AccSheet.Rates }, style = ButtonStyle.Quiet)
+                    if (live.size != rupee.size) FootNote("Accounts in other currencies are listed below and not added in.")
+                    notice?.let { FootNote(it) }
+                    Row(horizontalArrangement = Arrangement.spacedBy(Dimens.InlineGap), modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.Gap3)) {
+                        ChittaButton("Move money", onTransfer, modifier = Modifier.weight(1f), style = ButtonStyle.Quiet, enabled = live.size >= 2)
+                        ChittaButton("Exchange rates", { sheet = AccSheet.Rates }, modifier = Modifier.weight(1f), style = ButtonStyle.Quiet)
                     }
                     HairlineRule()
                 }
@@ -74,6 +74,7 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                 if (!ui.loading && live.isEmpty()) item { EmptyState("No accounts yet. Add one to start.", "Add an account", { sheet = AccSheet.Add }) }
                 items(live, key = { it.id }) { a -> AccountRow(a, ui.balances[a.id] ?: Paise.ZERO, ui.cards[a.id]) { sheet = AccSheet.Actions(a) } }
                 if (archived.isNotEmpty()) item {
+                    Spacer(Modifier.height(Dimens.SectionGap))
                     SectionHeader("Archived", action = if (showArchived) "Hide" else "Show", onAction = { showArchived = !showArchived })
                 }
                 if (showArchived) items(archived, key = { "x-" + it.id }) { a -> AccountRow(a, ui.balances[a.id] ?: Paise.ZERO, null) { sheet = AccSheet.Actions(a) } }
@@ -81,7 +82,7 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                 // Fixed deposits (Phase 8b). Worth shown is today's value; Net worth counts them only when switched on.
                 item { SectionHeader("Fixed deposits", action = "Add", onAction = { sheet = AccSheet.DepositEdit(null) }) }
                 if (ui.deposits.isEmpty() && !ui.loading) item {
-                    Text("No fixed deposits. Add one, or a bank message can add it.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2))
+                    FootNote("No fixed deposits. Add one, or a bank message can add it.")
                 }
                 items(ui.deposits.sortedWith(compareBy({ it.closed }, { it.maturityMs })), key = { "fd-" + it.id }) { d ->
                     DepositRow(d, ui.nowMs, ui.zone) { sheet = AccSheet.Deposit(d) }
@@ -91,10 +92,7 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                     val open = ui.deposits.count { !it.closed }
                     item {
                         ValueRow("Count deposits in Net worth", if (ui.nwDeposits) "On" else "Off", onClick = { vm.setNetWorthDeposits(!ui.nwDeposits) })
-                        Text(
-                            if (ui.nwDeposits) "$open open at today's value, as of ${dateText(ui.nowMs, ui.zone)}." else "Off, so Net worth leaves them out.",
-                            style = ChittaTheme.type.label, color = c.inkMuted,
-                        )
+                        FootNote(if (ui.nwDeposits) "$open open at today's value, as of ${dateText(ui.nowMs, ui.zone)}." else "Off, so Net worth leaves them out.")
                     }
                 }
                 // Mutual funds (Phase 8c) have their own screen.
@@ -112,9 +110,9 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                     items(owed.entries.toList(), key = { "cd-" + it.key }) { (card, v) ->
                         val matched = live.any { CardDues.forAccount(it, ui.dues.filter { d -> d.card == card }).isNotEmpty() }
                         ValueRow(card, (if (v < 0) "Credit " else "Owes ") + maskedRupees(Paise(kotlin.math.abs(v))), onClick = { sheet = AccSheet.CardOwed(card) })
-                        if (matched) Text("Counted in that account's card details.", style = ChittaTheme.type.label, color = c.inkMuted)
+                        if (matched) FootNote("Counted in that account's card details.")
                     }
-                    item { Text("Spend, payment and refund messages change what is owed. Payment messages are not saved as entries.", style = ChittaTheme.type.label, color = c.inkMuted) }
+                    item { FootNote("Spend, payment and refund messages change what is owed. Payment messages are not saved as entries.") }
                 }
             }
         }
@@ -183,7 +181,7 @@ private fun AccountRow(a: Account, balance: Paise, card: com.mansaketh.chitta.co
     Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick).padding(vertical = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(a.name, style = ChittaTheme.type.title, color = c.ink)
-            if ((a.currency ?: "INR") != "INR") Text(a.currency ?: "", style = ChittaTheme.type.label, color = c.inkMuted)
+            if (!(a.currency ?: "INR").equals("INR", ignoreCase = true)) Text((a.currency ?: "").uppercase(), style = ChittaTheme.type.label, color = c.inkMuted)
             if (card != null) Text("Owes ${IndianFormat.rupees(card.outstanding)} · due in ${card.daysToDue} ${if (card.daysToDue == 1L) "day" else "days"}", style = ChittaTheme.type.label, color = c.inkMuted)
         }
         AmountText(balance, alwaysShowPaise = true, tone = if (balance.value < 0) AmountTone.Expense else AmountTone.Neutral)

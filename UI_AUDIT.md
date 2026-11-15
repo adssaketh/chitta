@@ -208,3 +208,8 @@ Not done, and why
 - Done: timeline rows for Entry history (D268); press feedback on the remaining rows (D269).
 - Home, Insights, More: checked, no change (D270). More groups and status line (C5, M1) still undecided.
 - Still not done: Ledger rows expanding, whole-screen snapshots (D246), True black and accent (D266), a sweep for unused composables.
+
+## UI polish 3 (15 Nov 2026, branch `phase-ui-polish-4`)
+Done: all Settings sections are ExpandGroups (D271); FootNote component; SectionHeader gap rule (D272); Accounts button row and currency case (D273).
+Not checked on a phone yet. Open: whole-screen snapshots (D246); Quick Add "INR" comparison (money logic); More's groups (D270).
+

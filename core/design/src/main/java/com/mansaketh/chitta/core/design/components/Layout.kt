@@ -43,6 +43,15 @@ fun HairlineRule(modifier: Modifier = Modifier) {
 }
 
 /**
+ * The small muted note under a group of rows. One place for its size, colour and spacing, so every screen explains itself the same way
+ * (D271). Not a stamp: sentence case, no capitals.
+ */
+@Composable
+fun FootNote(text: String, modifier: Modifier = Modifier) {
+    Text(text, style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted, modifier = modifier.fillMaxWidth().padding(vertical = Dimens.Gap2))
+}
+
+/**
  * A section title: Hanken Grotesk Medium (never heavier), sentence case, an optional action on the right.
  *
  * The heading is as tall as its text, followed by [Dimens.HeadingGap] before whatever comes next (a rule

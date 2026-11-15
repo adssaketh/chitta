@@ -263,7 +263,7 @@ private fun NpsTab(ui: ManageUi, onToggleNetWorth: (Boolean) -> Unit, onAddAccou
             val schemes = ui.npsSchemes.filter { it.groupId == acc.id }.sortedBy { it.name }
             val t = Nps.totals(acc, schemes)
             item(key = "nps-" + acc.id) {
-                Spacer(Modifier.height(Dimens.Gap3))
+                Spacer(Modifier.height(Dimens.SectionGap))
                 SectionHeader(acc.name, action = "Add scheme", onAction = { onAddScheme(acc) })
                 Column(Modifier.fillMaxWidth().clickable { onAccount(acc) }) {
                     Text("Value", style = ChittaTheme.type.label, color = c.inkMuted)
