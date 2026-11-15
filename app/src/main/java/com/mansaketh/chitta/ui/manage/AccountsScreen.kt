@@ -15,6 +15,7 @@ import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.tokens.Dimens
 import com.mansaketh.chitta.core.model.Account
 import com.mansaketh.chitta.core.model.FixedDeposit
+import com.mansaketh.chitta.ui.household.sharedDepositSection
 import com.mansaketh.chitta.core.domain.CardDues
 import com.mansaketh.chitta.core.domain.FixedDeposits
 import com.mansaketh.chitta.core.domain.AmountExpression
@@ -85,7 +86,7 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                 items(ui.deposits.sortedWith(compareBy({ it.closed }, { it.maturityMs })), key = { "fd-" + it.id }) { d ->
                     DepositRow(d, ui.nowMs, ui.zone) { sheet = AccSheet.Deposit(d) }
                 }
-                com.mansaketh.chitta.ui.household.sharedDepositSection(sharedViews.deposits, ui.nowMs, ui.zone) { sheet = AccSheet.SharedDeposit(it) }
+                sharedDepositSection(sharedViews.deposits, ui.nowMs, ui.zone) { sheet = AccSheet.SharedDeposit(it) }
                 if (ui.deposits.isNotEmpty()) {
                     val open = ui.deposits.count { !it.closed }
                     item {
