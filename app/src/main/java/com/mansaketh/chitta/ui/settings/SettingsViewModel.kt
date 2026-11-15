@@ -65,6 +65,7 @@ class SettingsViewModel @Inject constructor(
     intake: com.mansaketh.chitta.intake.IntakeStore,
     private val receipts: com.mansaketh.chitta.receipts.ReceiptStore,
     private val uiPrefs: com.mansaketh.chitta.data.UiPrefs,
+    private val syncPrefs: com.mansaketh.chitta.cloud.SyncPrefs,
 ) : ViewModel() {
     val themeMode: StateFlow<String> = uiPrefs.themeMode
     fun setThemeMode(v: String) = uiPrefs.setThemeMode(v)
@@ -182,6 +183,7 @@ class SettingsViewModel @Inject constructor(
             return@work
         }
         withContext(Dispatchers.IO) { db.clearAllTables(); receipts.deleteAll() }
+        syncPrefs.bookReplaced = true // the other phones follow: every cloud row gets a delete marker at the next sync (D260)
         prefs.clearImportMarker(); prefs.firstRunDone = false
         refreshPoints()
         onDone()

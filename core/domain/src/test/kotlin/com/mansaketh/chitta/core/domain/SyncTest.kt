@@ -100,4 +100,42 @@ class SyncTest {
         assertTrue(SyncSettings.syncs("theme"))
         assertTrue(SyncSettings.syncs("hideAmounts"))
     }
+
+    // Worked example 4: the server says 10:00:00; a phone whose clock reads 10:01:59 is fine, 10:02:01 is not (limit 2 minutes).
+    @Test fun clockSkewLimit() {
+        val server = 36_000_000L
+        assertFalse(SyncMerge.skewTooBig(server + 119_000, server))
+        assertTrue(SyncMerge.skewTooBig(server + 121_000, server))
+        assertTrue(SyncMerge.skewTooBig(server - 121_000, server))
+    }
+
+    @Test fun onlyOwnRowsGoToTheCloud() {
+        assertFalse(SyncRows.syncsRow("account", "hh_u1", "u1", "me"))
+        assertTrue(SyncRows.syncsRow("account", "acc-cash", null, "me"))
+        assertFalse(SyncRows.syncsRow("txn", "t1", "other", "me"))
+        assertTrue(SyncRows.syncsRow("txn", "t1", "me", "me"))
+        assertTrue(SyncRows.syncsRow("txn", "t1", null, "me"))
+        assertFalse(SyncRows.syncsRow("setting", "lastBackup", null, "me"))
+        assertTrue(SyncRows.syncsRow("setting", "theme", null, "me"))
+        assertTrue(SyncRows.syncsRow("budget", "b1", null, "me"))
+    }
+
+    // Worked example 5: 59 s is "just now"; 5 min; 3 h; 2 days.
+    @Test fun agoWords() {
+        val now = 10L * 86_400_000L
+        assertEquals("just now", SyncStatus.ago(now - 59_000, now))
+        assertEquals("5 min ago", SyncStatus.ago(now - 5 * 60_000, now))
+        assertEquals("3 h ago", SyncStatus.ago(now - 3 * 3_600_000, now))
+        assertEquals("2 days ago", SyncStatus.ago(now - 2 * 86_400_000, now))
+    }
+
+    @Test fun statusLine() {
+        val now = 10L * 86_400_000L
+        assertEquals("Not signed in", SyncStatus.line(false, false, 0, null, false, now))
+        assertEquals("Needs your choice", SyncStatus.line(true, false, 0, null, true, now))
+        assertEquals("Syncing", SyncStatus.line(true, true, 3, now, false, now))
+        assertEquals("3 waiting to send", SyncStatus.line(true, false, 3, now, false, now))
+        assertEquals("Not synced yet", SyncStatus.line(true, false, 0, null, false, now))
+        assertEquals("Up to date, 5 min ago", SyncStatus.line(true, false, 0, now - 5 * 60_000, false, now))
+    }
 }

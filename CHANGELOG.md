@@ -1,5 +1,14 @@
 # Changelog
 
+## Phase 9c part 2, step 2: sync between phones (15 Nov 2026) - on branch `phase-9c-sync-2`
+- Settings > Backup and restore > "Sync between phones": Sync now, a status line (Up to date / N waiting / Syncing), last synced, waiting count, last error.
+- Each row of the book is one Firestore document under `users/{uid}/book`. A round pulls what changed since the cursor, applies it (newer stamp wins), then pushes this phone's changes. Runs a few seconds after an edit, when the app comes to the front, and hourly in the background (WorkManager).
+- Before sending, the server's time is checked; a phone clock more than 2 minutes off stops the sync with a message. Delete markers older than 180 days are cleared from the cloud once a day.
+- A phone that has not synced for 180 days is asked: Merge, or Replace with the cloud (a restore point is made first).
+- A restore, or "Delete everything", makes the cloud follow this phone: the phone starts over as a new device and every cloud row it lacks gets a delete marker.
+- Edit history (`entry_version`) is not synced, by your choice. No schema change.
+- Tests: new SyncTest cases (clock limit, own-rows rule, status words) and SyncStoreTest cases (read a row, newer/older cloud row, delete markers, unknown and missing columns, device-only settings, replace, start over).
+
 ## Phase 9c part 2, step 1: sync groundwork (15 Nov 2026) - on branch `phase-9c-sync`
 - Schema 10: two small tables, `sync_change` (which rows changed here and when, with delete markers) and `sync_state` (this phone's sync id and cursor). Nothing existing is changed or dropped.
 - SQLite triggers on 18 tables note every insert, edit and delete, whichever code made it (screens, importer, household sync, restore). They are put on each time the database opens.

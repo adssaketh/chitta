@@ -52,6 +52,7 @@ class MainActivity : FragmentActivity() {
     private val automation: com.mansaketh.chitta.ui.automation.AutomationViewModel by viewModels()
     private val assets: com.mansaketh.chitta.ui.assets.AssetsViewModel by viewModels()
     private val cloud: com.mansaketh.chitta.ui.cloud.CloudBackupViewModel by viewModels()
+    private val sync: com.mansaketh.chitta.ui.sync.SyncViewModel by viewModels()
     private val household: com.mansaketh.chitta.ui.household.HouseholdViewModel by viewModels()
     @Inject lateinit var signals: com.mansaketh.chitta.intake.IntakeSignals
 
@@ -127,7 +128,7 @@ class MainActivity : FragmentActivity() {
                 com.mansaketh.chitta.core.design.theme.LocalAnimationsOn provides animationsOn,
             ) {
             ChittaTheme(mode = mode, hideAmounts = hide) {
-                val vms = com.mansaketh.chitta.ui.AppViewModels(root, ledger, quickAdd, detail, manage, imports, plan, home, insights, settings, csvImport, intake, rules, automation, assets, cloud, household)
+                val vms = com.mansaketh.chitta.ui.AppViewModels(root, ledger, quickAdd, detail, manage, imports, plan, home, insights, settings, csvImport, intake, rules, automation, assets, cloud, sync, household)
                 if (locked) {
                     // While locked nothing from the book is composed, so nothing can be read or heard from behind the lock.
                     LockScreen(onUnlock = ::askToUnlock)

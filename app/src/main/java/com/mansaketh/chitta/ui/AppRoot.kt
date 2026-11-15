@@ -65,6 +65,7 @@ class AppViewModels(
     val automation: com.mansaketh.chitta.ui.automation.AutomationViewModel,
     val assets: com.mansaketh.chitta.ui.assets.AssetsViewModel,
     val cloud: com.mansaketh.chitta.ui.cloud.CloudBackupViewModel,
+    val sync: com.mansaketh.chitta.ui.sync.SyncViewModel,
     val household: com.mansaketh.chitta.ui.household.HouseholdViewModel,
 )
 
@@ -235,6 +236,7 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                         // A file from Drive that may be a Paddhu backup goes through the same preview and approval as a file you pick.
                         onPaddhuFile = { f -> vms.imports.pick(android.net.Uri.fromFile(f)); push("import") },
                     )
+                    top == "sync" -> com.mansaketh.chitta.ui.sync.SyncScreen(vms.sync, onBack = ::pop)
                     top == "household" -> com.mansaketh.chitta.ui.household.HouseholdScreen(vms.household, onBack = ::pop, onOpen = { push(it) })
                     top == "household-spent" -> com.mansaketh.chitta.ui.household.WhoSpentScreen(vms.household, onBack = ::pop)
                     top == "restore-points" -> com.mansaketh.chitta.ui.settings.RestorePointsScreen(vms.settings, onBack = ::pop)

@@ -11,6 +11,22 @@ package com.mansaketh.chitta.core.domain
 /** The stamp of one row on one device. [deleted] means a delete marker: the row is gone but the marker stays so other devices learn it. */
 data class RowStamp(val atMs: Long, val deviceId: String, val deleted: Boolean)
 
+/**
+ * One row as it travels to and from the cloud: which table and row, its stamp, the schema number of the phone that wrote it, and (unless it is
+ * a delete marker) its column values. Values are only ever Long, Double, String or null, the four kinds SQLite keeps in this book.
+ */
+data class WireRow(
+    val tbl: String,
+    val rowId: String,
+    val atMs: Long,
+    val deviceId: String,
+    val deleted: Boolean,
+    val schema: Int,
+    val values: Map<String, Any?>,
+) {
+    val stamp: RowStamp get() = RowStamp(atMs, deviceId, deleted)
+}
+
 enum class SyncDecision {
     /** Both sides already agree. Nothing to do. */
     Same,
@@ -46,6 +62,15 @@ object SyncMerge {
     /** Whether a phone that last synced at [lastSyncMs] is too old to merge safely (its delete markers may already be cleared in the cloud). */
     fun tooStale(lastSyncMs: Long?, nowMs: Long): Boolean = lastSyncMs != null && nowMs - lastSyncMs >= TOMBSTONE_DAYS * DAY_MS
 
+    /** How far this phone's clock may differ from the server's before sync refuses to send (minutes). Stamps are clock times, so a wrong clock would let old edits win. */
+    const val MAX_SKEW_MS = 2 * 60_000L
+
+    /** True when the phone clock (read at [localMidMs], the middle of the round trip) differs from the server's [serverMs] by more than [MAX_SKEW_MS]. */
+    fun skewTooBig(localMidMs: Long, serverMs: Long): Boolean = kotlin.math.abs(localMidMs - serverMs) > MAX_SKEW_MS
+
+    /** The cloud cursor is re-read a little behind where it stopped, because two phones' writes can reach the server out of order. Safe: applying the same row twice changes nothing. */
+    const val CURSOR_OVERLAP_SECONDS = 120L
+
     private const val DAY_MS = 86_400_000L
 }
 
@@ -65,6 +90,14 @@ object SyncRows {
      * this person's to sync (the household sync owns them).
      */
     fun isOwnEntry(ownerUid: String?, myUid: String): Boolean = ownerUid == null || ownerUid.isEmpty() || ownerUid == myUid
+
+    /** Whether one row is this person's own book and so goes to the cloud. Household copies and device-only settings stay on the phone. */
+    fun syncsRow(table: String, rowId: String, ownerUid: String?, myUid: String): Boolean = when (table) {
+        "account" -> !isHouseholdPlaceholderAccount(rowId)
+        "txn" -> isOwnEntry(ownerUid, myUid)
+        "setting" -> SyncSettings.syncs(rowId)
+        else -> true
+    }
 
     /** Other members' placeholder accounts (id starts with `hh_`) are made by the household sync and never synced here. */
     fun isHouseholdPlaceholderAccount(accountId: String): Boolean = accountId.startsWith("hh_")
@@ -94,4 +127,26 @@ object SyncSettings {
     )
 
     fun syncs(key: String): Boolean = key !in DEVICE_ONLY && !key.startsWith("household")
+}
+
+/** The one line the Sync screen shows. Plain words; the error text, when there is one, is shown separately. */
+object SyncStatus {
+    fun ago(thenMs: Long, nowMs: Long): String {
+        val minutes = ((nowMs - thenMs).coerceAtLeast(0L)) / 60_000L
+        return when {
+            minutes < 1 -> "just now"
+            minutes < 60 -> "$minutes min ago"
+            minutes < 24 * 60 -> "${minutes / 60} h ago"
+            else -> "${minutes / (24 * 60)} days ago"
+        }
+    }
+
+    fun line(signedIn: Boolean, running: Boolean, waiting: Int, lastSyncMs: Long?, needsChoice: Boolean, nowMs: Long): String = when {
+        !signedIn -> "Not signed in"
+        needsChoice -> "Needs your choice"
+        running -> "Syncing"
+        waiting > 0 -> "$waiting waiting to send"
+        lastSyncMs == null -> "Not synced yet"
+        else -> "Up to date, ${ago(lastSyncMs, nowMs)}"
+    }
 }

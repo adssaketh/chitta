@@ -13,6 +13,7 @@ import com.mansaketh.chitta.core.database.RuleRepository
 import com.mansaketh.chitta.core.database.CategoryWriter
 import com.mansaketh.chitta.core.database.PinnedRepository
 import com.mansaketh.chitta.core.database.RatesRepository
+import com.mansaketh.chitta.core.database.SyncStore
 import com.mansaketh.chitta.core.database.TitleRepository
 import dagger.Module
 import dagger.Provides
@@ -43,6 +44,7 @@ object AppModule {
     @Provides @Singleton fun titles(db: ChittaDatabase) = TitleRepository(db)
     @Provides @Singleton fun categoryWriter(db: ChittaDatabase) = CategoryWriter(db)
     @Provides @Singleton fun rates(db: ChittaDatabase) = RatesRepository(db)
+    @Provides @Singleton fun syncStore(db: ChittaDatabase) = SyncStore(db)
     @Provides @Singleton fun ids(): IdSource = object : IdSource { override fun newId() = UUID.randomUUID().toString() }
     @Provides @Singleton fun clock(): Clock = object : Clock {
         override fun nowMs() = System.currentTimeMillis()

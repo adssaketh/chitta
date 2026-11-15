@@ -131,6 +131,7 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
             SectionHeader("Backup and restore")
             HairlineRule()
             ValueRow("Google Drive backup", "", onClick = { onOpen("cloud-backup") })
+            ValueRow("Sync between phones", "", onClick = { onOpen("sync") })
             ValueRow("Restore points", "${ui.points.size}", onClick = { vm.refreshPoints(); onOpen("restore-points") })
             ValueRow("Make a restore point now", "", onClick = { vm.makePoint() })
             ValueRow("Save a backup file", "", onClick = { saveBackup.launch(RestorePoints.exportName(System.currentTimeMillis(), zone)) })

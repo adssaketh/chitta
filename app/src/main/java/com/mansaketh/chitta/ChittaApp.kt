@@ -25,11 +25,16 @@ class ChittaApp : Application() {
     @Inject lateinit var cloudBackup: com.mansaketh.chitta.cloud.CloudBackupService
     @Inject lateinit var householdSync: com.mansaketh.chitta.cloud.HouseholdSync
     @Inject lateinit var householdSharedItems: com.mansaketh.chitta.cloud.HouseholdSharedItems
+    @Inject lateinit var personalSync: com.mansaketh.chitta.cloud.PersonalSync
 
     /** A restore staged by Settings is swapped in here, before anything can open the book (DECISIONS D69). */
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(base)
-        DatabaseFiles.applyPending(base)
+        // A restored book is now the truth: the next sync makes the cloud, and so the other phones, follow it (DECISIONS D260).
+        if (DatabaseFiles.applyPending(base)) {
+            base.getSharedPreferences(com.mansaketh.chitta.cloud.SyncPrefs.FILE, Context.MODE_PRIVATE).edit()
+                .putBoolean(com.mansaketh.chitta.cloud.SyncPrefs.KEY_BOOK_REPLACED, true).apply()
+        }
     }
 
     @OptIn(kotlinx.coroutines.FlowPreview::class)
@@ -48,6 +53,27 @@ class ChittaApp : Application() {
         // Entry sharing (Phase 9b step 3): follows the household and the sharing choice; does nothing until the person has chosen what to share.
         householdSync.start(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO))
         householdSharedItems.start(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO))
+        // Sync between this person's phones (Phase 9c part 2): after edits, when the app comes to the front, and hourly while it is closed.
+        // Does nothing until Google is signed in.
+        com.mansaketh.chitta.cloud.PersonalSyncScheduler.schedule(this)
+        val syncScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO)
+        personalSync.start(syncScope)
+        registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
+            private var started = 0
+            private var lastRunMs = 0L
+            override fun onActivityStarted(activity: android.app.Activity) {
+                if (started++ == 0 && clock.nowMs() - lastRunMs > 30_000L) {
+                    lastRunMs = clock.nowMs()
+                    syncScope.launch { runCatching { personalSync.run("open") } }
+                }
+            }
+            override fun onActivityStopped(activity: android.app.Activity) { if (started > 0) started-- }
+            override fun onActivityCreated(activity: android.app.Activity, savedInstanceState: android.os.Bundle?) {}
+            override fun onActivityResumed(activity: android.app.Activity) {}
+            override fun onActivityPaused(activity: android.app.Activity) {}
+            override fun onActivitySaveInstanceState(activity: android.app.Activity, outState: android.os.Bundle) {}
+            override fun onActivityDestroyed(activity: android.app.Activity) {}
+        })
         // The spend widget is redrawn whenever the book changes, or hide-amounts or the lock is switched, while the app is running.
         // Between runs it refreshes every 30 minutes (the shortest period Android allows), so the day's total can lag after midnight.
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default).launch {
