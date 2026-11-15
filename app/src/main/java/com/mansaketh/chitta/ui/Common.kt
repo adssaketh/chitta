@@ -32,6 +32,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import androidx.compose.foundation.layout.size
 
 /** Category colours come from the earthy palette by a stable hash of the id (DECISIONS D38). */
 fun ChittaColors.categoryTint(id: String): Color = category[Math.floorMod(id.hashCode(), category.size)]
@@ -181,14 +182,21 @@ fun ChoiceChip(text: String, selected: Boolean, onClick: () -> Unit, tint: Color
     }
 }
 
-/** Tab-like text switch used on Ledger and Quick Add: the active one is ink with a 2 dp rule under it. */
+/**
+ * Tab-like text switch used on Ledger, Insights and Quick Add: the active one is ink with a 2 dp rule under it. [icons], when given,
+ * puts a 16 dp icon before each label (one per label). Tabs with icons are wider, so those screens let the strip scroll sideways.
+ */
 @Composable
-fun TextTabs(labels: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+fun TextTabs(labels: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier, icons: List<androidx.compose.ui.graphics.vector.ImageVector>? = null) {
     val c = ChittaTheme.colors
-    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Dimens.Gap6)) {
+    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(if (icons != null) Dimens.Gap4 else Dimens.Gap6)) {
         labels.forEachIndexed { i, label ->
+            val tint = if (i == selected) c.ink else c.inkMuted
             Column(Modifier.heightIn(min = Dimens.TouchTarget).clickable(role = Role.Tab) { onSelect(i) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                Text(label, style = if (i == selected) ChittaTheme.type.bodyMedium else ChittaTheme.type.body, color = if (i == selected) c.ink else c.inkMuted)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    icons?.getOrNull(i)?.let { Icon(it, contentDescription = null, tint = tint, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(Dimens.Gap1)) }
+                    Text(label, style = if (i == selected) ChittaTheme.type.bodyMedium else ChittaTheme.type.body, color = tint)
+                }
                 Spacer(Modifier.height(Dimens.Gap1))
                 Box(Modifier.height(2.dp).width(24.dp).background(if (i == selected) c.ink else Color.Transparent))
             }

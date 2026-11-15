@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -309,10 +310,30 @@ private fun MoreRow(label: String, meta: String?, onClick: () -> Unit) {
 
 @Composable
 private fun MoreScreen(order: List<MoreItem>, open: (MoreItem) -> Unit, onGallery: (() -> Unit)?) {
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
-        com.mansaketh.chitta.core.design.components.ScreenTitle("More", ChittaIcons.More)
-        order.forEach { MoreRow(it.label, null) { open(it) } }
-        if (onGallery != null) MoreRow("Design gallery", "Debug builds only", onGallery)
+    Column(Modifier.fillMaxSize()) {
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
+            com.mansaketh.chitta.core.design.components.ScreenTitle("More", ChittaIcons.More)
+            order.forEach { MoreRow(it.label, null) { open(it) } }
+            if (onGallery != null) MoreRow("Design gallery", "Debug builds only", onGallery)
+        }
+        AppMark(Modifier.align(Alignment.CenterHorizontally).padding(bottom = Dimens.Gap6))
+    }
+}
+
+/**
+ * The app's logo and name, quiet, at the bottom of More. The logo is the launcher icon drawn from its two layers (an adaptive icon
+ * cannot be loaded as one image), cut to a rounded square the way a launcher shows it.
+ */
+@Composable
+private fun AppMark(modifier: Modifier = Modifier) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(Modifier.size(64.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
+            // An adaptive icon is a 108 dp canvas of which the middle 72 dp shows, so the layers are drawn 1.5 times the size of the box.
+            androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(com.mansaketh.chitta.R.mipmap.ic_launcher_background), null, Modifier.requiredSize(96.dp))
+            androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(com.mansaketh.chitta.R.mipmap.ic_launcher_foreground), null, Modifier.requiredSize(96.dp))
+        }
+        Spacer(Modifier.height(Dimens.Gap2))
+        Text("Paddhu Pusthakam", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted)
     }
 }
 

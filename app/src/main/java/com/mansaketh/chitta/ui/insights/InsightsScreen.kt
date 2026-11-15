@@ -40,6 +40,8 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
+import androidx.compose.foundation.horizontalScroll
+import com.mansaketh.chitta.ui.ownsSideways
 
 private val monthShort = DateTimeFormatter.ofPattern("MMM", Locale.ENGLISH)
 private val monthYear = DateTimeFormatter.ofPattern("MMM yyyy", Locale.ENGLISH)
@@ -59,7 +61,11 @@ fun InsightsScreen(vm: InsightsViewModel, onOpenEntry: (String) -> Unit) {
 
     Column(Modifier.fillMaxSize()) {
         com.mansaketh.chitta.core.design.components.ScreenTitle("Insights", com.mansaketh.chitta.core.design.icons.ChittaIcons.Insights, Modifier.padding(horizontal = Dimens.Margin))
-        TextTabs(listOf("Current", "History", "Net worth", "Review"), tab, { tab = it }, Modifier.padding(horizontal = Dimens.Margin))
+        TextTabs(
+            listOf("Current", "History", "Net worth", "Review"), tab, { tab = it },
+            Modifier.ownsSideways().horizontalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin),
+            icons = com.mansaketh.chitta.core.design.icons.ChittaIcons.let { listOf(it.Insights, it.Undo, it.CatChartLineUp, it.Receipt) },
+        )
         HairlineRule()
         when {
             ui.loading -> LoadingPlaceholder(Modifier.padding(Dimens.Margin))

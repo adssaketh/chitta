@@ -23,6 +23,7 @@ import com.mansaketh.chitta.ui.plan.MultiPickSheet
 import java.time.DayOfWeek
 import java.time.format.TextStyle
 import java.util.Locale
+import androidx.compose.foundation.layout.size
 
 /**
  * Customise Home and tabs (master section 3). Everything here is a device setting kept in [UiPrefs]: which Home sections show and in
@@ -50,6 +51,10 @@ fun CustomiseScreen(vm: HomeViewModel, onBack: () -> Unit) {
             HairlineRule()
             layout.sections.forEachIndexed { i, cfg ->
                 Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowTall), verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.Icon(
+                        sectionIcon(cfg.section), contentDescription = null, tint = if (cfg.visible) c.ink else c.inkMuted,
+                        modifier = Modifier.padding(end = Dimens.Gap3).size(20.dp),
+                    )
                     Text(
                         cfg.section.title + if (cfg.visible) "" else "  (off)", style = if (cfg.visible) ChittaTheme.type.bodyMedium else ChittaTheme.type.body,
                         color = if (cfg.visible) c.ink else c.inkMuted,
@@ -129,4 +134,18 @@ private fun SmallAction(label: String, enabled: Boolean = true, onClick: () -> U
         label, style = ChittaTheme.type.labelMedium, color = if (enabled) ChittaTheme.colors.ink else ChittaTheme.colors.inkMuted.copy(alpha = 0.4f),
         modifier = Modifier.heightIn(min = Dimens.TouchTarget).clickable(enabled = enabled, role = Role.Button, onClick = onClick).padding(horizontal = Dimens.Gap2).wrapContentHeight(Alignment.CenterVertically),
     )
+}
+
+/** The icon beside each Home section (Customise). All come from the existing Phosphor set; nothing new was added to it. */
+private fun sectionIcon(section: HomeSection): androidx.compose.ui.graphics.vector.ImageVector = com.mansaketh.chitta.core.design.icons.ChittaIcons.let {
+    when (section) {
+        HomeSection.Budgets -> it.Plan
+        HomeSection.Balances -> it.Wallet
+        HomeSection.Recent -> it.Ledger
+        HomeSection.NetWorth -> it.CatChartLineUp
+        HomeSection.Goals -> it.CatPiggyBank
+        HomeSection.Loans -> it.Bank
+        HomeSection.Spending -> it.Tag
+        HomeSection.Heatmap -> it.Calendar
+    }
 }

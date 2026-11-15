@@ -30,6 +30,9 @@ import com.mansaketh.chitta.ui.*
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import com.mansaketh.chitta.ui.ownsSideways
 
 private enum class BulkStage { Menu, Category, Account }
 
@@ -85,7 +88,9 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
             val tabs = LedgerTab.entries
             TextTabs(
                 labels = listOf("All", "Spending", "Income", "Upcoming"), selected = tabs.indexOf(ui.filter.tab),
-                onSelect = { vm.setTab(tabs[it]) }, modifier = Modifier.padding(horizontal = Dimens.Margin),
+                onSelect = { vm.setTab(tabs[it]) },
+                modifier = Modifier.ownsSideways().horizontalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin),
+                icons = listOf(ChittaIcons.Ledger, ChittaIcons.Upload, ChittaIcons.Download, ChittaIcons.Calendar),
             )
             HairlineRule()
             val filtered = ui.filter.accountIds.isNotEmpty() || ui.filter.categoryIds.isNotEmpty() || ui.typedFilters

@@ -1,5 +1,11 @@
 # Changelog
 
+## Icons on tabs and Home sections, logo on More (15 Nov 2026) - on branch `phase-ui-polish-2`
+- Insights tabs (Current, History, Net worth, Review) and Ledger tabs (All, Spending, Income, Upcoming) each have a small icon before the label. The strips can scroll sideways when the icons make them wider than the screen; swiping on them does not change the main tab.
+- Customise > Home sections: an icon before each section name (Balances, Recent entries, Budgets, Net worth, Goals, Loans, Spending by category, Spending heatmap).
+- More: the app logo (the launcher icon) and the name sit quietly at the bottom, in the blank space. The list scrolls above it.
+- All icons come from the existing Phosphor set; none were added.
+
 ## Swipe fix, vibration strength, ledger scroll ticks (14 Nov 2026) - on branch `phase-ui-polish`
 - Tab swipe: once the finger has clearly moved sideways the movement is taken before the list sees it, so a diagonal swipe no longer turns into a scroll and fails. The Plan tab strip still scrolls on its own.
 - Settings > Look and feel > Vibration strength: Off, Light, Medium (default), Strong. Uses the phone's vibrator directly (VIBRATE permission) with a set strength; phones whose motor cannot vary strength use the normal system tap. The old on/off choice carries over (Off stays Off).
