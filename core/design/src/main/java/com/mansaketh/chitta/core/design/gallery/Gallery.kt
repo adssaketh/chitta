@@ -60,6 +60,7 @@ import com.mansaketh.chitta.core.design.components.RingLegend
 import com.mansaketh.chitta.core.design.components.SectionHeader
 import com.mansaketh.chitta.core.design.components.SheetSurface
 import com.mansaketh.chitta.core.design.components.Stamp
+import com.mansaketh.chitta.core.design.components.TimelineItem
 import com.mansaketh.chitta.core.design.components.StampTone
 import com.mansaketh.chitta.core.design.components.UndoBar
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
@@ -203,6 +204,13 @@ fun GalleryRows() = GallerySection("Rows, tags and groups") {
         }
         ExpandGroup("Backup and restore", summary = "Synced 2 min ago", icon = ChittaIcons.Download) {
             ListRow("Restore points", onClick = {})
+        }
+        TimelineItem("Edited", "12 Nov, 7:02 pm", first = true) {
+            Text("Zomato · ₹412.00 · Eating out", style = ChittaTheme.type.body, color = c.inkMuted)
+            Text("Amount: ₹400.00 to ₹412.00", style = ChittaTheme.type.label, color = c.inkMuted)
+        }
+        TimelineItem("Created", "12 Nov, 6:48 pm", last = true) {
+            Text("Zomato · ₹400.00 · Eating out", style = ChittaTheme.type.body, color = c.inkMuted)
         }
     }
 }

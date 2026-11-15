@@ -182,15 +182,16 @@ fun EntryHistoryScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> 
                 val v = versions[i]
                 val older = versions.getOrNull(i + 1)
                 val label = when (v.action) { HistoryAction.CREATED -> "Created"; HistoryAction.EDITED -> "Edited"; HistoryAction.DELETED -> "Deleted"; HistoryAction.RESTORED -> "Restored" }
-                Column(Modifier.fillMaxWidth().padding(vertical = Dimens.Gap3)) {
-                    Text("$label · ${dayAndTime(v.atMs, zone)}", style = ChittaTheme.type.title, color = c.ink)
+                TimelineItem(label, dayAndTime(v.atMs, zone), first = i == 0, last = i == versions.lastIndex) {
                     Text("${v.snapshot.name.ifBlank { "No title" }} · ${IndianFormat.rupees(Paise(Math.abs(v.snapshot.amount)), alwaysShowPaise = true)} · ${categoryName(v.snapshot.categoryId, ui.categories)}", style = ChittaTheme.type.body, color = c.inkMuted)
                     if (older != null) com.mansaketh.chitta.core.domain.EditDiff.between(older.snapshot, v.snapshot).forEach { ch ->
                         Text("${ch.field}: ${pretty(ch.field, ch.before, ui)} to ${pretty(ch.field, ch.after, ui)}", style = ChittaTheme.type.label, color = c.inkMuted)
                     }
-                    if (ui.canEdit && (i > 0 || v.action == HistoryAction.DELETED)) ChittaButton("Restore this version", { vm.restore(v) }, style = ButtonStyle.Quiet)
+                    if (ui.canEdit && (i > 0 || v.action == HistoryAction.DELETED)) {
+                        Spacer(Modifier.height(Dimens.InlineGap))
+                        ChittaButton("Restore this version", { vm.restore(v) }, style = ButtonStyle.Quiet)
+                    }
                 }
-                HairlineRule()
             }
         }
     }
