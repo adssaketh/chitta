@@ -1,5 +1,10 @@
 # Changelog
 
+## Release slimming (15 Nov 2026) - on branch `phase-9c-release-slim`
+- Release APK leaves out files the app never reads: the post-quantum cipher tables inside Bouncy Castle (about 4 MB packed), pdfbox's Chinese/Japanese/Korean font maps, stray `.proto` and licence files, and the unused legacy launcher PNGs (minSdk 26 always uses the adaptive icon).
+- Not removed: the receipt text reader (ML Kit, about 11.8 MB), which is the largest part of the APK and a shipped feature.
+- A PDF that uses a CJK font will no longer give text. Statements read here are English.
+
 ## Phase 9c part 2, step 2: sync between phones (15 Nov 2026) - on branch `phase-9c-sync-2`
 - Settings > Backup and restore > "Sync between phones": Sync now, a status line (Up to date / N waiting / Syncing), last synced, waiting count, last error.
 - Each row of the book is one Firestore document under `users/{uid}/book`. A round pulls what changed since the cursor, applies it (newer stamp wins), then pushes this phone's changes. Runs a few seconds after an edit, when the app comes to the front, and hourly in the background (WorkManager).

@@ -50,6 +50,28 @@ android {
         }
     }
 
+    packaging {
+        resources {
+            excludes += setOf(
+                // Bouncy Castle (pulled in by pdfbox-android) ships tables for post-quantum ciphers the app never uses: about 4 MB packed.
+                "org/bouncycastle/pqc/**",
+                // Proto definitions that Firebase libraries copy in as plain files; nothing reads them at run time.
+                "google/**/*.proto",
+                "META-INF/*.version",
+                "META-INF/AL2.0",
+                "META-INF/LGPL2.1",
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE*",
+                "META-INF/NOTICE*",
+                "DebugProbesKt.bin",
+                // pdfbox font maps for Chinese, Japanese and Korean PDFs. Statements read here are English; a CJK-font PDF would lose its text.
+                "assets/com/tom_roush/fontbox/resources/cmap/Adobe-*",
+                "assets/com/tom_roush/fontbox/resources/cmap/Uni*",
+                "assets/com/tom_roush/fontbox/resources/cmap/*-UCS2-*",
+            )
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
