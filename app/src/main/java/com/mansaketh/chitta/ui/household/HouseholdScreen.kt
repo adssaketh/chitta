@@ -54,6 +54,7 @@ import com.mansaketh.chitta.core.design.icons.ChittaIcons
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.tokens.Dimens
 import com.mansaketh.chitta.core.design.tokens.Shapes
+import com.mansaketh.chitta.core.domain.HouseholdDiagnostics
 import com.mansaketh.chitta.core.domain.HouseholdMember
 import com.mansaketh.chitta.core.domain.HouseholdSharing
 import com.mansaketh.chitta.core.domain.Households
@@ -66,10 +67,10 @@ import com.mansaketh.chitta.ui.ValueRow
 
 /**
  * Household (Phase 9b, steps 2 and 3). The page follows the design PDF p.31 (Household), p.32 (Invite sheet) and p.33 (Choose what to share).
- * Not built yet, so not drawn here: "Who spent how much" (PDF p.31) comes in step 4.
+ * Step 4 adds the "Who spent how much" row (opens the p.34 page) and the Diagnostics row and sheet.
  */
 @Composable
-fun HouseholdScreen(vm: HouseholdViewModel, onBack: () -> Unit) {
+fun HouseholdScreen(vm: HouseholdViewModel, onBack: () -> Unit, onOpen: (String) -> Unit = {}) {
     val ui by vm.ui.collectAsState()
     val c = ChittaTheme.colors
     val activity = LocalContext.current as? Activity
@@ -104,6 +105,8 @@ fun HouseholdScreen(vm: HouseholdViewModel, onBack: () -> Unit) {
                     onMember = { m -> sheet = if (m.uid == ui.myUid) "nickname" else "member:" + m.uid },
                     onToggleBalances = { vm.setShowBalances(!snap.showBalances) },
                     onSharing = { sheet = if (ui.sharing.ready) "sharing" else "share-choice" },
+                    onWhoSpent = { onOpen("household-spent") },
+                    onDiagnostics = { vm.loadDiagnostics(); sheet = "diagnostics" },
                     onLeave = { sheet = "leave" },
                 )
             }
@@ -124,6 +127,7 @@ fun HouseholdScreen(vm: HouseholdViewModel, onBack: () -> Unit) {
             onContinue = { choice -> sheet = null; vm.chooseSharing(choice) }, onNotNow = { sheet = null },
         )
         key == "sharing" && ui.local.inHousehold -> SharingSheet(ui, vm, onClose = { sheet = null })
+        key == "diagnostics" && ui.local.inHousehold -> DiagnosticsSheet(vm, onClose = { sheet = null })
         key == "invite" && snap != null -> InviteSheet(ui.code, Households.placesLeft(snap.members.size), vm, onClose = { sheet = null })
         key == "leave" -> ConfirmSheet(
             "Leave this household?",
@@ -186,7 +190,8 @@ private fun NoHouseholdPart(busy: Boolean, onCreate: () -> Unit, onJoin: () -> U
 @Composable
 private fun HouseholdPart(
     ui: HouseholdUi, snap: HouseholdSnapshot,
-    onRename: () -> Unit, onInvite: () -> Unit, onMember: (HouseholdMember) -> Unit, onToggleBalances: () -> Unit, onSharing: () -> Unit, onLeave: () -> Unit,
+    onRename: () -> Unit, onInvite: () -> Unit, onMember: (HouseholdMember) -> Unit, onToggleBalances: () -> Unit, onSharing: () -> Unit,
+    onWhoSpent: () -> Unit, onDiagnostics: () -> Unit, onLeave: () -> Unit,
 ) {
     val c = ChittaTheme.colors
     val iAmOwner = ui.local.isOwner
@@ -234,6 +239,10 @@ private fun HouseholdPart(
         style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2),
     )
     if (ui.sharing.problem.isNotBlank()) Text(ui.sharing.problem, style = ChittaTheme.type.label, color = c.ink, modifier = Modifier.padding(bottom = Dimens.Gap2))
+
+    // PDF p.34 is reached from here. Diagnostics (master section 7) has no PDF page: a value row opening a sheet, built from existing parts.
+    ValueRow("Who spent how much", "This month", onClick = onWhoSpent)
+    ValueRow("Diagnostics", "Phone and server", onClick = onDiagnostics)
 
     Spacer(Modifier.height(Dimens.SectionGap))
     if (iAmOwner) {
@@ -446,5 +455,43 @@ private fun SharingSheet(ui: HouseholdUi, vm: HouseholdViewModel, onClose: () ->
             "Entries marked Mine only are never shared. Sharing earlier entries cannot be undone from here; leaving the household keeps your entries on this phone.",
             style = ChittaTheme.type.label, color = c.inkMuted,
         )
+    }
+}
+
+/** What the phone and the server each hold, side by side (master section 7). Read from the server when the sheet opens; "Check again" reads it again. */
+@Composable
+private fun DiagnosticsSheet(vm: HouseholdViewModel, onClose: () -> Unit) {
+    val c = ChittaTheme.colors
+    val d by vm.diagnostics.collectAsState()
+    BottomOverlay(onClose) {
+        Text("Diagnostics", style = ChittaTheme.type.title, color = c.ink)
+        Spacer(Modifier.height(Dimens.Gap2))
+        Text("What this phone holds against what the server holds.", style = ChittaTheme.type.label, color = c.inkMuted)
+        Spacer(Modifier.height(Dimens.Gap3))
+        when {
+            d.loading -> Text("Reading the server.", style = ChittaTheme.type.body, color = c.inkMuted)
+            d.error != null -> Text(d.error!!, style = ChittaTheme.type.body, color = c.ink)
+            else -> {
+                HairlineRule()
+                d.rows.forEach { r ->
+                    Column(Modifier.fillMaxWidth().padding(vertical = Dimens.RowPadV)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(r.label, style = ChittaTheme.type.body, color = c.ink)
+                            Text("Phone ${r.phone} · Server ${r.server}", style = ChittaTheme.type.label, color = c.inkMuted)
+                        }
+                        Text(HouseholdDiagnostics.describe(r), style = ChittaTheme.type.label, color = c.inkMuted)
+                    }
+                    HairlineRule()
+                }
+                Spacer(Modifier.height(Dimens.Gap3))
+                Text(
+                    if (HouseholdDiagnostics.allSame(d.rows)) "Everything matches." else "Something differs. Tap Send now on Your sharing, then check again.",
+                    style = ChittaTheme.type.body, color = c.ink,
+                )
+            }
+        }
+        HouseholdDiagnostics.waitingNote(d.waiting)?.let { Text(it, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2)) }
+        Spacer(Modifier.height(Dimens.Gap4))
+        ChittaButton("Check again", { vm.loadDiagnostics() }, style = ButtonStyle.Quiet, enabled = !d.loading)
     }
 }

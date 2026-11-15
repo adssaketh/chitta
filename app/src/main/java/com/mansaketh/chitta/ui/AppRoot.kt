@@ -229,7 +229,8 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                         // A file from Drive that may be a Paddhu backup goes through the same preview and approval as a file you pick.
                         onPaddhuFile = { f -> vms.imports.pick(android.net.Uri.fromFile(f)); push("import") },
                     )
-                    top == "household" -> com.mansaketh.chitta.ui.household.HouseholdScreen(vms.household, onBack = ::pop)
+                    top == "household" -> com.mansaketh.chitta.ui.household.HouseholdScreen(vms.household, onBack = ::pop, onOpen = { push(it) })
+                    top == "household-spent" -> com.mansaketh.chitta.ui.household.WhoSpentScreen(vms.household, onBack = ::pop)
                     top == "restore-points" -> com.mansaketh.chitta.ui.settings.RestorePointsScreen(vms.settings, onBack = ::pop)
                     top == "automation" -> com.mansaketh.chitta.ui.automation.AutomationScreen(vms.automation, onBack = ::pop)
                     top == "rules" -> com.mansaketh.chitta.ui.rules.RulesScreen(vms.rules, onBack = ::pop)

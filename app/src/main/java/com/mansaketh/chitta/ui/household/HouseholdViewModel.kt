@@ -13,7 +13,13 @@ import com.mansaketh.chitta.cloud.HouseholdService
 import com.mansaketh.chitta.cloud.HouseholdSharingPrefs
 import com.mansaketh.chitta.cloud.HouseholdSync
 import com.mansaketh.chitta.cloud.SharingState
+import com.mansaketh.chitta.core.database.CategoryRepository
 import com.mansaketh.chitta.core.database.HouseholdStore
+import com.mansaketh.chitta.core.database.LedgerRepository
+import com.mansaketh.chitta.core.domain.DiagnosticRow
+import com.mansaketh.chitta.core.domain.HouseholdDiagnostics
+import com.mansaketh.chitta.core.domain.WhoSpent
+import com.mansaketh.chitta.core.domain.WhoSpentResult
 import com.mansaketh.chitta.core.domain.HouseholdSharing
 import com.mansaketh.chitta.cloud.HouseholdSnapshot
 import com.mansaketh.chitta.cloud.SignInResult
@@ -25,6 +31,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.YearMonth
+import java.time.ZoneId
 import javax.inject.Inject
 
 data class HouseholdUi(
@@ -49,6 +57,14 @@ data class HouseholdUi(
     val askToShare: Boolean = false,
 )
 
+/** The diagnostics view (Phase 9b step 4): one row per question, the waiting note, and whether the server could be read. */
+data class DiagnosticsUi(
+    val loading: Boolean = false,
+    val rows: List<DiagnosticRow> = emptyList(),
+    val waiting: Int = 0,
+    val error: String? = null,
+)
+
 /**
  * Household page logic (Phase 9b, step 2). Every action goes through [HouseholdService]; the page shows what the server says, and the
  * copy on this phone ([HouseholdPrefs]) only tells it which household to ask about.
@@ -62,6 +78,8 @@ class HouseholdViewModel @Inject constructor(
     private val fb: FirebaseSession,
     private val sync: HouseholdSync,
     sharingPrefs: HouseholdSharingPrefs,
+    ledger: LedgerRepository,
+    categoryRepo: CategoryRepository,
 ) : ViewModel() {
     private val busy = MutableStateFlow(false)
     private val notice = MutableStateFlow<String?>(null)
@@ -84,6 +102,36 @@ class HouseholdViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.Eagerly, HouseholdUi())
 
     fun dismissNotice() { notice.value = null }
+
+    // ---- Who spent how much (PDF p.34)
+    private val zone: ZoneId = ZoneId.systemDefault()
+    private val _month = MutableStateFlow(YearMonth.now(zone))
+    val month: StateFlow<YearMonth> = _month
+
+    /** The month's numbers, or null while the member list has not been read yet. Shared entries only (see [WhoSpent]). */
+    val spent: StateFlow<WhoSpentResult?> = combine(ledger.observeEverything(), categoryRepo.observeAll(), snapshot, _month, myUid) { entries, cats, snap, month, uid ->
+        snap?.let { WhoSpent.compute(entries, cats, WhoSpent.monthPeriod(month, zone), it.members, uid) }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    fun earlierMonth() { _month.value = _month.value.minusMonths(1) }
+    fun laterMonth() { if (_month.value < YearMonth.now(zone)) _month.value = _month.value.plusMonths(1) }
+
+    // ---- diagnostics: what the phone and the server each hold
+    private val _diagnostics = MutableStateFlow(DiagnosticsUi())
+    val diagnostics: StateFlow<DiagnosticsUi> = _diagnostics
+
+    fun loadDiagnostics() {
+        if (_diagnostics.value.loading) return
+        _diagnostics.value = _diagnostics.value.copy(loading = true, error = null)
+        viewModelScope.launch {
+            val phone = sync.phoneHolds()
+            if (phone == null) { _diagnostics.value = DiagnosticsUi(error = "Sign in with Google to read the household."); return@launch }
+            when (val server = sync.serverHolds()) {
+                is HResult.Ok -> _diagnostics.value = DiagnosticsUi(rows = HouseholdDiagnostics.rows(phone, server.value), waiting = phone.waiting)
+                is HResult.Fail -> _diagnostics.value = DiagnosticsUi(waiting = phone.waiting, error = server.message)
+            }
+        }
+    }
 
     /**
      * The page opened. If Firebase already has this person signed in, re-check the household on the server. Otherwise the page shows a

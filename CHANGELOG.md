@@ -1,5 +1,11 @@
 # Changelog
 
+## Phase 9b step 4: Who spent how much and Diagnostics (15 Nov 2026) - on `main`
+- Settings > Household > "Who spent how much" (PDF p.34): the household total for a month and each member's spending with a 20-segment bar and their share. Shared entries only; private and personal entries, transfers, balance corrections and loans are left out; a refund reduces what its member spent. Arrows beside the month name switch months (not in the PDF).
+- Settings > Household > "Diagnostics": what this phone holds against what the server counts (shared entries, your Mine-only entries, members), with "Check again" and a note when entries are waiting to go up.
+- Settle up (PDF p.29) is not built: the owner dropped it (D220). The "Settle up" link on p.34 is left out for the same reason. No shares, no "who owes whom".
+- Not yet run on a phone. The server counts use Firestore count queries and have not been tried against the live rules.
+
 ## Phase 9b step 3: Sharing entries (15 Nov 2026) - on `main`
 - After you create or join a household, "Choose what to share" (PDF p.33): share your existing entries, or only new ones. "Not now" keeps everything on the phone. Settings > Household > "Your sharing" (PDF p.31) shows Up to date / N waiting / Needs attention, with Send now and "Share my earlier entries".
 - New entries are shared by default. "Who sees it" in Quick Add and on the entry detail switches one to "Mine only".

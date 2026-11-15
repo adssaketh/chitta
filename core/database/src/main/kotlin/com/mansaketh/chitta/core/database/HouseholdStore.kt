@@ -2,6 +2,7 @@ package com.mansaketh.chitta.core.database
 
 import androidx.room.withTransaction
 import com.mansaketh.chitta.core.domain.HouseholdSharing
+import com.mansaketh.chitta.core.domain.PhoneHolds
 import com.mansaketh.chitta.core.model.Category
 import com.mansaketh.chitta.core.model.Transaction
 import kotlinx.coroutines.flow.Flow
@@ -130,6 +131,13 @@ class HouseholdStore(private val db: ChittaDatabase) {
     )
 
     data class Counts(val shared: Int, val waiting: Int, val fromMembers: Int)
+
+    /** What this phone holds, for the diagnostics view. Members = the other members' placeholder accounts plus this person. */
+    suspend fun phoneHolds(uid: String): PhoneHolds = PhoneHolds(
+        sharedSent = db.transactions().countSent(uid, false), privateSent = db.transactions().countSent(uid, true),
+        waiting = db.transactions().countWaiting(uid), fromMembers = db.transactions().countMembersEntries(),
+        members = db.accounts().getPlaceholders().size + 1,
+    )
 
     private companion object {
         /** SQLite allows 999 variables in one statement. */

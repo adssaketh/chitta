@@ -1,5 +1,6 @@
 package com.mansaketh.chitta.cloud
 
+import com.google.firebase.firestore.AggregateSource
 import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
@@ -13,6 +14,8 @@ import com.google.firebase.firestore.Source
 import com.mansaketh.chitta.core.database.HouseholdStore
 import com.mansaketh.chitta.core.domain.HouseholdSharing
 import com.mansaketh.chitta.core.domain.HouseholdWire
+import com.mansaketh.chitta.core.domain.PhoneHolds
+import com.mansaketh.chitta.core.domain.ServerHolds
 import com.mansaketh.chitta.core.model.Transaction
 import com.mansaketh.chitta.di.Clock
 import com.mansaketh.chitta.diagnostics.Diagnostics
@@ -176,6 +179,34 @@ class HouseholdSync @Inject constructor(
     }
 
     suspend fun counts(): HouseholdStore.Counts? = fb.uid?.let { runCatching { store.counts(it) }.getOrNull() }
+
+    /** What this phone holds, for the diagnostics view. Null when nobody is signed in. */
+    suspend fun phoneHolds(): PhoneHolds? = fb.uid?.let { runCatching { store.phoneHolds(it) }.getOrNull() }
+
+    /**
+     * What the server holds, counted by the server itself (not from the phone's cache): entries not marked private, my own Mine-only entries,
+     * and members. Equality-only queries like the ones the sync listens to, so the published rules already allow them. Returns the counts or a
+     * short reason it could not be read.
+     */
+    suspend fun serverHolds(): HResult<ServerHolds> {
+        val uid = fb.uid ?: return HResult.Fail(NOT_SIGNED_IN)
+        val hid = household.state.value.id.takeIf { household.state.value.inHousehold } ?: return HResult.Fail("Join or create a household first.")
+        return try {
+            withTimeout(SERVER_TIMEOUT_MS) {
+                val doc = fb.db.document("households/$hid")
+                val entries = doc.collection("transactions")
+                val shared = async { entries.whereEqualTo("isPrivate", false).count().get(AggregateSource.SERVER).await().count }
+                val mine = async { entries.whereEqualTo("ownerId", uid).whereEqualTo("isPrivate", true).count().get(AggregateSource.SERVER).await().count }
+                val members = async { doc.collection("members").count().get(AggregateSource.SERVER).await().count }
+                HResult.Ok(ServerHolds(shared.await().toInt(), mine.await().toInt(), members.await().toInt()))
+            }
+        } catch (e: CancellationException) {
+            if (e is TimeoutCancellationException) HResult.Fail(OFFLINE) else throw e
+        } catch (e: Exception) {
+            Diagnostics.record("household diagnostics", e)
+            HResult.Fail(if (e is FirebaseFirestoreException && e.code == Code.PERMISSION_DENIED) "The server refused the count." else OFFLINE)
+        }
+    }
 
     // ---- upload
 

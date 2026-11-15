@@ -86,6 +86,9 @@ interface TransactionDao {
     @Query("SELECT COUNT(*) FROM txn WHERE ownerUid = :uid AND householdSyncedAtMs IS NULL AND substr(accountId, 1, 3) <> 'hh_'") suspend fun countWaiting(uid: String): Int
     @Query("SELECT COUNT(*) FROM txn WHERE substr(accountId, 1, 3) = 'hh_'") suspend fun countMembersEntries(): Int
     @Query("SELECT COUNT(*) FROM txn WHERE ownerUid = :uid AND substr(accountId, 1, 3) <> 'hh_'") suspend fun countShared(uid: String): Int
+    /** Entries of mine that went up and have not changed since, split by Mine only (private) or shared. For the diagnostics view. */
+    @Query("SELECT COUNT(*) FROM txn WHERE ownerUid = :uid AND householdSyncedAtMs IS NOT NULL AND isPrivate = :priv AND substr(accountId, 1, 3) <> 'hh_'")
+    suspend fun countSent(uid: String, priv: Boolean): Int
 }
 
 /** What the household sync needs to know about one entry. */
