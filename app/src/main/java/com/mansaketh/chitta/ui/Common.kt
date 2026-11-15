@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -111,7 +110,7 @@ fun <T> ChoiceSheet(title: String, choices: List<Choice<T>>, onPick: (T) -> Unit
             LazyColumn(Modifier.heightIn(max = sheetMax(0.5f))) {
                 items(choices) { c ->
                     Row(
-                        Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(role = Role.Button) { onPick(c.value) }.padding(vertical = Dimens.Gap2),
+                        Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = Role.Button) { onPick(c.value) }.padding(vertical = Dimens.Gap2),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(Modifier.weight(1f)) {
@@ -163,19 +162,19 @@ fun ValueRow(label: String, value: String, onClick: (() -> Unit)? = null, modifi
     Column(modifier) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin)
-                .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
+                .then(if (onClick != null) Modifier.pressClickable(role = Role.Button, onClick = onClick) else Modifier)
                 .padding(vertical = Dimens.RowPadV),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Label first at its own width (never wider than 200 dp); the value takes the rest, right-aligned, and is cut after two lines.
-            Text(label, style = ChittaTheme.type.body, color = ChittaTheme.colors.inkMuted, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 200.dp))
+            // Label first at its own width (never wider than Dimens.LabelMaxWidth); the value takes the rest, right-aligned, and is cut after two lines.
+            Text(label, style = ChittaTheme.type.body, color = ChittaTheme.colors.inkMuted, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = Dimens.LabelMaxWidth))
             Text(
                 value, style = ChittaTheme.type.body, color = ChittaTheme.colors.ink, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.weight(1f).padding(start = Dimens.TitleAmountGap),
             )
             if (onClick != null) {
                 Spacer(Modifier.width(Dimens.Gap2))
-                Icon(ChittaIcons.CaretRight, contentDescription = null, tint = ChittaTheme.colors.inkMuted, modifier = Modifier.size(16.dp))
+                Icon(ChittaIcons.CaretRight, contentDescription = null, tint = ChittaTheme.colors.inkMuted, modifier = Modifier.size(Dimens.IconSmall))
             }
         }
         HairlineRule()
@@ -187,12 +186,12 @@ fun ValueRow(label: String, value: String, onClick: (() -> Unit)? = null, modifi
 fun ChoiceChip(text: String, selected: Boolean, onClick: () -> Unit, tint: Color? = null, modifier: Modifier = Modifier) {
     val c = ChittaTheme.colors
     Row(
-        modifier.heightIn(min = Dimens.TouchTarget).clip(Shapes.Control).then(if (selected) Modifier.background(c.ink) else Modifier.border(1.dp, c.mark, RoundedCornerShape(12.dp)))
-            .clickable(role = Role.Button, onClick = onClick).padding(horizontal = Dimens.Gap3),
+        modifier.heightIn(min = Dimens.TouchTarget).clip(Shapes.Control).then(if (selected) Modifier.background(c.ink) else Modifier.border(Dimens.Hairline, c.mark, Shapes.Control))
+            .pressClickable(role = Role.Button, shape = Shapes.Control, onClick = onClick).padding(horizontal = Dimens.Gap3),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2),
     ) {
-        if (tint != null) Box(Modifier.size(8.dp).background(tint))
+        if (tint != null) Box(Modifier.size(Dimens.Dot).background(tint))
         Text(text, style = ChittaTheme.type.label, color = if (selected) c.background else c.ink, maxLines = 1)
     }
 }
@@ -207,13 +206,13 @@ fun TextTabs(labels: List<String>, selected: Int, onSelect: (Int) -> Unit, modif
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(if (icons != null) Dimens.Gap4 else Dimens.Gap6)) {
         labels.forEachIndexed { i, label ->
             val tint = if (i == selected) c.ink else c.inkMuted
-            Column(Modifier.heightIn(min = Dimens.TouchTarget).clickable(role = Role.Tab) { onSelect(i) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Column(Modifier.heightIn(min = Dimens.TouchTarget).pressClickable(role = Role.Tab) { onSelect(i) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    icons?.getOrNull(i)?.let { Icon(it, contentDescription = null, tint = tint, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(Dimens.Gap1)) }
+                    icons?.getOrNull(i)?.let { Icon(it, contentDescription = null, tint = tint, modifier = Modifier.size(Dimens.IconSmall)); Spacer(Modifier.width(Dimens.Gap1)) }
                     Text(label, style = if (i == selected) ChittaTheme.type.bodyMedium else ChittaTheme.type.body, color = tint)
                 }
                 Spacer(Modifier.height(Dimens.Gap1))
-                Box(Modifier.height(2.dp).width(24.dp).background(if (i == selected) c.ink else Color.Transparent))
+                Box(Modifier.height(Dimens.MarkerHeight).width(Dimens.MarkerWidth).background(if (i == selected) c.ink else Color.Transparent))
             }
         }
     }
