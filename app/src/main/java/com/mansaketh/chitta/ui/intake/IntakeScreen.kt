@@ -7,6 +7,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -171,13 +172,15 @@ private fun ReviewStep(vm: IntakeViewModel, s: IntakeStage.Review) {
     val missingCategory = s.choices.count { it.categoryId == null }
     val canSave = ticked > 0 || s.claims.isNotEmpty()
 
+    // The sheets below fill the screen, so they need a Box of their own: inside the parent Column they were left with no room and never showed.
+    Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.padding(horizontal = Dimens.Margin)) {
             Text("$ticked ticked to save · $unticked left unticked", style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(top = Dimens.Gap2))
             if (s.alreadyImported > 0 || s.skipped > 0) Text("${s.alreadyImported + s.skipped} left out because they are already in your book or repeated", style = ChittaTheme.type.label, color = c.inkMuted)
             if (s.claims.isNotEmpty()) Text("${s.claims.size} ${if (s.claims.size == 1) "payment is" else "payments are"} already in your book from its other half. Saving adds the details to those entries' notes.", style = ChittaTheme.type.label, color = c.inkMuted)
             Text("Rows that need a look start unticked. Tap a row to change it.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap1))
-            if (missingCategory > 0) ChittaButton("Set a category for $missingCategory rows without one", { bulk = true }, style = ButtonStyle.Quiet)
+            if (missingCategory > 0) ChittaButton("Set a category for $missingCategory ${if (missingCategory == 1) "row" else "rows"} without one", { bulk = true }, style = ButtonStyle.Quiet)
         }
         if (s.choices.isEmpty()) Text("Nothing to look at.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(Dimens.Margin))
         LazyColumn(Modifier.weight(1f).padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = 8.dp)) {
@@ -243,6 +246,7 @@ private fun ReviewStep(vm: IntakeViewModel, s: IntakeStage.Review) {
         }
     }
     if (bulk) ChoiceSheet("Category for rows without one", s.picks.map { Choice(it.label, it) }, { vm.setCategoryForMissing(it); bulk = false }, { bulk = false })
+    }
 }
 
 /** A 24 dp tick box: a check when the row will be saved, an empty outline when it will not. */

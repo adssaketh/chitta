@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -171,11 +172,13 @@ private fun ReviewStep(vm: CsvImportViewModel, s: CsvStage.Review) {
     val needsLook = s.choices.count { !it.ticked }
     val missingCategory = s.choices.count { it.categoryId == null }
 
+    // The sheets below fill the screen, so they need a Box of their own: inside the parent Column they were left with no room and never showed.
+    Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.padding(horizontal = Dimens.Margin)) {
             Text("$ticked ticked to save · $needsLook left unticked · ${s.parse.skipped.size} left out", style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(vertical = Dimens.Gap2))
             Text("Rows that look like something you already have, or need a category or account, start unticked. Tap a row to change it.", style = ChittaTheme.type.label, color = c.inkMuted)
-            if (missingCategory > 0) ChittaButton("Set a category for $missingCategory rows without one", { bulk = true }, style = ButtonStyle.Quiet)
+            if (missingCategory > 0) ChittaButton("Set a category for $missingCategory ${if (missingCategory == 1) "row" else "rows"} without one", { bulk = true }, style = ButtonStyle.Quiet)
         }
         LazyColumn(Modifier.weight(1f).padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = 8.dp)) {
             itemsIndexed(s.choices) { i, ch ->
@@ -224,6 +227,7 @@ private fun ReviewStep(vm: CsvImportViewModel, s: CsvStage.Review) {
         }
     }
     if (bulk) ChoiceSheet("Category for rows without one", s.picks.map { Choice(it.label, it) }, { vm.setCategoryForMissing(it); bulk = false }, { bulk = false })
+    }
 }
 
 /** A reason is shown only while it is still true: picking an account or a category clears its note. */
