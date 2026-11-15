@@ -364,3 +364,16 @@ data class AssetValueEntity(
     val valuePaise: Long,
     val recordedAtMs: Long,
 )
+
+/*
+ * Phase 9c part 2 (schema 10): cross-device sync bookkeeping. Written by SQLite triggers (see SyncTriggers), never by app code,
+ * so every way a row can change (screens, importer, household sync, restore) is noticed and none can forget to say so.
+ */
+
+/** One row per synced row that changed here and has not yet been sent: when it changed, and whether the change was a delete (a delete marker). */
+@Entity(tableName = "sync_change", primaryKeys = ["tbl", "rowId"])
+data class SyncChangeEntity(val tbl: String, val rowId: String, val atMs: Long, val deleted: Boolean)
+
+/** Small device-only values of the sync: the device id, the cloud cursor, "applying" (set while a cloud row is being written here). */
+@Entity(tableName = "sync_state")
+data class SyncStateEntity(@PrimaryKey val key: String, val value: String)

@@ -1,5 +1,11 @@
 # Changelog
 
+## Phase 9c part 2, step 1: sync groundwork (15 Nov 2026) - on branch `phase-9c-sync`
+- Schema 10: two small tables, `sync_change` (which rows changed here and when, with delete markers) and `sync_state` (this phone's sync id and cursor). Nothing existing is changed or dropped.
+- SQLite triggers on 18 tables note every insert, edit and delete, whichever code made it (screens, importer, household sync, restore). They are put on each time the database opens.
+- Pure merge rules in `:core:domain` (`Sync.kt`): newest stamp wins for a whole row, a tie goes to the larger device id, a delete is a stamp, device-only settings never sync, household copies are not yours to sync.
+- Nothing is sent anywhere yet and no screen changes. Step 2 adds the Firestore service, the background job and Settings > Sync.
+
 ## Phase 9c step 2: lock icon, motion, accessibility, performance and anti-slop audits (15 Nov 2026) - on branch `phase-9c-audits`
 - Lock screen: the launcher icon now sits above the name (80 dp), replacing the plain text-only mark. More uses the same drawing.
 - Motion: the tab slide, the add button and the Home ring fill now jump to their end state when the phone's "Remove animations" is on, and follow the setting while the app is open. Nothing else in the app animates.

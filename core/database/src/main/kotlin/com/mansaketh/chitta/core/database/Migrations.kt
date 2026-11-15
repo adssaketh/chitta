@@ -81,6 +81,17 @@ object Migrations {
         }
     }
 
+    /**
+     * Phase 9c part 2 (D247): sync bookkeeping. Two small tables; nothing existing is changed or dropped. The triggers that fill
+     * `sync_change` are put on every time the database opens (ChittaDatabase.syncCallback), not here.
+     */
+    val V9_TO_V10 = object : Migration(9, 10) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS `sync_change` (`tbl` TEXT NOT NULL, `rowId` TEXT NOT NULL, `atMs` INTEGER NOT NULL, `deleted` INTEGER NOT NULL, PRIMARY KEY(`tbl`, `rowId`))")
+            db.execSQL("CREATE TABLE IF NOT EXISTS `sync_state` (`key` TEXT NOT NULL, `value` TEXT NOT NULL, PRIMARY KEY(`key`))")
+        }
+    }
+
     /** Phase 5: the day of month a monthly or yearly bill belongs on, so a bill on the 31st survives short months. Nothing is dropped. */
     val V2_TO_V3 = object : Migration(2, 3) {
         override fun migrate(db: SupportSQLiteDatabase) {
