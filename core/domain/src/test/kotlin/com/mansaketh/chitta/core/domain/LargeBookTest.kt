@@ -19,7 +19,7 @@ private fun ms(y: Int, m: Int, d: Int, h: Int = 12) = ZonedDateTime.of(y, m, d, 
  * cold start are checked on the phone (see the phase notes).
  */
 class LargeBookTest {
-    private val categories = (0 until 12).map { Category("c$it", "c$it", null, null, null, it, null, 0, it == 11, null, null) } +
+    private val categories = (0 until 12).map { Category("c$it", "c$it", null, null, null, it.toLong(), null, 0, it == 11, null, null) } +
         Category("salary", "salary", null, null, null, 12, null, 0, true, null, null)
 
     private fun tx(i: Int): Transaction {
@@ -38,7 +38,7 @@ class LargeBookTest {
     }
 
     private val entries = (0 until 10_000).map(::tx)
-    private val accounts = (0 until 3).map { Account("a$it", "a$it", null, null, it, null, 0, "INR", null, 2, null, null) }
+    private val accounts = (0 until 3).map { Account("a$it", "a$it", null, null, it.toLong(), null, 0, "INR", null, 2, null, null) }
     private val now = ms(2026, 6, 15)
 
     private inline fun <T> timed(name: String, limitMs: Long, block: () -> T): T {
