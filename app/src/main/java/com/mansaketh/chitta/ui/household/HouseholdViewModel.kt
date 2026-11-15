@@ -10,6 +10,11 @@ import com.mansaketh.chitta.cloud.HResult
 import com.mansaketh.chitta.cloud.HouseholdLocal
 import com.mansaketh.chitta.cloud.HouseholdPrefs
 import com.mansaketh.chitta.cloud.HouseholdService
+import com.mansaketh.chitta.cloud.HouseholdSharingPrefs
+import com.mansaketh.chitta.cloud.HouseholdSync
+import com.mansaketh.chitta.cloud.SharingState
+import com.mansaketh.chitta.core.database.HouseholdStore
+import com.mansaketh.chitta.core.domain.HouseholdSharing
 import com.mansaketh.chitta.cloud.HouseholdSnapshot
 import com.mansaketh.chitta.cloud.SignInResult
 import com.mansaketh.chitta.core.domain.Households
@@ -36,6 +41,12 @@ data class HouseholdUi(
     val code: String? = null,
     /** A starting nickname for the create and join sheets. */
     val suggestedNickname: String = "",
+    /** Entry sharing on this phone (Phase 9b step 3): chosen or not, last send, last problem. */
+    val sharing: SharingState = SharingState(),
+    /** How many entries are shared, waiting to go up, and came from other members. Read when the page opens and after each action. */
+    val counts: HouseholdStore.Counts? = null,
+    /** Set right after creating or joining: the page opens "Choose what to share" (PDF p.33) once. */
+    val askToShare: Boolean = false,
 )
 
 /**
@@ -49,6 +60,8 @@ class HouseholdViewModel @Inject constructor(
     private val prefs: HouseholdPrefs,
     private val cloud: CloudPrefs,
     private val fb: FirebaseSession,
+    private val sync: HouseholdSync,
+    sharingPrefs: HouseholdSharingPrefs,
 ) : ViewModel() {
     private val busy = MutableStateFlow(false)
     private val notice = MutableStateFlow<String?>(null)
@@ -57,13 +70,17 @@ class HouseholdViewModel @Inject constructor(
     private val code = MutableStateFlow<String?>(null)
     private val myUid = MutableStateFlow("")
     private val nickname = MutableStateFlow("")
+    private val counts = MutableStateFlow<HouseholdStore.Counts?>(null)
+    private val askToShare = MutableStateFlow(false)
 
     private data class Bits(val busy: Boolean, val notice: String?, val connected: Boolean, val snapshot: HouseholdSnapshot?, val code: String?)
     private val bits = combine(busy, notice, connected, snapshot, code) { b, n, c, s, k -> Bits(b, n, c, s, k) }
     private val ids = combine(myUid, nickname) { u, n -> u to n }
 
-    val ui: StateFlow<HouseholdUi> = combine(bits, prefs.state, cloud.email, ids) { b, l, e, i ->
-        HouseholdUi(e, b.connected, l, b.snapshot, i.first, b.busy, b.notice, b.code, i.second)
+    private val sharingBits = combine(sharingPrefs.state, counts, askToShare) { s, c, a -> Triple(s, c, a) }
+
+    val ui: StateFlow<HouseholdUi> = combine(bits, prefs.state, cloud.email, ids, sharingBits) { b, l, e, i, s ->
+        HouseholdUi(e, b.connected, l, b.snapshot, i.first, b.busy, b.notice, b.code, i.second, s.first, s.second, s.third)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, HouseholdUi())
 
     fun dismissNotice() { notice.value = null }
@@ -97,6 +114,7 @@ class HouseholdViewModel @Inject constructor(
     }
 
     private suspend fun refreshAndLoad() {
+        counts.value = sync.counts()
         service.refresh()?.let { notice.value = it; return }
         if (prefs.state.value.inHousehold) {
             when (val r = service.load()) {
@@ -115,8 +133,14 @@ class HouseholdViewModel @Inject constructor(
         refreshAndLoad()
     }
 
-    fun create(name: String, nick: String) = act("Household made.") { service.create(name, nick) }
-    fun join(codeText: String, nick: String) = act("You joined the household.") { service.join(codeText, nick) }
+    fun create(name: String, nick: String) = act("Household made.") { service.create(name, nick).also { if (it == null) askToShare.value = true } }
+    fun join(codeText: String, nick: String) = act("You joined the household.") { service.join(codeText, nick).also { if (it == null) askToShare.value = true } }
+    fun askHandled() { askToShare.value = false }
+
+    // ---- entry sharing (PDF p.33 and the "Your sharing" row)
+    fun chooseSharing(choice: HouseholdSharing.ShareChoice) = act("Sharing is on.") { sync.adopt(choice) }
+    fun shareEarlier() = act("Your earlier entries will go up.") { sync.shareEarlierEntries() }
+    fun sendNow() = act("Sent.") { sync.syncNow() }
     fun leave() = act("You left the household. Your entries stay on this phone.") { service.leave() }
     fun remove(uid: String) = act("Removed. Their entries stay on their phone.") { service.remove(uid) }
     fun makeOwner(uid: String) = act("Handed over. The new owner makes a new invite code.") { service.transfer(uid) }

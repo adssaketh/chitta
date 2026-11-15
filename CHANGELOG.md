@@ -1,5 +1,14 @@
 # Changelog
 
+## Phase 9b step 3: Sharing entries (15 Nov 2026) - on `main`
+- After you create or join a household, "Choose what to share" (PDF p.33): share your existing entries, or only new ones. "Not now" keeps everything on the phone. Settings > Household > "Your sharing" (PDF p.31) shows Up to date / N waiting / Needs attention, with Send now and "Share my earlier entries".
+- New entries are shared by default. "Who sees it" in Quick Add and on the entry detail switches one to "Mine only".
+- Ledger: an Everyone / Mine switch appears once sharing is on. Everyone shows the shared ledger (members' entries are labelled with their name as the account); Mine shows everything you own.
+- Other members' entries are read-only; delete only if the owner allows it. Bulk edit and delete skip them and tell you.
+- Entries made offline wait and go up when the phone is online again. Categories are shared (last edit wins, as in the old app).
+- Home, Insights, budgets and net worth are unchanged and personal.
+- Not in this step: "Who spent how much" (step 4), settle-up and shared loans/deposits (step 5). Not yet run on a phone; CI compile and tests pending.
+
 ## Icons on tabs and Home sections, logo on More (15 Nov 2026) - on branch `phase-ui-polish-2`
 - Insights tabs (Current, History, Net worth, Review) and Ledger tabs (All, Spending, Income, Upcoming) each have a small icon before the label. The strips can scroll sideways when the icons make them wider than the screen; swiping on them does not change the main tab.
 - Customise > Home sections: an icon before each section name (Balances, Recent entries, Budgets, Net worth, Goals, Loans, Spending by category, Spending heatmap).

@@ -45,9 +45,10 @@ class BookRepository(private val db: ChittaDatabase) {
     /** Everything in the database as a [Book], in a stable order (used by tests and by export later). */
     suspend fun readAll(): Book = db.withTransaction {
         Book(
-            accounts = db.accounts().getAll().map { it.toModel() },
+            // Other members' entries and their placeholder accounts live in the household on the server, not in the book (master section 7).
+            accounts = db.accounts().getAll().filterNot { com.mansaketh.chitta.core.domain.HouseholdSharing.isPlaceholderAccountId(it.id) }.map { it.toModel() },
             categories = db.categories().getAll().map { it.toModel() },
-            transactions = db.transactions().getAll().map { it.toModel() },
+            transactions = db.transactions().getOwn().map { it.toModel() },
             budgets = db.budgets().getAll().map { it.toModel() },
             categoryLimits = db.budgets().getLimits().map { it.toModel() },
             objectives = db.objectives().getAll().map { it.toModel() },

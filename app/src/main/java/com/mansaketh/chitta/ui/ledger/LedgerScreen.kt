@@ -20,6 +20,7 @@ import com.mansaketh.chitta.core.design.icons.ChittaIcons
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.tokens.Dimens
 import com.mansaketh.chitta.core.domain.BulkChange
+import com.mansaketh.chitta.core.domain.HouseholdSharing
 import com.mansaketh.chitta.core.domain.LedgerSearch
 import com.mansaketh.chitta.core.domain.LedgerTab
 import com.mansaketh.chitta.core.domain.Totals
@@ -48,6 +49,8 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
     var notice by remember { mutableStateOf<String?>(null) }
     var picker by remember { mutableStateOf<String?>(null) } // "account" or "category" filter picker
     val selecting = ui.selected.isNotEmpty()
+    val said by vm.message.collectAsState()
+    LaunchedEffect(said) { said?.let { notice = it; vm.messageShown() } }
     val c = ChittaTheme.colors
     val zone = remember { java.time.ZoneId.systemDefault() }
     val now = remember { System.currentTimeMillis() }
@@ -84,6 +87,15 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
                 ui.problems.forEach { problem ->
                     Text("Not used: $problem", style = ChittaTheme.type.label, color = c.ink, modifier = Modifier.padding(horizontal = Dimens.Margin, vertical = Dimens.Space1))
                 }
+            }
+            if (ui.lens.active && !selecting) {
+                // Everyone / Mine (PDF p.31): which entries the list and its monthly totals show. Only while sharing is on.
+                val views = listOf(HouseholdSharing.VIEW_EVERYONE, HouseholdSharing.VIEW_MINE)
+                TextTabs(
+                    labels = listOf("Everyone", "Mine"), selected = views.indexOf(ui.lens.view).coerceAtLeast(0),
+                    onSelect = { vm.setView(views[it]) },
+                    modifier = Modifier.padding(horizontal = Dimens.Margin),
+                )
             }
             val tabs = LedgerTab.entries
             TextTabs(
@@ -206,7 +218,7 @@ internal fun Transaction.toRow(ui: LedgerUi, muted: androidx.compose.ui.graphics
     }
     return LedgerEntry(
         title = name.ifBlank { label },
-        category = listOfNotNull(label, accountName(accountId, ui.accounts), "Split".takeIf { splitGroupId != null }, "Possible duplicate".takeIf { id in ui.possibleDuplicates }).joinToString(" · "),
+        category = listOfNotNull(label, accountName(accountId, ui.allAccounts), "Split".takeIf { splitGroupId != null }, "Possible duplicate".takeIf { id in ui.possibleDuplicates }).joinToString(" · "),
         glyph = if (neutral) ChittaIcons.Transfer else (ui.categories.firstOrNull { it.id == categoryId }.let { cat -> com.mansaketh.chitta.ui.manage.CategoryIconCatalog.imageFor(cat?.iconName, cat?.name) } ?: ChittaIcons.Tag),
         categoryColor = if (neutral) mutedColor else tintFor(categoryId),
         amount = Paise(Math.abs(amount)),

@@ -6,7 +6,10 @@ import com.mansaketh.chitta.core.database.AccountRepository
 import com.mansaketh.chitta.core.database.CategoryRepository
 import com.mansaketh.chitta.core.database.LedgerRepository
 import com.mansaketh.chitta.core.domain.BulkChange
+import com.mansaketh.chitta.cloud.HouseholdLens
+import com.mansaketh.chitta.cloud.HouseholdView
 import com.mansaketh.chitta.core.domain.DeleteImpact
+import com.mansaketh.chitta.core.domain.HouseholdSharing
 import com.mansaketh.chitta.core.domain.LedgerFilter
 import com.mansaketh.chitta.core.domain.LedgerGrouping
 import com.mansaketh.chitta.core.domain.LedgerSearch
@@ -42,7 +45,12 @@ data class LedgerUi(
     val months: List<MonthGroup> = emptyList(),
     val byId: Map<String, Transaction> = emptyMap(),
     val categories: List<Category> = emptyList(),
+    /** Own accounts only: what the filter and bulk-move pickers list. */
     val accounts: List<Account> = emptyList(),
+    /** Own accounts plus each member's placeholder, for showing whose money an entry is. */
+    val allAccounts: List<Account> = emptyList(),
+    /** Household sharing is on; the Everyone/Mine switch shows and edit rules apply (PDF p.31). */
+    val lens: HouseholdLens = HouseholdLens(),
     val filter: LedgerFilter = LedgerFilter(),
     val selected: Set<String> = emptySet(),
     val totalEntries: Int = 0,
@@ -60,6 +68,7 @@ class LedgerViewModel @Inject constructor(
     ledger: LedgerRepository,
     accounts: AccountRepository,
     categories: CategoryRepository,
+    private val householdView: HouseholdView,
     private val actions: EntryActions,
     private val clock: Clock,
 ) : ViewModel() {
@@ -68,9 +77,13 @@ class LedgerViewModel @Inject constructor(
     private val _pendingDelete = MutableStateFlow<DeleteImpact?>(null)
     val pendingDelete: StateFlow<DeleteImpact?> = _pendingDelete
 
-    private data class Data(val entries: List<Transaction>, val accounts: List<Account>, val categories: List<Category>)
+    private data class Data(val lens: HouseholdLens, val entries: List<Transaction>, val accounts: List<Account>, val categories: List<Category>)
 
-    private val data = combine(ledger.observeAll(), accounts.observeAll(), categories.observeAll()) { e, a, c -> Data(e, a, c) }
+    /** A short sentence for things that were skipped, shown once by the screen. */
+    val message = MutableStateFlow<String?>(null)
+    fun messageShown() { message.value = null }
+
+    private val data = combine(householdView.entries(), accounts.observeAllWithMembers(), categories.observeAll()) { (l, e), a, c -> Data(l, e, a, c) }
 
     val ui: StateFlow<LedgerUi> = combine(data, filter, selected) { d, f, sel ->
         val parsed = SearchSyntax.parse(f.text, d.categories, d.accounts, clock.nowMs(), clock.zone())
@@ -79,7 +92,7 @@ class LedgerViewModel @Inject constructor(
             loading = false,
             months = LedgerGrouping.group(shown, d.categories, clock.zone()),
             byId = d.entries.associateBy { it.id },
-            categories = d.categories, accounts = d.accounts, filter = f,
+            categories = d.categories, accounts = d.accounts.filter { !HouseholdSharing.isPlaceholderAccountId(it.id) }, allAccounts = d.accounts, lens = d.lens, filter = f,
             selected = sel.intersect(d.entries.map { it.id }.toSet()),
             totalEntries = d.entries.size, matching = shown.size,
             possibleDuplicates = com.mansaketh.chitta.core.domain.Duplicates.flaggedIds(d.entries),
@@ -93,15 +106,27 @@ class LedgerViewModel @Inject constructor(
     fun setCategories(ids: Set<String>) = filter.update { it.copy(categoryIds = ids) }
     fun clearFilters() = filter.update { LedgerFilter(tab = it.tab) }
 
+    fun setView(view: String) = householdView.setView(view)
+
     fun toggle(id: String) = selected.update { if (id in it) it - id else it + id }
     fun startSelecting(id: String) = selected.update { it + id }
     fun clearSelection() { selected.value = emptySet() }
 
     private fun selectedEntries(): List<Transaction> = ui.value.let { u -> u.selected.mapNotNull { u.byId[it] } }
 
+    /** Whether [t] may be edited here: in a household only the owner's own entries (master section 7). */
+    private fun canEdit(t: Transaction, l: HouseholdLens) = HouseholdSharing.canEdit(l.active, t.ownerUid, l.myUid)
+    private fun canDelete(t: Transaction, l: HouseholdLens) = HouseholdSharing.canDelete(l.active, t.ownerUid, l.myUid, l.canDelete)
+
+    private fun skippedNote(n: Int, what: String) = "$n ${if (n == 1) "entry" else "entries"} from other members left alone: you can't $what them."
+
     fun requestDelete() {
         val u = ui.value
-        _pendingDelete.value = actions.impact(selectedEntries(), u.byId.values.toList(), u.accounts)
+        val mine = selectedEntries().filter { canDelete(it, u.lens) }
+        val left = selected.value.size - mine.size
+        if (left > 0) message.value = skippedNote(left, "delete")
+        if (mine.isEmpty()) { clearSelection(); return }
+        _pendingDelete.value = actions.impact(mine, u.byId.values.toList(), u.allAccounts)
     }
 
     fun cancelDelete() { _pendingDelete.value = null }
@@ -115,7 +140,10 @@ class LedgerViewModel @Inject constructor(
     /** Applies a bulk change. Returns how many entries were skipped (transfer halves that cannot move). */
     fun bulk(change: BulkChange, onDone: (changed: Int, skipped: Int) -> Unit) {
         val u = ui.value
-        val result = actions.bulk(selectedEntries(), u.byId.values.toList(), change)
+        val mine = selectedEntries().filter { canEdit(it, u.lens) }
+        val left = selectedEntries().size - mine.size
+        if (left > 0) message.value = skippedNote(left, "change")
+        val result = actions.bulk(mine, u.byId.values.toList(), change)
         viewModelScope.launch {
             actions.save(result.changed, "Changed ${result.changed.size} entries")
             clearSelection()
@@ -127,7 +155,7 @@ class LedgerViewModel @Inject constructor(
     fun copyText(): String {
         val u = ui.value
         return selectedEntries().sortedBy { it.dateMs }.joinToString("\n") { t ->
-            listOf(dayAndTime(t.dateMs, clock.zone()), t.name.ifBlank { "(no title)" }, IndianFormat.rupees(Paise(t.amount)), categoryName(t.categoryId, u.categories), accountName(t.accountId, u.accounts)).joinToString(" · ")
+            listOf(dayAndTime(t.dateMs, clock.zone()), t.name.ifBlank { "(no title)" }, IndianFormat.rupees(Paise(t.amount)), categoryName(t.categoryId, u.categories), accountName(t.accountId, u.allAccounts)).joinToString(" · ")
         }
     }
 

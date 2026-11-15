@@ -8,7 +8,10 @@ import kotlinx.coroutines.flow.map
 
 /** Repositories hand out plain model classes, never Room entities, so screens and domain code stay Android-free. */
 class AccountRepository(private val db: ChittaDatabase) {
-    fun observeAll(): Flow<List<Account>> = db.accounts().observeAll().map { rows -> rows.map { it.toModel() } }
+    /** This person's accounts. Another member's placeholder account (Phase 9b) is never listed, so it can never show in a picker or a balance. */
+    fun observeAll(): Flow<List<Account>> = db.accounts().observeOwn().map { rows -> rows.map { it.toModel() } }
+    /** Own accounts and the placeholder accounts, only to put a name on another member's entry. */
+    fun observeAllWithMembers(): Flow<List<Account>> = db.accounts().observeAll().map { rows -> rows.map { it.toModel() } }
     suspend fun get(id: String): Account? = db.accounts().get(id)?.toModel()
     suspend fun save(account: Account) = db.accounts().upsert(account.toEntity())
     suspend fun sums(): List<AccountSum> = db.transactions().sumsByAccount()

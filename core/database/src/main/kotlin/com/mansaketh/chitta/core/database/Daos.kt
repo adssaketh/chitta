@@ -18,6 +18,12 @@ interface AccountDao {
     @Query("SELECT * FROM account WHERE id = :id") suspend fun get(id: String): AccountEntity?
     @Query("SELECT COUNT(*) FROM account") suspend fun count(): Int
     @Query("SELECT COUNT(*) FROM account WHERE archived = 0") suspend fun countActive(): Int
+
+    // ---- Phase 9b step 3: other members' placeholder accounts (id starts with "hh_") are never shown as accounts.
+    @Query("SELECT * FROM account WHERE substr(id, 1, 3) <> 'hh_' ORDER BY sortOrder, name") fun observeOwn(): Flow<List<AccountEntity>>
+    @Query("SELECT * FROM account WHERE substr(id, 1, 3) = 'hh_'") suspend fun getPlaceholders(): List<AccountEntity>
+    @Query("DELETE FROM account WHERE substr(id, 1, 3) = 'hh_'") suspend fun deletePlaceholders()
+    @Query("UPDATE account SET name = :name, modifiedAtMs = :nowMs WHERE id = :id") suspend fun rename(id: String, name: String, nowMs: Long)
 }
 
 @Dao
@@ -53,7 +59,40 @@ interface TransactionDao {
      */
     @Query("SELECT accountId, SUM(amountPaise) AS sumPaise, COUNT(*) AS count FROM txn GROUP BY accountId")
     suspend fun sumsByAccount(): List<AccountSum>
+
+    // ---- Phase 9b step 3: household. Other members' entries sit in a placeholder account (id starts with "hh_").
+    /** This person's own entries (everything not in a member's placeholder account). What every balance, bill and total reads. */
+    @Query("SELECT * FROM txn WHERE substr(accountId, 1, 3) <> 'hh_' ORDER BY dateMs DESC, id") fun observeOwn(): Flow<List<TransactionEntity>>
+    @Query("SELECT * FROM txn WHERE substr(accountId, 1, 3) <> 'hh_' ORDER BY dateMs DESC, id") suspend fun getOwn(): List<TransactionEntity>
+    /** Mine, waiting to go up: shared by me and not uploaded since the last change. */
+    @Query("SELECT * FROM txn WHERE ownerUid = :uid AND householdSyncedAtMs IS NULL AND substr(accountId, 1, 3) <> 'hh_' ORDER BY dateMs, id LIMIT :limit")
+    suspend fun waiting(uid: String, limit: Int): List<TransactionEntity>
+    /** New entries (nobody owns them yet) plus mine that are waiting: a change here wakes the upload. */
+    @Query("SELECT COUNT(*) FROM txn WHERE substr(accountId, 1, 3) <> 'hh_' AND (ownerUid IS NULL OR (ownerUid = :uid AND householdSyncedAtMs IS NULL))")
+    fun observeWaitingCount(uid: String): Flow<Int>
+    @Query("UPDATE txn SET ownerUid = :uid WHERE ownerUid IS NULL AND substr(accountId, 1, 3) <> 'hh_'") suspend fun claimNew(uid: String): Int
+    @Query("UPDATE txn SET householdSyncedAtMs = :ms WHERE id = :id") suspend fun setSynced(id: String, ms: Long)
+    @Query("UPDATE txn SET householdSyncedAtMs = NULL WHERE id IN (:ids)") suspend fun markDirty(ids: List<String>)
+    /** "Share the entries already on the phone": new and personal entries become mine and go up. */
+    @Query("UPDATE txn SET ownerUid = :uid, householdSyncedAtMs = NULL WHERE (ownerUid IS NULL OR ownerUid = '') AND substr(accountId, 1, 3) <> 'hh_'")
+    suspend fun shareExisting(uid: String): Int
+    /** "Only new entries": entries already here become personal and stay on the phone. */
+    @Query("UPDATE txn SET ownerUid = '' WHERE ownerUid IS NULL AND substr(accountId, 1, 3) <> 'hh_'") suspend fun keepExistingPersonal(): Int
+    @Query("SELECT id, ownerUid, householdSyncedAtMs FROM txn") suspend fun syncRows(): List<SyncRow>
+    @Query("DELETE FROM txn WHERE substr(accountId, 1, 3) = 'hh_'") suspend fun deleteInPlaceholders()
+    @Query("DELETE FROM txn WHERE ownerUid IS NOT NULL AND ownerUid <> '' AND ownerUid <> :uid") suspend fun deleteForeign(uid: String)
+    /** Leaving: what I shared stays here as personal entries. */
+    @Query("UPDATE txn SET ownerUid = '', householdSyncedAtMs = NULL WHERE ownerUid IS NOT NULL AND ownerUid <> ''") suspend fun makeAllPersonal()
+    @Query("SELECT COUNT(*) FROM txn WHERE ownerUid = :uid AND householdSyncedAtMs IS NULL AND substr(accountId, 1, 3) <> 'hh_'") suspend fun countWaiting(uid: String): Int
+    @Query("SELECT COUNT(*) FROM txn WHERE substr(accountId, 1, 3) = 'hh_'") suspend fun countMembersEntries(): Int
+    @Query("SELECT COUNT(*) FROM txn WHERE ownerUid = :uid AND substr(accountId, 1, 3) <> 'hh_'") suspend fun countShared(uid: String): Int
 }
+
+/** What the household sync needs to know about one entry. */
+data class SyncRow(val id: String, val ownerUid: String?, val householdSyncedAtMs: Long?)
+
+/** An entry whose last action in the history was a delete, and when. */
+data class DeleteMark(val entryId: String, val atMs: Long)
 
 @Dao
 interface BudgetDao {
@@ -168,6 +207,16 @@ interface VersionDao {
     /** The newest version of every entry whose last action was DELETED (actionCode 2): the recently deleted list. */
     @Query("SELECT * FROM entry_version v WHERE actionCode = 2 AND id = (SELECT MAX(id) FROM entry_version WHERE entryId = v.entryId) ORDER BY atMs DESC LIMIT :limit")
     fun observeDeleted(limit: Int): Flow<List<EntryVersionEntity>>
+
+    // ---- Phase 9b step 3: the household sync takes deletions from the history (no second log).
+    /** Entries whose newest history row is a delete, after [sinceMs]. */
+    @Query("SELECT entryId, atMs FROM entry_version v WHERE actionCode = 2 AND atMs > :sinceMs AND id = (SELECT MAX(id) FROM entry_version WHERE entryId = v.entryId) ORDER BY atMs")
+    suspend fun deletedSince(sinceMs: Long): List<DeleteMark>
+    /** Every entry whose newest history row is a delete. */
+    @Query("SELECT entryId FROM entry_version v WHERE actionCode = 2 AND id = (SELECT MAX(id) FROM entry_version WHERE entryId = v.entryId)")
+    suspend fun deletedIds(): List<String>
+    /** Changes whenever something is deleted or restored: wakes the sync. */
+    @Query("SELECT COUNT(*) FROM entry_version WHERE actionCode = 2") fun observeDeleteCount(): Flow<Int>
 }
 
 @Dao

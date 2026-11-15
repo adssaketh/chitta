@@ -35,6 +35,12 @@ data class DetailUi(
     /** Other lines of the same split, for the detail screen. */
     val siblings: List<Transaction> = emptyList(),
     val loading: Boolean = true,
+    /** Household sharing is on for this phone. */
+    val sharing: Boolean = false,
+    /** This person may change the entry. In a household only the owner's own entries (master section 7). */
+    val canEdit: Boolean = true,
+    /** This person may delete it: their own, or anyone's when the owner allowed it. */
+    val canDelete: Boolean = true,
 )
 
 /** The receipt photo of the open entry. [reading] is what the text on it seemed to say, shown as suggestions until closed. */
@@ -57,8 +63,11 @@ class EntryDetailViewModel @Inject constructor(
     private val ids: IdSource,
     private val clock: Clock,
     private val receipts: ReceiptStore,
+    private val householdView: com.mansaketh.chitta.cloud.HouseholdView,
 ) : ViewModel() {
     private val id = MutableStateFlow<String?>(null)
+    /** Names of other members' placeholder accounts are needed to say whose money an entry is; the pickers filter them out. */
+    private val accountsWithMembers = accounts.observeAllWithMembers()
     fun load(entryId: String) {
         if (id.value != entryId) receipt.value = ReceiptUi()
         id.value = entryId
@@ -135,14 +144,20 @@ class EntryDetailViewModel @Inject constructor(
     }
 
     val ui: StateFlow<DetailUi> = id.filterNotNull().flatMapLatest { eid ->
-        combine(ledger.observe(eid), ledger.observeHistory(eid), accounts.observeAll(), categories.observeAll(), ledger.observeAll()) { e, h, a, c, all ->
+        combine(ledger.observe(eid), ledger.observeHistory(eid), accountsWithMembers, categories.observeAll(), ledger.observeAll(), householdView.lens) { e, h, a, c, all, lens ->
             val twin = e?.pairedTransactionId?.let { ledger.get(it) }
-            DetailUi(e, twin, a, c, h, siblings = e?.let { Splits.siblings(it, all) } ?: emptyList(), loading = false)
+            DetailUi(
+                e, twin, a, c, h, siblings = e?.let { Splits.siblings(it, all) } ?: emptyList(), loading = false,
+                sharing = lens.active,
+                canEdit = e == null || com.mansaketh.chitta.core.domain.HouseholdSharing.canEdit(lens.active, e.ownerUid, lens.myUid),
+                canDelete = e == null || com.mansaketh.chitta.core.domain.HouseholdSharing.canDelete(lens.active, e.ownerUid, lens.myUid, lens.canDelete),
+            )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DetailUi())
 
     private fun edit(change: (Transaction) -> Transaction) {
         val e = ui.value.entry ?: return
+        if (!ui.value.canEdit) return
         val next = change(e).copy(modifiedAtMs = clock.nowMs())
         viewModelScope.launch { actions.save(listOf(next), "Saved changes") }
     }
@@ -175,6 +190,7 @@ class EntryDetailViewModel @Inject constructor(
 
     /** Typed amount (a calculation is fine). Keeps the sign the entry already has. */
     fun setAmount(raw: String): Boolean {
+        if (!ui.value.canEdit) return false
         val p = AmountExpression.evaluate(raw) ?: return false
         if (p.isZero) return false
         edit { e -> e.copy(amount = if (e.amount < 0) -p.value else p.value, originalAmount = null, originalCurrency = null, exchangeRate = null) }
@@ -183,6 +199,7 @@ class EntryDetailViewModel @Inject constructor(
 
     private fun bulk(change: BulkChange) {
         val e = ui.value.entry ?: return
+        if (!ui.value.canEdit) return
         val all = listOfNotNull(e, ui.value.twin)
         val result = actions.bulk(listOf(e), all, change)
         viewModelScope.launch { actions.save(result.changed, "Saved changes") }
@@ -190,6 +207,7 @@ class EntryDetailViewModel @Inject constructor(
 
     fun duplicate(onDone: () -> Unit) {
         val e = ui.value.entry ?: return
+        if (!ui.value.canEdit) return
         if (Totals.isNeutral(e)) return
         val copy = e.copy(id = ids.newId(), dateMs = clock.nowMs(), modifiedAtMs = clock.nowMs(), pairedTransactionId = null)
         viewModelScope.launch { actions.add(listOf(copy), "Duplicated · ${e.name.ifBlank { "entry" }}"); onDone() }
@@ -205,12 +223,23 @@ class EntryDetailViewModel @Inject constructor(
 
     fun deleteImpact(): DeleteImpact? {
         val u = ui.value; val e = u.entry ?: return null
+        if (!u.canDelete) return null
         return Deletion.impact(listOf(e), listOfNotNull(e, u.twin), u.accounts)
     }
 
     fun confirmDelete(impact: DeleteImpact, onDone: () -> Unit) = viewModelScope.launch { actions.delete(impact); onDone() }
 
+    /** "Mine only" on or off for this entry (and the other half of a transfer, so both halves are seen alike). */
+    fun setMineOnly(on: Boolean) {
+        val u = ui.value; val e = u.entry ?: return
+        if (!u.canEdit || !u.sharing || e.isPrivate == on) return
+        val now = clock.nowMs()
+        val changed = listOfNotNull(e, u.twin).filter { it.isPrivate != on }.map { it.copy(isPrivate = on, modifiedAtMs = now) }
+        viewModelScope.launch { actions.save(changed, if (on) "Now visible only to you" else "Now shared with the household") }
+    }
+
     fun restore(version: EntryVersion) = viewModelScope.launch {
+        if (!ui.value.canEdit) return@launch
         val before = ledger.get(version.entryId)
         if (!ledger.restoreVersion(version.entryId, version.id)) return@launch
         undo.post("Restored an earlier version") { if (before != null) ledger.update(listOf(before)) else ledger.delete(listOf(version.entryId)) }

@@ -53,7 +53,10 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
                 ui.loading -> LoadingPlaceholder(Modifier.padding(Dimens.Margin))
                 e == null -> Text("This entry is gone. It may have been deleted.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(Dimens.Margin))
                 else -> {
+                    // Another member's entry is read-only here (master section 7): rows open nothing and the actions are hidden.
+                    val canEdit = ui.canEdit
                     val neutral = Totals.isNeutral(e)
+                    val locked = neutral || !canEdit
                     val transfer = Totals.isTransfer(e)
                     Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.FabInset)) {
                         Text(e.name.ifBlank { categoryName(e.categoryId, ui.categories) }, style = ChittaTheme.type.headline, color = c.ink)
@@ -69,27 +72,30 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
                             if (Totals.isBalanceCorrection(e)) Stamp("Correction")
                         }
                         HairlineRule()
-                        ValueRow("Title", e.name.ifBlank { "No title" }, onClick = if (neutral) null else ({ edit = Edit.Title }))
-                        ValueRow("Amount", IndianFormat.rupees(Paise(Math.abs(e.amount)), alwaysShowPaise = true), onClick = if (neutral) null else ({ edit = Edit.Amount }))
-                        ValueRow("Category", if (neutral) "Not counted as spending" else categoryName(e.categoryId, ui.categories), onClick = if (neutral) null else ({ edit = Edit.Category }))
-                        ValueRow("Account", accountName(e.accountId, ui.accounts), onClick = if (neutral) null else ({ edit = Edit.Account }))
+                        ValueRow("Title", e.name.ifBlank { "No title" }, onClick = if (locked) null else ({ edit = Edit.Title }))
+                        ValueRow("Amount", IndianFormat.rupees(Paise(Math.abs(e.amount)), alwaysShowPaise = true), onClick = if (locked) null else ({ edit = Edit.Amount }))
+                        ValueRow("Category", if (neutral) "Not counted as spending" else categoryName(e.categoryId, ui.categories), onClick = if (locked) null else ({ edit = Edit.Category }))
+                        ValueRow("Account", accountName(e.accountId, ui.accounts), onClick = if (locked) null else ({ edit = Edit.Account }))
                         if (transfer) ui.twin?.let { ValueRow("Other half", accountName(it.accountId, ui.accounts)) }
-                        ValueRow("Date", dayAndTime(e.dateMs, zone), onClick = { edit = Edit.Date })
-                        ValueRow("Note", e.note.ifBlank { "No note" }, onClick = { edit = Edit.Note })
+                        ValueRow("Date", dayAndTime(e.dateMs, zone), onClick = if (canEdit) ({ edit = Edit.Date }) else null)
+                        ValueRow("Note", e.note.ifBlank { "No note" }, onClick = if (canEdit) ({ edit = Edit.Note }) else null)
                         if (remember(e.note) { com.mansaketh.chitta.intake.PingBridge.viewIntent(context, e.note) != null }) ValueRow("View SMS in Ping", "", onClick = { com.mansaketh.chitta.intake.PingBridge.open(context, e.note) })
-                        if (plan != null && !neutral && e.kind != TransactionKind.LENT && e.kind != TransactionKind.BORROWED) ValueRow("Repeat", e.repeat?.let { com.mansaketh.chitta.ui.plan.repeatLabel(it, e.periodLength ?: 1) } ?: "Does not repeat", onClick = { edit = Edit.Repeat })
+                        if (plan != null && canEdit && !neutral && e.kind != TransactionKind.LENT && e.kind != TransactionKind.BORROWED) ValueRow("Repeat", e.repeat?.let { com.mansaketh.chitta.ui.plan.repeatLabel(it, e.periodLength ?: 1) } ?: "Does not repeat", onClick = { edit = Edit.Repeat })
                         if (ui.siblings.isNotEmpty()) {
                             Text("Part of a split of ${IndianFormat.rupees(Paise(Math.abs(e.amount) + ui.siblings.sumOf { Math.abs(it.amount) }), alwaysShowPaise = true)}. Other lines:", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
                             ui.siblings.forEach { s -> ValueRow(categoryName(s.categoryId, ui.categories), IndianFormat.rupees(Paise(Math.abs(s.amount)), alwaysShowPaise = true)) }
                         }
-                        ValueRow("Receipt", when { receipt.busy -> "Reading the photo…"; receipt.has -> "Photo attached"; else -> "None" }, onClick = { edit = Edit.Receipt })
+                        // Who sees it (PDF p.31): only for entries that are mine and can be shared. Personal ones never leave this phone.
+                        if (ui.sharing && canEdit && e.ownerUid != "") ValueRow("Who sees it", if (e.isPrivate) "Mine only" else "Everyone in the household", onClick = { vm.setMineOnly(!e.isPrivate) })
+                        else if (ui.sharing && !canEdit) ValueRow("Added by", accountName(e.accountId, ui.accounts))
+                        if (canEdit) ValueRow("Receipt", when { receipt.busy -> "Reading the photo…"; receipt.has -> "Photo attached"; else -> "None" }, onClick = { edit = Edit.Receipt })
                         ValueRow("History", "${ui.history.size} ${if (ui.history.size == 1) "version" else "versions"}", onClick = onHistory)
                         Spacer(Modifier.height(Dimens.Gap4))
                         Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
-                            if (!neutral) ChittaButton("Duplicate", { vm.duplicate(onBack) }, style = ButtonStyle.Quiet)
-                            if (!neutral) ChittaButton("Pin", vm::pin, style = ButtonStyle.Quiet)
-                            if (!neutral && e.kind == null && e.splitGroupId == null) ChittaButton("Split", { edit = Edit.Split }, style = ButtonStyle.Quiet)
-                            ChittaButton("Delete", { impact = vm.deleteImpact(); edit = Edit.Delete }, style = ButtonStyle.Quiet)
+                            if (!neutral && canEdit) ChittaButton("Duplicate", { vm.duplicate(onBack) }, style = ButtonStyle.Quiet)
+                            if (!neutral && canEdit) ChittaButton("Pin", vm::pin, style = ButtonStyle.Quiet)
+                            if (!neutral && canEdit && e.kind == null && e.splitGroupId == null) ChittaButton("Split", { edit = Edit.Split }, style = ButtonStyle.Quiet)
+                            if (ui.canDelete) ChittaButton("Delete", { impact = vm.deleteImpact(); edit = Edit.Delete }, style = ButtonStyle.Quiet)
                         }
                     }
                 }
@@ -104,7 +110,7 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
             }
             Edit.Note -> TextSheet("Note", "Note", e.note, { vm.setNote(it); edit = Edit.None }, { edit = Edit.None }, singleLine = false)
             Edit.Category -> ChoiceSheet("Category", ui.categories.filter { it.mainCategoryId == null && !it.archived && it.income == e.income }.map { Choice(it.name, it.id, selected = it.id == e.categoryId) }, { vm.setCategory(it); edit = Edit.None }, { edit = Edit.None })
-            Edit.Account -> ChoiceSheet("Account", ui.accounts.filter { !it.archived }.map { Choice(it.name, it.id, selected = it.id == e.accountId) }, { id -> vm.setAccount(id, ui.accounts.firstOrNull { it.id == id }?.currency); edit = Edit.None }, { edit = Edit.None })
+            Edit.Account -> ChoiceSheet("Account", ui.accounts.filter { !it.archived && !com.mansaketh.chitta.core.domain.HouseholdSharing.isPlaceholderAccountId(it.id) }.map { Choice(it.name, it.id, selected = it.id == e.accountId) }, { id -> vm.setAccount(id, ui.accounts.firstOrNull { it.id == id }?.currency); edit = Edit.None }, { edit = Edit.None })
             Edit.Date -> LaunchedEffect(Unit) {
                 val day = Instant.ofEpochMilli(e.dateMs).atZone(zone).toLocalDate()
                 DatePickerDialog(context, { _, y, m, d ->
@@ -151,7 +157,7 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
             val notice = receipt.notice
             when {
                 reading != null -> ReceiptReadingSheet(
-                    reading, e, canEdit = !Totals.isNeutral(e), zone = zone,
+                    reading, e, canEdit = !Totals.isNeutral(e) && ui.canEdit, zone = zone,
                     onUseAmount = vm::useReceiptAmount, onUseDate = vm::useReceiptDate, onUseTitle = vm::setTitle, onClose = vm::closeReading,
                 )
                 notice != null -> ReceiptNoticeSheet(notice, vm::clearReceiptNotice)
@@ -182,7 +188,7 @@ fun EntryHistoryScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> 
                     if (older != null) com.mansaketh.chitta.core.domain.EditDiff.between(older.snapshot, v.snapshot).forEach { ch ->
                         Text("${ch.field}: ${pretty(ch.field, ch.before, ui)} to ${pretty(ch.field, ch.after, ui)}", style = ChittaTheme.type.label, color = c.inkMuted)
                     }
-                    if (i > 0 || v.action == HistoryAction.DELETED) ChittaButton("Restore this version", { vm.restore(v) }, style = ButtonStyle.Quiet)
+                    if (ui.canEdit && (i > 0 || v.action == HistoryAction.DELETED)) ChittaButton("Restore this version", { vm.restore(v) }, style = ButtonStyle.Quiet)
                 }
                 HairlineRule()
             }

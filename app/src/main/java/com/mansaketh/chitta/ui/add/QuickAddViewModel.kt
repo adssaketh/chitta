@@ -49,10 +49,18 @@ class QuickAddViewModel @Inject constructor(
     private val ratesRepo: RatesRepository,
     private val fetcher: RateFetcher,
     private val actions: EntryActions,
+    householdView: com.mansaketh.chitta.cloud.HouseholdView,
     private val ids: IdSource,
     private val clock: Clock,
 ) : ViewModel() {
     private val draft = MutableStateFlow(QuickAddDraft(dateMs = clock.nowMs()))
+
+    /** Sharing with a household is on, so the sheet offers "Mine only" (PDF p.31). New entries are shared unless this is switched on. */
+    val sharing: StateFlow<Boolean> = householdView.lens.map { it.active }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+    val mineOnly = MutableStateFlow(false)
+    fun setMineOnly(on: Boolean) { mineOnly.value = on }
+    /** Only entries made while sharing is on can be marked; otherwise nothing changes. */
+    private fun marked(entries: List<Transaction>): List<Transaction> = if (sharing.value && mineOnly.value) entries.map { it.copy(isPrivate = true) } else entries
     private val entries = ledger.observeAll()
     private val memory = titleRepo.observeAll().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     private val rules = ruleRepo.observeAll().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -99,6 +107,7 @@ class QuickAddViewModel @Inject constructor(
     /** Opens a clean sheet, optionally of a given type or filled from a pinned entry. */
     fun reset(type: EntryType = EntryType.Expense, pin: PinnedEntry? = null) {
         _linkNotes.value = emptyList()
+        mineOnly.value = false
         draft.value = if (pin == null) QuickAddDraft(type = type, dateMs = clock.nowMs())
         else QuickAddDraft(
             type = if (pin.income) EntryType.Income else EntryType.Expense,
@@ -186,7 +195,7 @@ class QuickAddViewModel @Inject constructor(
         val entry = built.entries.singleOrNull() ?: return false
         val parts = com.mansaketh.chitta.core.domain.Splits.build(entry, Paise(Math.abs(entry.amount)), lines, ids::newId) ?: return false
         viewModelScope.launch {
-            actions.add(parts, "Saved · ${entry.name.ifBlank { "entry" }} split into ${parts.size} lines")
+            actions.add(marked(parts), "Saved · ${entry.name.ifBlank { "entry" }} split into ${parts.size} lines")
             onSaved()
         }
         return true
@@ -201,7 +210,7 @@ class QuickAddViewModel @Inject constructor(
             val first = built.entries.first()
             val label = if (d.type == EntryType.Transfer) "Saved · transfer ${IndianFormat.rupees(Paise(Math.abs(first.amount)))}"
             else "Saved · ${first.name.ifBlank { "entry" }} ${IndianFormat.rupees(Paise(Math.abs(first.amount)))}"
-            actions.add(built.entries, label)
+            actions.add(marked(built.entries), label)
             if (d.type != EntryType.Transfer && d.title.isNotBlank() && d.categoryId != null) titleRepo.remember(d.title, d.categoryId!!, clock.nowMs(), ids.newId())
             onSaved()
         }

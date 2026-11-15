@@ -14,10 +14,16 @@ import kotlinx.coroutines.flow.map
  */
 class LedgerRepository(private val db: ChittaDatabase, private val clock: () -> Long = System::currentTimeMillis) {
 
-    fun observeAll(): Flow<List<Transaction>> = db.transactions().observeAll().map { rows -> rows.map { it.toModel() } }
+    /**
+     * This person's own entries. In a household, other members' entries (which sit in a placeholder account) are NOT here, so balances,
+     * net worth, bills, reminders and duplicate checks never change because of them. Lists that show the household use [observeEverything].
+     */
+    fun observeAll(): Flow<List<Transaction>> = db.transactions().observeOwn().map { rows -> rows.map { it.toModel() } }
+    /** Own entries and other members' shared entries, for the Everyone / Mine lists and totals. */
+    fun observeEverything(): Flow<List<Transaction>> = db.transactions().observeAll().map { rows -> rows.map { it.toModel() } }
     fun observe(id: String): Flow<Transaction?> = db.transactions().observe(id).map { it?.toModel() }
     /** Every entry once, newest first, for work that needs the whole list (Phase 5 unlinking a deleted goal). */
-    suspend fun observeAllOnce(): List<Transaction> = db.transactions().getAll().map { it.toModel() }
+    suspend fun observeAllOnce(): List<Transaction> = db.transactions().getOwn().map { it.toModel() }
     suspend fun get(id: String): Transaction? = db.transactions().get(id)?.toModel()
 
     fun observeHistory(entryId: String): Flow<List<EntryVersion>> = db.versions().observeFor(entryId).map { rows -> rows.map { it.toModel() } }
@@ -29,7 +35,7 @@ class LedgerRepository(private val db: ChittaDatabase, private val clock: () -> 
 
     /** Adds new entries (one, or both legs of a transfer) and records them as CREATED. */
     suspend fun add(entries: List<Transaction>) = db.withTransaction {
-        db.transactions().upsertAll(entries.map { it.toEntity() })
+        db.transactions().upsertAll(entries.map { it.dirty().toEntity() })
         db.versions().add(entries.map { version(it, HistoryAction.CREATED) })
     }
 
@@ -37,7 +43,7 @@ class LedgerRepository(private val db: ChittaDatabase, private val clock: () -> 
     suspend fun update(entries: List<Transaction>): List<Transaction> = db.withTransaction {
         val before = db.transactions().getMany(entries.map { it.id }).associateBy { it.id }
         val real = entries.filter { before[it.id]?.toModel() != it }
-        db.transactions().upsertAll(real.map { it.toEntity() })
+        db.transactions().upsertAll(real.map { it.dirty().toEntity() })
         db.versions().add(real.map { version(it, HistoryAction.EDITED) })
         real.mapNotNull { before[it.id]?.toModel() }
     }
@@ -52,7 +58,7 @@ class LedgerRepository(private val db: ChittaDatabase, private val clock: () -> 
 
     /** Puts deleted entries back (Undo of a delete, or restoring from Recently deleted). */
     suspend fun restoreDeleted(entries: List<Transaction>) = db.withTransaction {
-        db.transactions().upsertAll(entries.map { it.toEntity() })
+        db.transactions().upsertAll(entries.map { it.dirty().toEntity() })
         db.versions().add(entries.map { version(it, HistoryAction.RESTORED) })
     }
 
@@ -60,10 +66,16 @@ class LedgerRepository(private val db: ChittaDatabase, private val clock: () -> 
     suspend fun restoreVersion(entryId: String, versionId: Long): Boolean = db.withTransaction {
         val old = db.versions().getFor(entryId).firstOrNull { it.id == versionId } ?: return@withTransaction false
         val snapshot = Snapshots.decode(old.snapshotJson)
-        db.transactions().upsert(snapshot.toEntity())
+        db.transactions().upsert(snapshot.dirty().toEntity())
         db.versions().add(listOf(version(snapshot, HistoryAction.RESTORED)))
         true
     }
+
+    /**
+     * Every write made here is a change that has not gone to the household yet (a shared entry is uploaded again when this is null).
+     * Entries that arrive from the household are written by [HouseholdStore], not here, so they are never sent back.
+     */
+    private fun Transaction.dirty(): Transaction = if (householdSyncedAtMs == null) this else copy(householdSyncedAtMs = null)
 
     private fun version(t: Transaction, action: HistoryAction) =
         EntryVersionEntity(entryId = t.id, actionCode = action.code, atMs = clock(), snapshotJson = Snapshots.encode(t))

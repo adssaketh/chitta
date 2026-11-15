@@ -77,6 +77,9 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
                 ValueRow("Currency", (d.originalCurrency ?: acct) + if (d.originalCurrency != null && d.originalCurrency != acct) " · rate ${ui.rateText ?: "unknown"}" else "", onClick = { pick = Pick.Currency })
             }
             ValueRow("Note", d.note.ifBlank { "Add a note" }, onClick = { pick = Pick.Note })
+            val sharing by vm.sharing.collectAsState()
+            val mineOnly by vm.mineOnly.collectAsState()
+            if (sharing) ValueRow("Who sees it", if (mineOnly) "Mine only" else "Everyone in the household", onClick = { vm.setMineOnly(!mineOnly) })
             rateNotice?.let { Text(it, style = ChittaTheme.type.label, color = c.inkMuted) }
             vm.linkNotes.collectAsState().value.forEach { Text(it, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap1)) }
             ui.problem?.let { if (d.amountRaw.isNotEmpty()) Text(it, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2)) }

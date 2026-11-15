@@ -6,6 +6,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -53,6 +55,7 @@ import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.tokens.Dimens
 import com.mansaketh.chitta.core.design.tokens.Shapes
 import com.mansaketh.chitta.core.domain.HouseholdMember
+import com.mansaketh.chitta.core.domain.HouseholdSharing
 import com.mansaketh.chitta.core.domain.Households
 import com.mansaketh.chitta.ui.BottomOverlay
 import com.mansaketh.chitta.ui.Choice
@@ -62,8 +65,8 @@ import com.mansaketh.chitta.ui.TextSheet
 import com.mansaketh.chitta.ui.ValueRow
 
 /**
- * Household (Phase 9b, step 2). The page follows the design PDF p.31 (Household) and p.32 (Invite sheet).
- * Not built yet, so not drawn here: "Your sharing" and "Who spent how much" (PDF p.31) come with entry sharing in later steps.
+ * Household (Phase 9b, steps 2 and 3). The page follows the design PDF p.31 (Household), p.32 (Invite sheet) and p.33 (Choose what to share).
+ * Not built yet, so not drawn here: "Who spent how much" (PDF p.31) comes in step 4.
  */
 @Composable
 fun HouseholdScreen(vm: HouseholdViewModel, onBack: () -> Unit) {
@@ -76,6 +79,8 @@ fun HouseholdScreen(vm: HouseholdViewModel, onBack: () -> Unit) {
     var draft by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(Unit) { vm.opened() }
+    // Right after creating or joining, ask once what to do with the entries already on the phone (PDF p.33).
+    LaunchedEffect(ui.askToShare) { if (ui.askToShare) { sheet = "share-choice"; vm.askHandled() } }
 
     Column(Modifier.fillMaxSize()) {
         ChittaTopBar("Household", onBack = onBack)
@@ -98,6 +103,7 @@ fun HouseholdScreen(vm: HouseholdViewModel, onBack: () -> Unit) {
                     onRename = { sheet = "rename" }, onInvite = { vm.loadCode(); sheet = "invite" },
                     onMember = { m -> sheet = if (m.uid == ui.myUid) "nickname" else "member:" + m.uid },
                     onToggleBalances = { vm.setShowBalances(!snap.showBalances) },
+                    onSharing = { sheet = if (ui.sharing.ready) "sharing" else "share-choice" },
                     onLeave = { sheet = "leave" },
                 )
             }
@@ -113,6 +119,11 @@ fun HouseholdScreen(vm: HouseholdViewModel, onBack: () -> Unit) {
         key == "join-nick" -> TextSheet("Your name in the household", "The name others will see", ui.suggestedNickname, { vm.join(draft, it); sheet = null }, { sheet = null }, saveLabel = "Join")
         key == "nickname" -> TextSheet("Your name", "The name others will see", ui.local.nickname, { vm.setNickname(it); sheet = null }, { sheet = null })
         key == "rename" -> TextSheet("Household name", "Name", snap?.name ?: ui.local.name, { vm.rename(it); sheet = null }, { sheet = null })
+        key == "share-choice" && ui.local.inHousehold -> ShareChoiceSheet(
+            snap?.name ?: ui.local.name,
+            onContinue = { choice -> sheet = null; vm.chooseSharing(choice) }, onNotNow = { sheet = null },
+        )
+        key == "sharing" && ui.local.inHousehold -> SharingSheet(ui, vm, onClose = { sheet = null })
         key == "invite" && snap != null -> InviteSheet(ui.code, Households.placesLeft(snap.members.size), vm, onClose = { sheet = null })
         key == "leave" -> ConfirmSheet(
             "Leave this household?",
@@ -175,7 +186,7 @@ private fun NoHouseholdPart(busy: Boolean, onCreate: () -> Unit, onJoin: () -> U
 @Composable
 private fun HouseholdPart(
     ui: HouseholdUi, snap: HouseholdSnapshot,
-    onRename: () -> Unit, onInvite: () -> Unit, onMember: (HouseholdMember) -> Unit, onToggleBalances: () -> Unit, onLeave: () -> Unit,
+    onRename: () -> Unit, onInvite: () -> Unit, onMember: (HouseholdMember) -> Unit, onToggleBalances: () -> Unit, onSharing: () -> Unit, onLeave: () -> Unit,
 ) {
     val c = ChittaTheme.colors
     val iAmOwner = ui.local.isOwner
@@ -215,6 +226,15 @@ private fun HouseholdPart(
         )
     }
 
+    // PDF p.31 draws "Your sharing" with a line under it; built as a value row like the others (D202).
+    ValueRow("Your sharing", sharingValue(ui), onClick = onSharing)
+    Text(
+        if (ui.sharing.ready) "New entries are shared with the household unless you mark them Mine only."
+        else "Nothing is shared yet. Tap to choose what happens to the entries already on this phone.",
+        style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2),
+    )
+    if (ui.sharing.problem.isNotBlank()) Text(ui.sharing.problem, style = ChittaTheme.type.label, color = c.ink, modifier = Modifier.padding(bottom = Dimens.Gap2))
+
     Spacer(Modifier.height(Dimens.SectionGap))
     if (iAmOwner) {
         Text(
@@ -227,6 +247,13 @@ private fun HouseholdPart(
             modifier = Modifier.heightIn(min = Dimens.TouchTarget).clickable(role = Role.Button, onClick = onLeave).padding(vertical = Dimens.Gap3),
         )
     }
+}
+
+private fun sharingValue(ui: HouseholdUi): String = when {
+    !ui.sharing.ready -> "Not chosen"
+    ui.sharing.problem.isNotBlank() -> "Needs attention"
+    (ui.counts?.waiting ?: 0) > 0 -> "${ui.counts!!.waiting} waiting"
+    else -> "Up to date"
 }
 
 @Composable
@@ -334,5 +361,90 @@ private fun InviteSheet(code: String?, placesLeft: Int, vm: HouseholdViewModel, 
                 modifier = Modifier.heightIn(min = Dimens.TouchTarget).clickable(role = Role.Button) { copied = false; vm.stopJoining() }.padding(vertical = Dimens.Gap3),
             )
         }
+    }
+}
+
+/** PDF p.33. Shown right after creating or joining, and from "Your sharing" until a choice is made. Nothing is deleted either way. */
+@Composable
+private fun ShareChoiceSheet(householdName: String, onContinue: (HouseholdSharing.ShareChoice) -> Unit, onNotNow: () -> Unit) {
+    val c = ChittaTheme.colors
+    var choice by rememberSaveable { mutableStateOf(HouseholdSharing.ShareChoice.SHARE_EXISTING) }
+    BottomOverlay(onNotNow) {
+        Text("Share your existing entries?", style = ChittaTheme.type.headline, color = c.ink)
+        Spacer(Modifier.height(Dimens.Gap2))
+        Text(
+            "You've joined ${householdName.ifBlank { "the household" }}. Choose what happens to the entries already on this phone.",
+            style = ChittaTheme.type.label, color = c.inkMuted,
+        )
+        Spacer(Modifier.height(Dimens.Gap4))
+        ShareOption(
+            "Share my earlier entries", "Add the entries you kept private on this phone to the household.",
+            selected = choice == HouseholdSharing.ShareChoice.SHARE_EXISTING,
+        ) { choice = HouseholdSharing.ShareChoice.SHARE_EXISTING }
+        HairlineRule()
+        ShareOption(
+            "Only new entries", "What you add from now on is shared. Earlier ones stay on this phone.",
+            selected = choice == HouseholdSharing.ShareChoice.ONLY_NEW,
+        ) { choice = HouseholdSharing.ShareChoice.ONLY_NEW }
+        HairlineRule()
+        Spacer(Modifier.height(Dimens.Gap3))
+        Text(
+            "Everyone can always edit and delete their own entries. You can share earlier entries later from the Household page.",
+            style = ChittaTheme.type.label, color = c.inkMuted,
+        )
+        Spacer(Modifier.height(Dimens.Gap4))
+        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
+            ChittaButton("Not now", onNotNow, style = ButtonStyle.Quiet, modifier = Modifier.weight(1f))
+            ChittaButton("Continue", { onContinue(choice) }, modifier = Modifier.weight(1f), confirmHaptic = true)
+        }
+    }
+}
+
+/** A radio row: the app has no radio component, so this draws the ring and the dot. */
+@Composable
+private fun ShareOption(title: String, detail: String, selected: Boolean, onClick: () -> Unit) {
+    val c = ChittaTheme.colors
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable(role = Role.RadioButton, onClick = onClick).padding(vertical = Dimens.Gap3),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Box(Modifier.padding(top = 2.dp).size(20.dp).border(1.5.dp, c.ink, CircleShape), contentAlignment = Alignment.Center) {
+            if (selected) Box(Modifier.size(10.dp).clip(CircleShape).background(c.ink))
+        }
+        Spacer(Modifier.width(Dimens.Gap3))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = if (selected) ChittaTheme.type.bodyMedium else ChittaTheme.type.body, color = c.ink)
+            Text(detail, style = ChittaTheme.type.label, color = c.inkMuted)
+        }
+    }
+}
+
+/** What "Your sharing" opens: how much is shared and waiting, when it last went up, and the two things a person can do about it. */
+@Composable
+private fun SharingSheet(ui: HouseholdUi, vm: HouseholdViewModel, onClose: () -> Unit) {
+    val c = ChittaTheme.colors
+    val counts = ui.counts
+    BottomOverlay(onClose) {
+        Text("Your sharing", style = ChittaTheme.type.title, color = c.ink)
+        Spacer(Modifier.height(Dimens.Gap3))
+        if (counts != null) {
+            Text("${counts.shared} of your entries are shared. ${counts.waiting} waiting to go up.", style = ChittaTheme.type.body, color = c.ink)
+            Text("${counts.fromMembers} entries from other members are on this phone.", style = ChittaTheme.type.label, color = c.inkMuted)
+        }
+        Text(
+            if (ui.sharing.lastSyncMs > 0) "Last sent " + java.time.Instant.ofEpochMilli(ui.sharing.lastSyncMs).atZone(java.time.ZoneId.systemDefault())
+                .format(java.time.format.DateTimeFormatter.ofPattern("d MMM, h:mm a", java.util.Locale.ENGLISH)) + "." else "Nothing sent yet.",
+            style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2),
+        )
+        if (ui.sharing.problem.isNotBlank()) Text(ui.sharing.problem, style = ChittaTheme.type.label, color = c.ink, modifier = Modifier.padding(top = Dimens.Gap2))
+        Spacer(Modifier.height(Dimens.Gap4))
+        ChittaButton("Send now", { vm.sendNow(); onClose() }, enabled = !ui.busy)
+        Spacer(Modifier.height(Dimens.Gap2))
+        ChittaButton("Share my earlier entries", { vm.shareEarlier(); onClose() }, style = ButtonStyle.Quiet, enabled = !ui.busy)
+        Spacer(Modifier.height(Dimens.Gap3))
+        Text(
+            "Entries marked Mine only are never shared. Sharing earlier entries cannot be undone from here; leaving the household keeps your entries on this phone.",
+            style = ChittaTheme.type.label, color = c.inkMuted,
+        )
     }
 }
