@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -97,10 +98,14 @@ fun BottomOverlay(onDismiss: () -> Unit, modifier: Modifier = Modifier, handle: 
     androidx.compose.runtime.LaunchedEffect(Unit) {
         if (motion) rise.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy, stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow))
     }
+    val statusTop = androidx.compose.foundation.layout.WindowInsets.statusBars.getTop(androidx.compose.ui.platform.LocalDensity.current)
+    val scrimColor = ChittaTheme.colors.scrim
     Box(Modifier.fillMaxSize()) {
         Box(
             Modifier.fillMaxSize().graphicsLayer { alpha = rise.value.coerceIn(0f, 1f) }
-                .background(ChittaTheme.colors.scrim).clickable(role = Role.Button, onClickLabel = "Close", onClick = onDismiss),
+                // The page sits below the status bar, so the dim is also painted up over that strip: no colour step under the clock.
+                .drawBehind { val top = statusTop.toFloat(); drawRect(scrimColor, topLeft = androidx.compose.ui.geometry.Offset(0f, -top), size = androidx.compose.ui.geometry.Size(size.width, top)) }
+                .background(scrimColor).clickable(role = Role.Button, onClickLabel = "Close", onClick = onDismiss),
         )
         Column(
             Modifier.align(Alignment.BottomCenter).imePadding().navigationBarsPadding()

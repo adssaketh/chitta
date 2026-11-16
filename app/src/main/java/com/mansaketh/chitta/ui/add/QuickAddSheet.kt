@@ -36,7 +36,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
-private enum class Pick { None, Account, ToAccount, Currency, Rate, Note, Date }
+private enum class Pick { None, Account, ToAccount, Note, Date }
 
 /**
  * Quick Add (PDF p.15, screen 07): handle only (no title, no close button), the type switch with Pin and Split at the top, the amount with
@@ -54,11 +54,9 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
     var pick by remember { mutableStateOf(Pick.None) }
     var useKeyboard by remember { mutableStateOf(false) }
     val amountFocus = remember { androidx.compose.ui.focus.FocusRequester() }
-    var rateNotice by remember { mutableStateOf<String?>(null) }
     var splitTotal by remember { mutableStateOf<com.mansaketh.chitta.core.money.Paise?>(null) }
     val zone = remember { ZoneId.systemDefault() }
     val types = EntryType.entries
-    var moreOptions by remember { mutableStateOf(false) }
     val formScroll = rememberScrollState()
     // The amount's caret shows only while it is being typed: after a tap on the amount or a key press, and for 2 s after the last one.
     // A field taking focus (Title) hides it at once.
@@ -69,21 +67,7 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
         if (typingTick > 0) { kotlinx.coroutines.delay(2000); typing = false }
     }
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
-    // The keypad and Save are fixed, so the rows "More options" opens land below the visible form: scroll them into view.
-    LaunchedEffect(moreOptions) {
-        if (moreOptions) {
-            withFrameNanos { }
-            withFrameNanos { }
-            formScroll.animateScrollTo(formScroll.maxValue)
-        }
-    }
-
     val transfer = d.type == EntryType.Transfer
-    val acct = ui.accounts.firstOrNull { it.id == d.accountId }?.currency ?: "INR"
-    val otherCurrency = d.originalCurrency != null && d.originalCurrency != acct
-    // "More options" opens Note and Currency in place. They also show on their own when they matter: a note is already there, or the currency is not the account's (PDF p.15).
-    val expanded = moreOptions || otherCurrency || d.note.isNotBlank()
-
     BottomOverlay(onClose, handle = false) {
         Column(Modifier.heightIn(max = sheetMax(Dimens.SheetMaxFraction)).semantics { paneTitle = "Add a transaction" }) {
             SheetHandle(Modifier.align(Alignment.CenterHorizontally))
@@ -157,16 +141,9 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
                     add(SummaryPart(friendlyDay(d.dateMs, System.currentTimeMillis(), zone), "Date", { pick = Pick.Date }))
                     if (sharing) add(SummaryPart(if (mineOnly) "Mine only" else "Everyone", "Who sees it. Tap to change", { vm.setMineOnly(!mineOnly) }))
                 }
-                SummaryLine(summary, onMore = if (expanded) null else ({ moreOptions = true }), modifier = Modifier.tightVertical(Dimens.Space4))
-
-                if (expanded) {
-                    if (otherCurrency || moreOptions) {
-                        ValueRow("Currency", (d.originalCurrency ?: acct).uppercase() + if (otherCurrency) " · rate ${ui.rateText ?: "unknown"}" else "", onClick = { pick = Pick.Currency })
-                    }
-                    ui.preview?.let { Text("About ${IndianFormat.rupees(it)} at ${ui.rateText}".rupeeAware(), style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2)) }
-                    ValueRow("Note", d.note.ifBlank { "Add a note" }, onClick = { pick = Pick.Note })
-                }
-                rateNotice?.let { Text(it, style = ChittaTheme.type.label, color = c.inkMuted) }
+                // Money is always rupees, so there is no currency row. The note is one link on the line; once a note exists it shows as a row.
+                SummaryLine(summary, onMore = if (d.note.isBlank()) ({ pick = Pick.Note }) else null, modifier = Modifier.tightVertical(Dimens.Space4))
+                if (d.note.isNotBlank()) ValueRow("Note", d.note, onClick = { pick = Pick.Note })
                 vm.linkNotes.collectAsState().value.forEach { Text(it, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap1)) }
                 ui.problem?.let { if (d.amountRaw.isNotEmpty()) Text(it, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2)) }
             }
@@ -213,18 +190,6 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
     when (pick) {
         Pick.Account -> ChoiceSheet("Account", ui.accounts.map { Choice(it.name, it.id, selected = it.id == d.accountId) }, { vm.setAccount(it); pick = Pick.None }, { pick = Pick.None })
         Pick.ToAccount -> ChoiceSheet("Goes to", ui.accounts.filter { it.id != d.accountId }.map { Choice(it.name, it.id, selected = it.id == d.toAccountId) }, { vm.setToAccount(it); pick = Pick.None }, { pick = Pick.None })
-        Pick.Currency -> ChoiceSheet(
-            "Amount is in", ui.knownCurrencies.map { Choice(it, it) } + Choice("Refresh rates", "·refresh", "Needs internet") + Choice("Type the rate myself", "·rate"),
-            { v ->
-                when (v) {
-                    "·refresh" -> { vm.refreshRates { r -> rateNotice = if (r is RefreshResult.Updated) "Rates updated (${r.asOf})." else (r as RefreshResult.Failed).reason + " Old rates kept." }; pick = Pick.None }
-                    "·rate" -> pick = Pick.Rate
-                    else -> { vm.setCurrency(v); pick = Pick.None }
-                }
-            },
-            { pick = Pick.None },
-        )
-        Pick.Rate -> TextSheet("Exchange rate", "Rate (account currency per 1 unit typed)", ui.rateText ?: "", { vm.setRate(it); pick = Pick.None }, { pick = Pick.None }, numeric = true)
         Pick.Note -> TextSheet("Note", "Note", d.note, { vm.setNote(it); pick = Pick.None }, { pick = Pick.None }, singleLine = false)
         Pick.Date -> BottomOverlay({ pick = Pick.None }, handle = false) {
             val time = Instant.ofEpochMilli(d.dateMs).atZone(zone).toLocalTime()

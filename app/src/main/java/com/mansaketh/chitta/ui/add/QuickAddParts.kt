@@ -77,7 +77,7 @@ internal data class SummaryPart(val text: String, val description: String, val o
  * others do. [onMore] is null once the extra rows are showing.
  */
 @Composable
-internal fun SummaryLine(parts: List<SummaryPart>, onMore: (() -> Unit)?, modifier: Modifier = Modifier) {
+internal fun SummaryLine(parts: List<SummaryPart>, onMore: (() -> Unit)?, modifier: Modifier = Modifier, moreLabel: String = "Add a note") {
     val c = ChittaTheme.colors
     Row(modifier.heightIn(min = Dimens.TouchTarget), verticalAlignment = Alignment.CenterVertically) {
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
@@ -98,7 +98,7 @@ internal fun SummaryLine(parts: List<SummaryPart>, onMore: (() -> Unit)?, modifi
         }
         if (onMore != null) {
             Text(
-                "More options",
+                moreLabel,
                 style = ChittaTheme.type.link,
                 color = c.ink,
                 modifier = Modifier.heightIn(min = Dimens.TouchTarget).pressClickable(role = Role.Button, onClick = onMore).wrapContentHeight(Alignment.CenterVertically),
