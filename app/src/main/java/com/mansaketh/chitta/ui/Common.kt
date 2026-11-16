@@ -153,9 +153,11 @@ fun ConfirmSheet(title: String, lines: List<String>, confirmLabel: String, onCon
         Spacer(Modifier.height(Dimens.Gap3))
         lines.forEach { Text(it.rupeeAware(), style = ChittaTheme.type.body, color = ChittaTheme.colors.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2)) }
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton(confirmLabel, onConfirm, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(Dimens.Gap2))
-        ChittaButton("Cancel", onDismiss, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
+        // Cancel first, the red confirm second: only the confirm is filled (PDF p.22).
+        com.mansaketh.chitta.core.design.kit.ButtonPair(
+            first = { m -> ChittaButton("Cancel", onDismiss, kind = ButtonKind.Secondary, modifier = m) },
+            second = { m -> ChittaButton(confirmLabel, onConfirm, confirmHaptic = true, modifier = m) },
+        )
     }
 }
 

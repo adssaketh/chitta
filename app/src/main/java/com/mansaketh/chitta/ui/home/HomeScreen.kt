@@ -4,7 +4,10 @@ import com.mansaketh.chitta.core.design.kit.SheetHeader
 import androidx.compose.foundation.background
 import com.mansaketh.chitta.ui.FeatureIcons
 import com.mansaketh.chitta.core.domain.TabKey
-import com.mansaketh.chitta.core.design.kit.GaugeBar
+import com.mansaketh.chitta.core.design.kit.EntryRow
+import com.mansaketh.chitta.core.design.kit.Note
+import com.mansaketh.chitta.ui.plan.PlanRow
+import com.mansaketh.chitta.core.money.Segments
 import com.mansaketh.chitta.core.design.kit.EmptyState
 import com.mansaketh.chitta.core.design.kit.Section
 import com.mansaketh.chitta.core.design.kit.BadgedIconAction
@@ -182,15 +185,13 @@ fun HomeScreen(
                 val lui = LedgerUi(categories = ui.categories, accounts = ui.accounts)
                 ui.coming.forEachIndexed { i, t ->
                     val row = t.toRow(lui, c.inkMuted) { id -> c.categoryTint(id) }
-                    ListRow(
-                        title = row.title, meta = dateText(t.dateMs, ui.zone), onClick = { onOpenEntry(t.id) },
-                        trailing = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                AmountText(row.amount, style = ChittaTheme.type.rowAmount)
-                                // one stamp only: on the first, nearest bill
-                                if (i == 0) { Spacer(Modifier.width(Dimens.InlineGap)); Stamp("Upcoming") }
-                            }
-                        },
+                    val date = java.time.Instant.ofEpochMilli(t.dateMs).atZone(ui.zone).toLocalDate()
+                    EntryRow(
+                        title = row.title, meta = row.category, glyph = row.glyph, glyphColor = row.categoryColor, amount = row.amount, tone = row.tone,
+                        marginDay = date.dayOfMonth, weekday = date.weekdayShort(),
+                        // one stamp only: on the first, nearest bill
+                        stamp = if (i == 0) "Upcoming" else null,
+                        onClick = { onOpenEntry(t.id) },
                     )
                 }
             }
@@ -200,14 +201,10 @@ fun HomeScreen(
                 Section(cfg.section.title) {
                     when (data) {
                         is SectionData.BudgetsData -> if (data.rows.isEmpty()) Muted("No budgets yet.") else data.rows.forEach { r ->
-                            Column(Modifier.fillMaxWidth().pressClickable(role = Role.Button) { onOpenBudget(r.budget.id) }.padding(vertical = Dimens.RowPadV)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(r.budget.name, style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.weight(1f))
-                                    AmountText(r.summary.left, style = ChittaTheme.type.amountRow)
-                                }
-                                Text("left of ${IndianFormat.rupeesRounded(r.summary.limit)}", style = ChittaTheme.type.label, color = c.inkMuted)
-                            }
-                            HairlineRule()
+                            PlanRow(
+                                r.budget.name, r.summary.left, "left of ${IndianFormat.rupeesRounded(r.summary.limit)}",
+                                Segments.gauge(r.summary.spent, r.summary.limit), "${r.budget.name} budget", onClick = { onOpenBudget(r.budget.id) },
+                            )
                         }
                         is SectionData.BalancesData -> {
                             // One line per account name with an ellipsis and at least 16 dp before the amount.
@@ -235,20 +232,10 @@ fun HomeScreen(
                             if (data.series.size >= 2) TrendLine(data.series.map { it.figures.total.value }, "Net worth over the last ${data.series.size} months", height = Dimens.TrendHeight)
                         }
                         is SectionData.GoalsData -> if (data.rows.isEmpty()) Muted("No goals yet.") else data.rows.forEach { (g, p) ->
-                            Column(Modifier.fillMaxWidth().pressClickable(role = Role.Button) { onOpenGoal(g.id) }.padding(vertical = Dimens.RowPadV)) {
-                                Text(g.name, style = ChittaTheme.type.body, color = c.ink)
-                                GaugeBar(p.gauge, g.name)
-                                Text("${IndianFormat.rupeesRounded(p.saved)} of ${IndianFormat.rupeesRounded(p.target)}", style = ChittaTheme.type.label, color = c.inkMuted)
-                            }
-                            HairlineRule()
+                            PlanRow(g.name, null, "${IndianFormat.rupeesRounded(p.saved)} of ${IndianFormat.rupeesRounded(p.target)}", p.gauge, g.name, onClick = { onOpenGoal(g.id) })
                         }
                         is SectionData.LoansData -> if (data.rows.isEmpty()) Muted("No loans yet.") else data.rows.forEach { (l, p) ->
-                            Column(Modifier.fillMaxWidth().pressClickable(role = Role.Button) { onOpenLoan(l.id) }.padding(vertical = Dimens.RowPadV)) {
-                                Text(l.name, style = ChittaTheme.type.body, color = c.ink)
-                                GaugeBar(p.gauge, l.name)
-                                Text("${IndianFormat.rupeesRounded(p.outstanding)} still to go", style = ChittaTheme.type.label, color = c.inkMuted)
-                            }
-                            HairlineRule()
+                            PlanRow(l.name, null, "${IndianFormat.rupeesRounded(p.outstanding)} still to go", p.gauge, l.name, onClick = { onOpenLoan(l.id) })
                         }
                         is SectionData.SpendingData -> if (data.bars.isEmpty()) Muted("No spending in the past ${data.days} days.") else {
                             val top = data.bars.maxOf { it.amount.value }.coerceAtLeast(1L)
@@ -322,7 +309,7 @@ private fun ExplainSheet(ui: HomeUi, onDismiss: () -> Unit) {
                 Spacer(Modifier.width(Dimens.Gap2))
                 Text("A spending account has had no entry for over 7 days.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.weight(1f))
             }
-            Muted("Home shows the smaller of the two, so you never plan around money the accounts do not hold.")
+            Note("Home shows the smaller of the two, so you never plan around money the accounts do not hold.", Modifier.padding(top = Dimens.Gap2))
         } else if (hero == null) {
             Muted("Set a budget in Plan, or mark spending accounts in Customise Home.")
         }

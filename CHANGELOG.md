@@ -1,5 +1,14 @@
 # Changelog
 
+## Phase 11c: daily screens (16 Nov 2026) - on branch `phase-11c-daily`
+- Look only. Screens 05 to 15 of the v8 design: Home, Quick Add, Ledger, Entry detail, Split, Delete confirm.
+- Home: Coming up rows carry the date in the margin and the category glyph; Budgets, Goals and Loans use the Plan row with a gauge; the cash-check explanation is a Note.
+- Quick Add: sheet title, type switch, Pin and Split as icons, one wide Save, Currency row only when it differs (or behind More options).
+- Ledger: every day uses the shared entry row; multi-select shows tick boxes; search field has an icon and clear button, "Search tips" link, active filters are removable chips with Clear all.
+- Entry: one top block (glyph, title, amount, tag) that opens the edit sheets; Duplicate, Pin, Split in the top bar; Delete in red at the end.
+- Delete confirm and Split use button pairs. New Pin and Split icons (drawn).
+- Not compiled locally (no Android SDK here); GitHub Actions is the first build.
+
 ## Phase 11b: every screen on the kit (16 Nov 2026) - on branch `phase-11b-callsites`
 - Look only. Every screen now uses the v8 kit from 11a; no feature, setting or number changed.
 - Buttons: one `ChittaButton` with weights (red Primary, outlined Secondary, Link, Danger). Top bars: Home, Ledger, Plan, Insights and More use `TopBarMain`; every other screen `TopBarDetail`. One icon map for tabs, More and Home sections (`ui/FeatureIcons.kt`). Sections, rows, empty states, chips, month steppers and the gauge are the kit versions.

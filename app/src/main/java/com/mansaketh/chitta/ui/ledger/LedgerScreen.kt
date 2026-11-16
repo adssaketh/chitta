@@ -5,6 +5,8 @@ import com.mansaketh.chitta.ui.FeatureIcons
 import com.mansaketh.chitta.core.domain.TabKey
 import com.mansaketh.chitta.core.design.kit.EmptyState
 import com.mansaketh.chitta.core.design.kit.TopBarMain
+import com.mansaketh.chitta.core.design.kit.FilterChip
+import com.mansaketh.chitta.core.design.kit.SheetHeader
 import com.mansaketh.chitta.core.design.kit.ButtonKind
 import com.mansaketh.chitta.core.design.kit.ChittaButton
 import android.content.ClipboardManager
@@ -12,6 +14,15 @@ import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
@@ -44,7 +55,7 @@ import com.mansaketh.chitta.ui.ownsSideways
 private enum class BulkStage { Menu, Category, Account }
 
 /** Where did it go? Day-grouped rows, sticky month header, tabs, search and filters, multi-select with bulk edit (PDF p.12). */
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Unit, modifier: Modifier = Modifier) {
     val ui by vm.ui.collectAsState()
@@ -79,15 +90,12 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
                 })
             }
             if (searching && !selecting) {
-                ChittaField(
-                    value = ui.filter.text, onValueChange = vm::setText, label = "Search title, note, category or account",
-                    modifier = Modifier.padding(horizontal = Dimens.Margin, vertical = Dimens.InlineGap),
+                SearchBox(
+                    value = ui.filter.text, onValueChange = vm::setText,
+                    modifier = Modifier.padding(horizontal = Dimens.Margin).padding(top = Dimens.InlineGap),
                 )
-                if (ui.filter.text.isBlank()) {
-                    Text(
-                        "Filters: amt>500, cat:food, acc:hdfc, last:30d, type:lent, note:word, from:2026-10-01. A minus leaves one out: -cat:food.",
-                        style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(start = Dimens.Margin, end = Dimens.Margin, bottom = Dimens.InlineGap),
-                    )
+                Row(Modifier.fillMaxWidth().padding(horizontal = Dimens.Margin), horizontalArrangement = Arrangement.End) {
+                    ChittaButton("Search tips", { picker = "tips" }, kind = ButtonKind.Link)
                 }
                 ui.problems.forEach { problem ->
                     Text("Not used: $problem", style = ChittaTheme.type.label, color = c.ink, modifier = Modifier.padding(horizontal = Dimens.Margin, vertical = Dimens.Space1))
@@ -112,9 +120,14 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
             HairlineRule()
             val filtered = ui.filter.accountIds.isNotEmpty() || ui.filter.categoryIds.isNotEmpty() || ui.typedFilters
             if (filtered) {
-                Row(Modifier.fillMaxWidth().padding(horizontal = Dimens.Margin), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Filtered: ${ui.matching} of ${ui.totalEntries} entries", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.weight(1f))
-                    ChittaButton("Clear", vm::clearFilters, kind = ButtonKind.Link)
+                FlowRow(
+                    Modifier.fillMaxWidth().padding(horizontal = Dimens.Margin).padding(top = Dimens.InlineGap),
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.InlineGap), verticalArrangement = Arrangement.spacedBy(Dimens.InlineGap),
+                    itemVerticalAlignment = Alignment.CenterVertically,
+                ) {
+                    ui.filter.accountIds.forEach { id -> FilterChip(accountName(id, ui.allAccounts), onRemove = { vm.setAccounts(ui.filter.accountIds - id) }) }
+                    ui.filter.categoryIds.forEach { id -> FilterChip(categoryName(id, ui.categories), onRemove = { vm.setCategories(ui.filter.categoryIds - id) }) }
+                    ChittaButton("Clear all", vm::clearFilters, kind = ButtonKind.Link)
                 }
             }
             notice?.let { Text(it, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(horizontal = Dimens.Margin, vertical = Dimens.Gap2)) }
@@ -139,6 +152,7 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
                         }
                         items(month.days, key = { "d-${it.date}" }) { day ->
                             LedgerDay(
+                                selecting = selecting,
                                 dayNumber = day.date.dayOfMonth, weekday = day.date.weekdayShort(),
                                 entries = day.entries.map { t -> t.toRow(ui, c.inkMuted) { id -> c.categoryTint(id) } }, dayTotal = day.net,
                                 onEntryClick = { e -> if (selecting) vm.toggle(e.id) else onOpen(e.id) },
@@ -186,6 +200,14 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
         }
 
         when (picker) {
+            "tips" -> BottomOverlay({ picker = null }, handle = false) {
+                SheetHeader("Search tips", onClose = { picker = null })
+                Spacer(Modifier.height(Dimens.Gap3))
+                Text(
+                    "Filters: amt>500, cat:food, acc:hdfc, last:30d, type:lent, note:word, from:2026-10-01. A minus leaves one out: -cat:food.",
+                    style = ChittaTheme.type.body, color = c.inkMuted,
+                )
+            }
             "menu" -> ChoiceSheet("Filter", listOf(Choice("By account", "account"), Choice("By category", "category")), onPick = { picker = it }, onDismiss = { picker = null })
             "account" -> ChoiceSheet(
                 "Show one account",
@@ -243,4 +265,34 @@ private fun copy(context: Context, text: String) {
 private fun share(context: Context, text: String) {
     val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
     context.startActivity(Intent.createChooser(send, "Share totals").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+}
+
+/** The Ledger search field (PDF p.18): a search icon, the query, and a clear button inside one bordered box. */
+@Composable
+private fun SearchBox(value: String, onValueChange: (String) -> Unit, modifier: Modifier = Modifier) {
+    val c = ChittaTheme.colors
+    val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+    Row(
+        modifier.fillMaxWidth().heightIn(min = Dimens.ButtonHeight)
+            .clip(com.mansaketh.chitta.core.design.tokens.Shapes.Control)
+            .background(c.surface)
+            .border(Dimens.Hairline, c.mark, com.mansaketh.chitta.core.design.tokens.Shapes.Control)
+            .padding(start = Dimens.Gap3),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(ChittaIcons.Search, contentDescription = null, tint = c.inkMuted, modifier = Modifier.size(Dimens.IconSmall))
+        Spacer(Modifier.width(Dimens.Gap2))
+        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+            if (value.isEmpty()) Text("Search", style = ChittaTheme.type.body, color = c.inkMuted)
+            BasicTextField(
+                value = value, onValueChange = onValueChange, singleLine = true,
+                textStyle = ChittaTheme.type.body.copy(color = c.ink), cursorBrush = SolidColor(c.ink),
+                modifier = Modifier.fillMaxWidth().focusRequester(focus)
+                    .semantics { contentDescription = "Search title, note, category or account" },
+            )
+        }
+        if (value.isNotEmpty()) IconAction(ChittaIcons.Close, "Clear search", { onValueChange("") })
+        else Spacer(Modifier.width(Dimens.Gap3))
+    }
+    LaunchedEffect(Unit) { focus.requestFocus() }
 }

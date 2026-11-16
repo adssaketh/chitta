@@ -79,16 +79,18 @@ fun SplitSheet(total: Paise, categories: List<Category>, firstCategoryId: String
             style = ChittaTheme.type.body, color = if (check == SplitCheck.Balanced) c.ink else c.warningText,
         )
         Spacer(Modifier.height(Dimens.Gap3))
-        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
-            ChittaButton("Add a line", { lines.add(LineDraft()) }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
-            ChittaButton("Equal parts", {
-                val withCat = lines.filter { it.categoryId != null }
-                if (withCat.size >= 2) {
-                    Splits.equalLines(total, withCat.map { it.categoryId!! }).forEachIndexed { i, sl -> withCat[i].amountText = plain(sl.amount.value) }
-                    tick++
-                }
-            }, kind = ButtonKind.Secondary, enabled = lines.count { it.categoryId != null } >= 2, modifier = Modifier.fillMaxWidth())
-        }
+        com.mansaketh.chitta.core.design.kit.ButtonPair(
+            first = { m -> ChittaButton("Add a line", { lines.add(LineDraft()) }, kind = ButtonKind.Secondary, modifier = m) },
+            second = { m ->
+                ChittaButton("Equal parts", {
+                    val withCat = lines.filter { it.categoryId != null }
+                    if (withCat.size >= 2) {
+                        Splits.equalLines(total, withCat.map { it.categoryId!! }).forEachIndexed { i, sl -> withCat[i].amountText = plain(sl.amount.value) }
+                        tick++
+                    }
+                }, kind = ButtonKind.Secondary, enabled = lines.count { it.categoryId != null } >= 2, modifier = m)
+            },
+        )
         Spacer(Modifier.height(Dimens.Gap4))
         ChittaButton("Save split", { onSave(valid) }, enabled = check == SplitCheck.Balanced, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
     }
