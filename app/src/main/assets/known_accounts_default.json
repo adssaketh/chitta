@@ -179,9 +179,8 @@
   },
   {
    "key": "federal:credit_card:9368",
-   "name": "Federal Signet Rupay Card",
-   "wallet": "Federal (closed)",
-   "closed": true
+   "name": "Saketh - Federal Signet Rupay Card",
+   "wallet": "Saketh - Federal"
   },
   {
    "key": "hdfc:credit_card:1170",

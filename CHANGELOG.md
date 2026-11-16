@@ -1,5 +1,8 @@
 # Changelog
 
+## Phase 10c: Federal accounts (16 Nov 2026)
+- Built-in list: the Federal Signet Rupay card (••9368) is marked operating and goes into "Saketh - Federal". The three Federal savings accounts (••3269, ••4365, ••6299) stay closed, as you confirmed.
+
 ## Phase 10b: known accounts built in (16 Nov 2026)
 - Your 42 accounts and cards from the old app (Scapia, Axis, SBI, HDFC, ICICI, Federal, Yes, pension rows, closed ones) now come with the app, so bank messages are recognised on the first run without loading a file. A file you load still replaces them.
 

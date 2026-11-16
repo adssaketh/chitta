@@ -24,4 +24,10 @@ class DefaultKnownAccountsTest {
         assertTrue(known.lookup("icici:account:2090")!!.closed)
         assertNotNull(known.lookup("hdfc:credit_card:0886"))
     }
+
+    @Test fun signetCardIsOperatingAndThreeFederalSavingsAccountsAreClosed() {
+        assertEquals(false, known.lookup("federal:credit_card:9368")!!.closed)
+        assertEquals("Saketh - Federal", known.lookup("federal:credit_card:9368")?.wallet)
+        listOf("3269", "4365", "6299").forEach { assertTrue(known.lookup("federal:account:$it")!!.closed, it) }
+    }
 }
