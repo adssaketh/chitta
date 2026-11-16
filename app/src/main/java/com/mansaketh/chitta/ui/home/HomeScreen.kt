@@ -1,5 +1,6 @@
 package com.mansaketh.chitta.ui.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -55,14 +56,26 @@ fun HomeScreen(
     onOpenLedger: () -> Unit,
     onCustomise: () -> Unit,
     onOpenReview: () -> Unit = {},
+    onOpenBell: () -> Unit = {},
 ) {
     val ui by vm.ui.collectAsState()
+    val waiting by vm.waiting.collectAsState()
     val firstDay by vm.prefs.firstDay.collectAsState()
     var sheet by remember { mutableStateOf<String?>(null) }
     val c = ChittaTheme.colors
 
     Column(Modifier.fillMaxSize()) {
         ChittaTopBar("Home", titleIcon = ChittaIcons.Home, actions = {
+            // The bell: bank messages the app was not sure about wait here. The number shows only when something waits.
+            Box(contentAlignment = Alignment.TopEnd) {
+                IconAction(ChittaIcons.Bell, if (waiting > 0) "Bank messages, $waiting waiting" else "Bank messages", onOpenBell)
+                if (waiting > 0) {
+                    Text(
+                        if (waiting > 99) "99+" else waiting.toString(), style = ChittaTheme.type.stamp, color = c.onSindoor,
+                        modifier = Modifier.padding(top = 4.dp, end = 2.dp).background(c.sindoor, androidx.compose.foundation.shape.CircleShape).defaultMinSize(minWidth = 18.dp, minHeight = 18.dp).wrapContentSize(Alignment.Center),
+                    )
+                }
+            }
             IconAction(ChittaIcons.Gear, "Customise Home", onCustomise)
             HideAmountsAction(hidden, onToggleHide)
         })

@@ -50,16 +50,54 @@ class PlannerTest {
         assertTrue(e.income)
     }
 
-    @Test fun unknownAccountClosedPensionNoMerchantNoCategoryGoToReview() {
-        listOf(
-            row(known = false), row(closed = true), row(tick = false), row(merchant = ""), row(label = ""),
-        ).forEach { assertEquals(1, IntakePlanner.plan(listOf(it), ctx()).toReview.size, it.toString()) }
+    @Test fun closedAccountPensionAndCardBillPaymentStillWaitInTheBell() {
+        listOf(row(closed = true), row(tick = false)).forEach { assertEquals(1, IntakePlanner.plan(listOf(it), ctx()).toReview.size, it.toString()) }
     }
 
-    @Test fun accountNotInBookGoesToReviewWithNoAccountReason() {
+    @Test fun unknownAccountIsSavedOnAGuessAndMarkedCheck() {
+        val p = IntakePlanner.plan(listOf(row(known = false, wallet = "Scapia card")), ctx())
+        val c = p.toAutoSave.single()
+        assertEquals("Scapia card", c.newAccountName)
+        assertTrue(c.needsCheck)
+        val e = IntakePlanner.autoEntries(p, accounts + account("a2", "Scapia card"), 5) { "id" }.single()
+        assertEquals("a2", e.accountId)
+        assertTrue(hasCheckMark(e.note))
+        assertFalse(hasCheckMark(withoutCheckMark(e.note)))
+        assertTrue(withoutCheckMark(e.note).contains("Ping SMS #n1-a"))
+    }
+
+    @Test fun accountNotInBookIsMadeNotWaitedFor() {
         val p = IntakePlanner.plan(listOf(row()), ctx(accts = emptyList()))
+        assertEquals(1, p.toAutoSave.size)
+        assertEquals("Axis", p.toAutoSave[0].newAccountName)
+        assertFalse(p.toAutoSave[0].needsCheck) // known account name, known category: nothing is guessed
+        assertTrue(IntakePlanner.autoEntries(p, emptyList(), 0) { "x" }.isEmpty()) // until the store has made the account
+    }
+
+    @Test fun messageThatDoesNotSayWhichAccountWaitsInTheBell() {
+        val p = IntakePlanner.plan(listOf(row(wallet = "Unassigned", known = false)), ctx())
         assertEquals(1, p.toReview.size)
-        assertTrue(IntakeReason.NoAccount in p.toReview[0].reasons)
+        assertNull(p.toReview[0].newAccountName)
+    }
+
+    @Test fun noMerchantOrCategoryUsesTheOtherCategoryAndIsMarkedCheck() {
+        val withOther = listOf(cat("1", "Dining"), cat("11", "Income", true), cat("99", "Other"))
+        val c = IntakePlanner.plan(listOf(row(label = "", merchant = "", title = "Money received")), IntakeContext(accounts, withOther, emptyList(), emptyList(), zone)).toAutoSave.single()
+        assertEquals("99", c.categoryId)
+        assertTrue(c.needsCheck)
+    }
+
+    @Test fun noCategoryAndNoOtherCategoryWaitsInTheBell() {
+        assertEquals(1, IntakePlanner.plan(listOf(row(label = "")), ctx()).toReview.size)
+    }
+
+    @Test fun confidentMessageIsNotMarkedCheck() {
+        val e = IntakePlanner.autoEntries(IntakePlanner.plan(listOf(row()), ctx()), accounts, 0) { "x" }.single()
+        assertFalse(hasCheckMark(e.note))
+    }
+
+    @Test fun upiPagesStillWaitForYourLook() {
+        assertEquals(1, IntakePlanner.plan(listOf(row(upi = true)), ctx()).toReview.size)
     }
 
     @Test fun learnedCategoryBeatsKeywordAndMakesAMissingLabelConfident() {
@@ -103,7 +141,7 @@ class PlannerTest {
     }
 
     @Test fun reviewOnlySavesTickedAndSaveableRows() {
-        val p = IntakePlanner.plan(listOf(row(id = "a", known = false), row(id = "b", known = false, label = "")), ctx())
+        val p = IntakePlanner.plan(listOf(row(id = "a", tick = false), row(id = "b", tick = false, label = "")), ctx())
         val choices = IntakePlanner.initialChoices(p)
         assertTrue(choices.all { !it.ticked }) // reasons exist, so nothing is ticked by itself
         val ticked = choices.map { it.copy(ticked = true) }

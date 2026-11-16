@@ -34,4 +34,14 @@ object CategoryResolver {
         val wanted = names[label].orEmpty()
         return live.firstOrNull { norm(it.name) in wanted }
     }
+
+    private val fallbackNames = listOf("other", "others", "otherincome", "miscellaneous", "misc", "uncategorised", "uncategorized", "unsorted", "everythingelse")
+
+    /** The "catch-all" category for a message nothing else matches: an "Other" style category in your book, or null when there is none. */
+    fun fallback(income: Boolean, categories: List<Category>): Category? =
+        categories.filter { !it.archived && it.mainCategoryId == null && it.income == income }.firstOrNull { norm(it.name) in fallbackNames }
+
+    /** Names the app gives the catch-all category when the book has none. */
+    const val FALLBACK_EXPENSE_NAME = "Other"
+    const val FALLBACK_INCOME_NAME = "Other income"
 }

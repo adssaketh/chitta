@@ -6,6 +6,13 @@ const val PING_NOTE_MARKER = "Ping SMS #"
 /** The text of the message (and its day) is also remembered: the same SMS can arrive twice, once without Android's own id. */
 const val PING_KEY_MARKER = "Ping SMS key "
 
+/** A line in the note of an entry that was saved automatically on a guess. The Check tag shows while it is there; editing the entry or "Looks right" removes it. */
+const val CHECK_NOTE_MARKER = "Check: saved automatically on a guess"
+
+fun hasCheckMark(note: String): Boolean = note.contains(CHECK_NOTE_MARKER)
+
+fun withoutCheckMark(note: String): String = note.lines().filter { it.trim() != CHECK_NOTE_MARKER }.joinToString("\n").trim()
+
 /** The raw sender header (for example `AX-AXISBK-S`), so "View SMS in Ping" can find the message again. Never a phone number. */
 const val PING_FROM_MARKER = "Ping SMS from "
 

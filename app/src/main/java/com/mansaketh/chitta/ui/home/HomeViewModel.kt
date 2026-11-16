@@ -108,7 +108,11 @@ class HomeViewModel @Inject constructor(
     val prefs: UiPrefs,
     netWorthInputs: NetWorthInputs,
     private val clock: Clock,
+    intake: com.mansaketh.chitta.intake.IntakeStore,
 ) : ViewModel() {
+    /** Bank messages waiting for a look (the bell on Home). */
+    val waiting: kotlinx.coroutines.flow.StateFlow<Int> = intake.pendingCount
+
     private data class Raw(val entries: List<Transaction>, val budgets: List<Budget>, val objectives: List<Objective>, val categories: List<Category>, val accounts: List<Account>, val extras: NetWorthExtras = NetWorthExtras.NONE, val sinking: List<SinkingFund> = emptyList())
     private data class P(val layout: HomeLayout, val cash: Set<String>, val preferCash: Boolean, val heroId: String?, val firstDay: DayOfWeek)
 

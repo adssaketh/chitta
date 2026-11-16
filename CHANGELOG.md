@@ -1,5 +1,12 @@
 # Changelog
 
+## Phase 10: bell and smarter auto-add (16 Nov 2026)
+- Home: a bell next to the gear shows how many bank messages are waiting, and opens the same review list as Settings > Bank messages and UPI.
+- Bank messages from Ping are now added automatically even when part of them is a guess: an unknown card or account is made from the SMS (for example "Scapia card"), and a message with no merchant or no known category goes into your "Other" category. The Check tag on the entry (Ledger and entry page) says it was a guess; changing the entry or tapping "Looks right" removes it.
+- Still waiting in the bell: closed accounts, pension / provident fund rows, card bill payments, likely duplicates, UPI pages, amounts not read with certainty, and messages that do not say which account they are.
+- Not changed: the "AI" is still rules plus the categories you chose before; nothing leaves the phone (D274 is the decision note).
+- Undo after an automatic save removes the entries and puts the messages back in the bell; an account made by that save stays (empty).
+
 ## UI polish 3 (15 Nov 2026) - on branch `phase-ui-polish-4`
 - Settings: Security, Household and Data are now groups like Look and feel, so every section opens and closes the same way. Only Look and feel starts open.
 - Accounts: Move money and Exchange rates sit side by side (before, the second button was squeezed out and left a tall empty gap). The total balance now counts accounts whose currency was saved as "inr" (it showed 0.00), and the code shows in capitals.

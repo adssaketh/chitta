@@ -160,7 +160,9 @@ class EntryDetailViewModel @Inject constructor(
     private fun edit(change: (Transaction) -> Transaction) {
         val e = ui.value.entry ?: return
         if (!ui.value.canEdit) return
-        val next = change(e).copy(modifiedAtMs = clock.nowMs())
+        val changed = change(e)
+        // Any edit means the person has looked at it: the Check line goes.
+        val next = changed.copy(modifiedAtMs = clock.nowMs(), note = if (changed.note == e.note) com.mansaketh.chitta.core.intake.withoutCheckMark(changed.note) else changed.note)
         viewModelScope.launch { actions.save(listOf(next), "Saved changes") }
     }
 
@@ -198,6 +200,9 @@ class EntryDetailViewModel @Inject constructor(
         edit { e -> e.copy(amount = if (e.amount < 0) -p.value else p.value, originalAmount = null, originalCurrency = null, exchangeRate = null) }
         return true
     }
+
+    /** "Looks right": drops the Check line without changing anything else. */
+    fun confirmCheck() = edit { it }
 
     private fun bulk(change: BulkChange) {
         val e = ui.value.entry ?: return

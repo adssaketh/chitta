@@ -202,7 +202,7 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                             vms.home, hidden, onToggleHide,
                             onOpenEntry = { push("detail:$it") }, onOpenBudget = { push("budget:$it") }, onOpenGoal = { push("goal:$it") }, onOpenLoan = { push("loan:$it") },
                             onOpenPlan = { tabChoice = TabKey.Plan.key; planTab = 3 }, onOpenLedger = { tabChoice = TabKey.Ledger.key }, onCustomise = { push("customise") },
-                            onOpenReview = { push("month-review") },
+                            onOpenReview = { push("month-review") }, onOpenBell = { push("intake") },
                         )
                         TabKey.Ledger.key -> LedgerScreen(vms.ledger, onOpen = { push("detail:$it") }, onAdd = { openAdd() })
                         TabKey.Insights.key -> InsightsScreen(vms.insights, onOpenEntry = { push("detail:$it") })

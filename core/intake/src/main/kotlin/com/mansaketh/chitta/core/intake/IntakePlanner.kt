@@ -36,7 +36,13 @@ data class IntakeCandidate(
     val reasons: List<IntakeReason>,
     val autoSave: Boolean,
     val autoReason: String,
+    /** The account to make when the book has none for this row (automatic saves only; the review screen offers its own "Make an account"). */
+    val newAccountName: String? = null,
+    /** Saved on a guess: the entry gets the Check line in its note. */
+    val needsCheck: Boolean = false,
 ) {
+    /** Ready for an automatic save: it has an account (or one to make) and a category. */
+    val autoSaveable: Boolean get() = (accountId != null || newAccountName != null) && categoryId != null
     val ready: Boolean get() = reasons.isEmpty()
     val saveable: Boolean get() = accountId != null && categoryId != null
 }
@@ -89,7 +95,9 @@ object IntakePlanner {
             val learned = ctx.titleMemory.firstOrNull { it.title.equals(r.title, ignoreCase = true) }?.categoryId
                 ?.takeIf { id -> ctx.categories.any { it.id == id && !it.archived } }
             val byLabel = CategoryResolver.forLabel(r.categoryLabel, !r.isExpense, ctx.categories)
-            val categoryId = learned ?: byLabel?.id
+            val known = learned ?: byLabel?.id
+            val fallback = CategoryResolver.fallback(!r.isExpense, ctx.categories)?.id
+            val newName = if (account == null) r.walletName.trim().takeIf { it.isNotEmpty() && !it.equals("Unassigned", ignoreCase = true) } else null
             val signed = if (r.isExpense) -r.amountPaise else r.amountPaise
             val dup = ctx.existing.firstOrNull { e ->
                 e.id !in usedExisting && e.amount == signed && day(e.dateMs) == day(r.dateMs) &&
@@ -99,16 +107,18 @@ object IntakePlanner {
 
             val reasons = ArrayList<IntakeReason>()
             if (account == null) reasons.add(IntakeReason.NoAccount)
-            if (categoryId == null) reasons.add(IntakeReason.NoCategory)
+            if (known == null) reasons.add(IntakeReason.NoCategory)
             if (dup != null) reasons.add(IntakeReason.PossibleDuplicate)
             if (!r.knownAccount) reasons.add(IntakeReason.UnknownAccount)
             if (r.closed) reasons.add(IntakeReason.ClosedAccount)
             if (!r.tickByDefault) reasons.add(IntakeReason.NotTicked)
             if (r.amountUnconfirmed) reasons.add(IntakeReason.Unconfirmed)
 
-            val decision = AutoSave.decide(r, learned, byLabel?.id, account != null)
+            val decision = AutoSave.decide(r, learned, byLabel?.id, account != null, newName != null, fallback != null)
             val auto = decision.isSave && dup == null && !r.amountUnconfirmed && !r.isUpi
-            IntakeCandidate(r, account?.id, categoryId, null, reasons, auto, decision.reason)
+            // Review rows keep a blank category so the person picks one; automatic rows take the catch-all when nothing else is known.
+            val categoryId = known ?: if (auto) fallback else null
+            IntakeCandidate(r, account?.id, categoryId, null, reasons, auto, decision.reason, newName, auto && decision.needsCheck)
         }
         return IntakePlan(out, rows.size - fresh.size, claims)
     }
@@ -139,14 +149,18 @@ object IntakePlanner {
             entry(r, account, c.categoryId!!, c.subCategoryId, nowMs, newId())
         }
 
+    /** [accounts] must already hold any account the plan wants made (see [IntakeCandidate.newAccountName]); a row whose account is still missing is skipped. */
     fun autoEntries(plan: IntakePlan, accounts: List<Account>, nowMs: Long, newId: () -> String): List<Transaction> =
-        plan.toAutoSave.filter { it.saveable }.map { c ->
-            entry(c.row, accounts.first { it.id == c.accountId }, c.categoryId!!, c.subCategoryId, nowMs, newId())
+        plan.toAutoSave.filter { it.autoSaveable }.mapNotNull { c ->
+            val account = c.accountId?.let { id -> accounts.firstOrNull { it.id == id } }
+                ?: c.newAccountName?.let { n -> accounts.firstOrNull { !it.archived && norm(it.name) == norm(n) } }
+                ?: return@mapNotNull null
+            entry(c.row, account, c.categoryId!!, c.subCategoryId, nowMs, newId(), c.needsCheck)
         }
 
-    private fun entry(r: IntakeRow, account: Account, categoryId: String, subCategoryId: String?, nowMs: Long, id: String) = Transaction(
+    private fun entry(r: IntakeRow, account: Account, categoryId: String, subCategoryId: String?, nowMs: Long, id: String, check: Boolean = false) = Transaction(
         id = id, pairedTransactionId = null, name = r.title, amount = if (r.isExpense) -r.amountPaise else r.amountPaise, currency = account.currency,
-        note = r.note, categoryId = categoryId, subCategoryId = subCategoryId, accountId = account.id, dateMs = r.dateMs, modifiedAtMs = nowMs,
+        note = if (check) r.note + "\n" + CHECK_NOTE_MARKER else r.note, categoryId = categoryId, subCategoryId = subCategoryId, accountId = account.id, dateMs = r.dateMs, modifiedAtMs = nowMs,
         originalDueMs = null, income = !r.isExpense, periodLength = null, repeat = null, endDateMs = null, upcomingNotification = null,
         kind = null, paid = true, createdAnotherFuture = null, skipPaid = false, methodAdded = MethodAdded.SHARED, objectiveId = null,
         objectiveLoanId = null, excludeFromBudgetIds = emptyList(), ownerUid = null, isPrivate = false, householdSyncedAtMs = null,

@@ -7,6 +7,7 @@ import com.mansaketh.chitta.core.database.CategoryRepository
 import com.mansaketh.chitta.core.database.LedgerRepository
 import com.mansaketh.chitta.core.database.TitleRepository
 import com.mansaketh.chitta.core.domain.RestoreKind
+import com.mansaketh.chitta.core.intake.CategoryResolver
 import com.mansaketh.chitta.core.intake.IntakeChoice
 import com.mansaketh.chitta.core.intake.IntakeClaim
 import com.mansaketh.chitta.core.intake.IntakeContext
@@ -20,6 +21,7 @@ import com.mansaketh.chitta.core.intake.PingContract
 import com.mansaketh.chitta.core.intake.PingExport
 import com.mansaketh.chitta.core.domain.FixedDeposits
 import com.mansaketh.chitta.core.model.Account
+import com.mansaketh.chitta.core.model.Category
 import com.mansaketh.chitta.core.model.CardDue
 import com.mansaketh.chitta.data.RestoreManager
 import com.mansaketh.chitta.di.Clock
@@ -161,11 +163,17 @@ class IntakeStore @Inject constructor(
         rawItems.forEach { byId.putIfAbsent(idOf(it), it) }
         val items = byId.values.toList()
         val intake = withContext(Dispatchers.Default) { PingExport.parse(PingExport.exportOf(items), loadKnown(), clock.zone()) }
+        if (intake.rows.isNotEmpty()) ensureCatchAllCategories()
         val ctx = planContext()
         val plan = withContext(Dispatchers.Default) { IntakePlanner.plan(intake.rows, ctx) }
         applyClaims(plan.claims)
-        val auto = IntakePlanner.autoEntries(plan, ctx.accounts, clock.nowMs(), ids::newId)
-        val autoIds = plan.toAutoSave.filter { it.saveable }.map { it.row.sourceId }
+        // Accounts the messages name that the book does not have yet are made now, once per name.
+        val toMake = plan.toAutoSave.filter { it.accountId == null }.mapNotNull { it.newAccountName }.distinctBy { it.lowercase() }
+        val made = toMake.map { createAccount(it) }
+        val accountsNow = ctx.accounts + made.filter { m -> ctx.accounts.none { it.id == m.id } }
+        val auto = IntakePlanner.autoEntries(plan, accountsNow, clock.nowMs(), ids::newId)
+        val autoIds = plan.toAutoSave.filter { it.autoSaveable }.map { it.row.sourceId }
+        val checks = plan.toAutoSave.count { it.needsCheck && it.autoSaveable }
         val reviewIds = plan.candidates.map { it.row.sourceId }.toSet() - autoIds.toSet()
         // One Undo for everything this read saved: entries, deposits and card dues (the bar holds a single item).
         val undoSteps = ArrayList<suspend () -> Unit>()
@@ -175,7 +183,8 @@ class IntakeStore @Inject constructor(
             ledger.add(auto)
             val saved = auto.map { it.id }
             val back = autoIds.mapNotNull { byId[it] }
-            said += "Saved ${auto.size} from your bank messages"
+            said += "Saved ${auto.size} from your bank messages" + (if (checks > 0) ", $checks marked Check" else "") +
+                (if (made.isNotEmpty()) ". New ${if (made.size == 1) "account" else "accounts"}: ${made.joinToString { it.name }}" else "")
             // Undo puts them back in the review list, so they are not saved again behind your back.
             undoSteps += {
                 ledger.delete(saved)
@@ -247,6 +256,17 @@ class IntakeStore @Inject constructor(
         val doneIds = choices.filter { it.ticked && it.saveable }.map { it.candidate.row.sourceId } + claims.map { it.row.sourceId }
         withContext(Dispatchers.IO) { removeFromPending(doneIds) }
         entries.size
+    }
+
+    /** An "Other" category for spending and one for income, made once when the book has none, so a message with no known category can still be saved (marked Check). */
+    private suspend fun ensureCatchAllCategories() {
+        val cats = categoryRepo.observeAll().first()
+        var order = (cats.maxOfOrNull { it.sortOrder } ?: -1) + 1
+        for (income in listOf(false, true)) {
+            if (CategoryResolver.fallback(income, cats) != null) continue
+            val name = if (income) CategoryResolver.FALLBACK_INCOME_NAME else CategoryResolver.FALLBACK_EXPENSE_NAME
+            categoryRepo.save(Category(ids.newId(), name, null, null, null, clock.nowMs(), null, order++, income, null, null))
+        }
     }
 
     /** A new account for rows whose account is not in the book yet. */

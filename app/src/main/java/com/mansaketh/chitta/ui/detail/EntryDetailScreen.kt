@@ -70,6 +70,11 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
                             else if (e.kind != null && e.paid) Stamp("Paid")
                             if (transfer) Stamp("Transfer")
                             if (Totals.isBalanceCorrection(e)) Stamp("Correction")
+                            if (com.mansaketh.chitta.core.intake.hasCheckMark(e.note)) Stamp("Check", tone = StampTone.Attention)
+                        }
+                        if (canEdit && com.mansaketh.chitta.core.intake.hasCheckMark(e.note)) {
+                            Text("Added automatically from a bank message on a best guess. Change what is wrong, or confirm it.", style = ChittaTheme.type.label, color = c.inkMuted)
+                            ChittaButton("Looks right", vm::confirmCheck, style = ButtonStyle.Quiet)
                         }
                         HairlineRule()
                         ValueRow("Title", e.name.ifBlank { "No title" }, onClick = if (locked) null else ({ edit = Edit.Title }))
