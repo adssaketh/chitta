@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
@@ -102,9 +103,12 @@ fun BottomOverlay(onDismiss: () -> Unit, modifier: Modifier = Modifier, handle: 
     val scrimColor = ChittaTheme.colors.scrim
     Box(Modifier.fillMaxSize()) {
         Box(
-            Modifier.fillMaxSize().graphicsLayer { alpha = rise.value.coerceIn(0f, 1f) }
-                // The page sits below the status bar, so the dim is also painted up over that strip: no colour step under the clock.
-                .drawBehind { val top = statusTop.toFloat(); drawRect(scrimColor, topLeft = androidx.compose.ui.geometry.Offset(0f, -top), size = androidx.compose.ui.geometry.Size(size.width, top)) }
+            // The page sits below the status bar, so the dim layer is made taller and shifted up over that strip. It is one layer, so the strip
+            // fades in with the rest (a partly transparent layer is clipped to its own bounds, so painting the strip from inside it would not show until the end).
+            Modifier.layout { m, cons ->
+                val p = m.measure(androidx.compose.ui.unit.Constraints.fixed(cons.maxWidth, cons.maxHeight + statusTop))
+                layout(cons.maxWidth, cons.maxHeight) { p.place(0, -statusTop) }
+            }.graphicsLayer { alpha = rise.value.coerceIn(0f, 1f) }
                 .background(scrimColor).clickable(role = Role.Button, onClickLabel = "Close", onClick = onDismiss),
         )
         Column(

@@ -16,6 +16,8 @@
 - The amount's caret now shows only while typing: after a tap on the amount or a key press, for 2 s after the last one, and it hides at once when the Title field takes focus. Its space is kept so nothing shifts.
 - Quick Add no longer has a Currency row or "More options": money is rupees only. The link at the end of the summary line now reads "Add a note" and opens the note sheet; once a note exists it shows as a Note row.
 - Every bottom sheet's dim now also covers the status bar strip, so there is no colour step under the clock.
+- Sheet dim over the status bar is now one taller layer that fades with the rest (it had been painted from inside the fading layer, which clips, so the strip only changed colour at the very end).
+- Standing decision (user): rupees only; no currency conversion in later screens. Master prompt section 1 and the section 7 currency items are out of date on this.
 - Not compiled locally (no Android SDK here); CI builds and re-records the screenshots. Not verified on a phone.
 
 ## Screen 06 Safe to spend, explained, to PDF p.14 (16 Nov 2026) - on branch `ui-06-safe-to-spend-explained`
