@@ -77,9 +77,10 @@ class IntakeStore @Inject constructor(
     val knownCount: StateFlow<Int> = _known
 
     // ---------------------------------------------------------------- known accounts
+    /** A list you loaded wins; with none, the list that ships with the app (your names from the old app) is used, so messages are known from the first run. */
     private fun loadKnown(): KnownAccounts = try {
         val f = File(dir, KNOWN)
-        if (f.isFile) KnownAccounts.parse(f.readText()) else KnownAccounts.EMPTY
+        if (f.isFile) KnownAccounts.parse(f.readText()) else KnownAccounts.parse(context.assets.open(DEFAULT_KNOWN).bufferedReader().use { it.readText() })
     } catch (e: Exception) { KnownAccounts.EMPTY }
 
     fun knownAccounts(): KnownAccounts = loadKnown()
@@ -93,7 +94,7 @@ class IntakeStore @Inject constructor(
         parsed.size
     }
 
-    suspend fun clearKnownAccounts() = withContext(Dispatchers.IO) { File(dir, KNOWN).delete(); _known.value = 0 }
+    suspend fun clearKnownAccounts() = withContext(Dispatchers.IO) { File(dir, KNOWN).delete(); _known.value = loadKnown().size }
 
     // ---------------------------------------------------------------- pending and parked
     private fun readItems(f: File): List<JsonObject> = try { if (f.isFile) PingExport.items(f.readText()) else emptyList() } catch (e: Exception) { emptyList() }
@@ -283,6 +284,7 @@ class IntakeStore @Inject constructor(
         private const val PENDING = "pending.json"
         private const val PARKED = "parked-fd.json"
         private const val KNOWN = "known_accounts.json"
+        private const val DEFAULT_KNOWN = "known_accounts_default.json"
         const val MAX_FILE_BYTES = 8 * 1024 * 1024
         /** From this many automatic saves in one go, a restore point is made first (a date-range file can hold hundreds). */
         private const val RESTORE_POINT_FROM = 10

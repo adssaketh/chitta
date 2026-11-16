@@ -1,0 +1,240 @@
+{
+ "version": 1,
+ "accounts": [
+  {
+   "key": "axis:account:6372",
+   "name": "Saketh - Axis Savings Bank Account",
+   "wallet": "Saketh - Axis"
+  },
+  {
+   "key": "sbi:account:1327",
+   "name": "Saketh - SBI Savings Bank Account",
+   "wallet": "Saketh - SBI"
+  },
+  {
+   "key": "axis:credit_card:4498",
+   "name": "Saketh - Axis Bank Privilege Credit Card",
+   "wallet": "Saketh - Axis"
+  },
+  {
+   "key": "icici:credit_card:1000",
+   "name": "Saketh - ICICI Amazon Pay Credit Card",
+   "wallet": "Saketh - ICICI"
+  },
+  {
+   "key": "sbi_card:credit_card:3764",
+   "name": "Saketh - SBI IRCTC Platinum Credit Card",
+   "wallet": "Saketh - SBI"
+  },
+  {
+   "key": "yes:credit_card:3689",
+   "name": "Saketh - Kiwi Yes Bank Credit Card",
+   "wallet": "Saketh - Yes Bank"
+  },
+  {
+   "key": "yes:credit_card:",
+   "name": "Saketh - Kiwi Yes Bank Credit Card",
+   "wallet": "Saketh - Yes Bank"
+  },
+  {
+   "key": "hdfc:credit_card:0886",
+   "name": "Saketh - HDFC Indian Oil Credit Card",
+   "wallet": "Saketh - HDFC"
+  },
+  {
+   "key": "scapia:credit_card:visa",
+   "name": "Saketh - Federal Bank Scapia Visa Credit Card",
+   "wallet": "Saketh - Federal"
+  },
+  {
+   "key": "scapia:credit_card:rupay",
+   "name": "Federal Bank Scapia Rupay Credit Card (Saketh add-on or Mansa add-on)",
+   "wallet": "Saketh - Federal",
+   "dueCard": "Saketh - Federal Bank Scapia Visa Credit Card"
+  },
+  {
+   "key": "scapia:credit_card:",
+   "name": "Federal Bank Scapia Credit Card (Saketh Visa or Rupay, or Mansa add-on)",
+   "wallet": "Saketh - Federal",
+   "dueCard": "Saketh - Federal Bank Scapia Visa Credit Card"
+  },
+  {
+   "key": "federal:credit_card:1736",
+   "name": "Saketh - Federal Bank Scapia Visa Credit Card",
+   "wallet": "Saketh - Federal"
+  },
+  {
+   "key": "federal:credit_card:4278",
+   "name": "Saketh - Federal Bank Scapia Rupay Credit Card (add-on for Federal Bank Scapia Visa Credit Card)",
+   "wallet": "Saketh - Federal",
+   "dueCard": "Saketh - Federal Bank Scapia Visa Credit Card"
+  },
+  {
+   "key": "bajaj:credit_card:0688",
+   "name": "Saketh - Bajaj Finserv EMI Card",
+   "wallet": "Saketh - Bajaj Finserv"
+  },
+  {
+   "key": "kfncra:account:0840",
+   "name": "Saketh - National Pension Scheme (NPS) Tier 1",
+   "wallet": "Saketh - Pension & PF",
+   "tickByDefault": false
+  },
+  {
+   "key": "ptnnps:account:7819",
+   "name": "Saketh - Atal Pension Yojana (APY)",
+   "wallet": "Saketh - Pension & PF",
+   "tickByDefault": false
+  },
+  {
+   "key": "epfoho:account:4895",
+   "name": "Saketh - Employee Provident Fund (EPF)",
+   "wallet": "Saketh - Pension & PF",
+   "tickByDefault": false
+  },
+  {
+   "key": "sbi:account:6919",
+   "name": "Mansa - SBI Savings Bank Account",
+   "wallet": "Mansa - SBI"
+  },
+  {
+   "key": "federal:account:7855",
+   "name": "Mansa - Federal Bank (Jupiter) Savings Account",
+   "wallet": "Mansa - Federal"
+  },
+  {
+   "key": "dopbnk:account:7718",
+   "name": "Mansa - India Post Payments Bank Savings Account (APY)",
+   "wallet": "Mansa - India Post"
+  },
+  {
+   "key": "ipbmsg:account:7716",
+   "name": "Mansa - India Post Payments Bank Digital Savings Account (PLI)",
+   "wallet": "Mansa - India Post"
+  },
+  {
+   "key": "icici:credit_card:5002",
+   "name": "Mansa - ICICI Coral Rupay Credit Card",
+   "wallet": "Mansa - ICICI"
+  },
+  {
+   "key": "federal:credit_card:3777",
+   "name": "Mansa - Federal Bank Scapia Rupay Credit Card (add-on for Saketh's Federal Bank Scapia Visa Credit Card)",
+   "wallet": "Mansa - Federal",
+   "dueCard": "Saketh - Federal Bank Scapia Visa Credit Card"
+  },
+  {
+   "key": "ptnnps:account:0727",
+   "name": "Mansa - Atal Pension Yojana (APY)",
+   "wallet": "Mansa - Pension & PF",
+   "tickByDefault": false
+  },
+  {
+   "key": "epfoho:account:4774",
+   "name": "Mansa - Employee Provident Fund (EPF)",
+   "wallet": "Mansa - Pension & PF",
+   "tickByDefault": false
+  },
+  {
+   "key": "icici:account:2090",
+   "name": "Saketh - ICICI Savings Account",
+   "wallet": "Saketh - ICICI",
+   "closed": true
+  },
+  {
+   "key": "au:account:1858",
+   "name": "Saketh - AU Small Finance Bank Savings Account",
+   "wallet": "Saketh - AU",
+   "closed": true
+  },
+  {
+   "key": "au:account:7280",
+   "name": "FD Account",
+   "wallet": "Saketh - AU",
+   "closed": true
+  },
+  {
+   "key": "federal:account:3269",
+   "name": "Federal Bank Account",
+   "wallet": "Federal (closed)",
+   "closed": true
+  },
+  {
+   "key": "federal:account:4365",
+   "name": "Federal Bank Account",
+   "wallet": "Federal (closed)",
+   "closed": true
+  },
+  {
+   "key": "federal:account:6299",
+   "name": "Federal Bank Account",
+   "wallet": "Federal (closed)",
+   "closed": true
+  },
+  {
+   "key": "icici:credit_card:8006",
+   "name": "ICICI Coral Rupay Credit Card",
+   "wallet": "ICICI (closed)",
+   "closed": true
+  },
+  {
+   "key": "federal:credit_card:9368",
+   "name": "Federal Signet Rupay Card",
+   "wallet": "Federal (closed)",
+   "closed": true
+  },
+  {
+   "key": "hdfc:credit_card:1170",
+   "name": "HDFC Swiggy Credit Card",
+   "wallet": "Saketh - HDFC",
+   "closed": true
+  },
+  {
+   "key": "axis:credit_card:1896",
+   "name": "Axis Indian Oil Credit Card",
+   "wallet": "Saketh - Axis",
+   "closed": true
+  },
+  {
+   "key": "axis:credit_card:2099",
+   "name": "Axis Myzone Credit Card",
+   "wallet": "Saketh - Axis",
+   "closed": true
+  },
+  {
+   "key": "idfcfb:credit_card:0932",
+   "name": "IDFC First Bank Millennia Credit Card",
+   "wallet": "IDFC First (closed)",
+   "closed": true
+  },
+  {
+   "key": "sbi_card:credit_card:3367",
+   "name": "SBI Credit Card",
+   "wallet": "SBI Card (closed)",
+   "closed": true
+  },
+  {
+   "key": "sbi_card:credit_card:6511",
+   "name": "SBI Credit Card",
+   "wallet": "SBI Card (closed)",
+   "closed": true
+  },
+  {
+   "key": "sbi_card:credit_card:3054",
+   "name": "SBI Credit Card",
+   "wallet": "SBI Card (closed)",
+   "closed": true
+  },
+  {
+   "key": "sbi:debit_card:3811",
+   "name": "Mansa - SBI Debit Card",
+   "wallet": "Mansa - SBI",
+   "closed": true
+  },
+  {
+   "key": "sbi:debit_card:2617",
+   "name": "Mansa - SBI Debit Card",
+   "wallet": "Mansa - SBI"
+  }
+ ]
+}

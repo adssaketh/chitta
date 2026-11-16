@@ -136,13 +136,13 @@ private fun HomeStep(vm: IntakeViewModel, s: IntakeStage.Home) {
         ValueRow("Ping file (a date range)", "", onClick = { ping.launch(arrayOf("*/*")) })
         ValueRow("Known accounts", if (known == 0) "None" else "$known", onClick = { sheet = "known" })
         Text(
-            "Known accounts are your own names for the cards and accounts in your bank messages. Only messages for those accounts are ever saved without a look. The list stays on this phone.",
+            "Known accounts are your own names for the cards and accounts in your bank messages. Only messages for those accounts are ever saved without a look. Your list from the old app comes with Chitta; loading a file replaces it.",
             style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2),
         )
     }
     if (sheet == "known") ChoiceSheet(
         "Known accounts",
-        buildList { add(Choice("Load a list from a file", "load")); if (known > 0) add(Choice("Remove the list", "clear")) },
+        buildList { add(Choice("Load a list from a file", "load")); add(Choice("Back to the built-in list", "clear")) },
         { v -> sheet = null; if (v == "load") known2.launch(arrayOf("*/*")) else vm.clearKnownAccounts() }, { sheet = null },
     )
 }

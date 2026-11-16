@@ -1,5 +1,8 @@
 # Changelog
 
+## Phase 10b: known accounts built in (16 Nov 2026)
+- Your 42 accounts and cards from the old app (Scapia, Axis, SBI, HDFC, ICICI, Federal, Yes, pension rows, closed ones) now come with the app, so bank messages are recognised on the first run without loading a file. A file you load still replaces them.
+
 ## Phase 10: bell and smarter auto-add (16 Nov 2026)
 - Home: a bell next to the gear shows how many bank messages are waiting, and opens the same review list as Settings > Bank messages and UPI.
 - Bank messages from Ping are now added automatically even when part of them is a guess: an unknown card or account is made from the SMS (for example "Scapia card"), and a message with no merchant or no known category goes into your "Other" category. The Check tag on the entry (Ledger and entry page) says it was a guess; changing the entry or tapping "Looks right" removes it.
