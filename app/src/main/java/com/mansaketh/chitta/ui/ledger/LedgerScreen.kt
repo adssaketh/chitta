@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.runtime.*
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -80,6 +81,8 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
             }
         }
     }
+    // While the keyboard is up, Search tips, Everyone / Mine and the tabs step aside so the list has room; they return when it closes.
+    val typing = androidx.compose.foundation.layout.WindowInsets.Companion.isImeVisible
     val zone = remember { java.time.ZoneId.systemDefault() }
     val now = remember { System.currentTimeMillis() }
 
@@ -105,14 +108,14 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
                     value = ui.filter.text, onValueChange = vm::setText,
                     modifier = Modifier.padding(horizontal = Dimens.Margin).padding(top = Dimens.InlineGap),
                 )
-                Row(Modifier.fillMaxWidth().padding(horizontal = Dimens.Margin), horizontalArrangement = Arrangement.End) {
+                if (!typing) Row(Modifier.fillMaxWidth().padding(horizontal = Dimens.Margin), horizontalArrangement = Arrangement.End) {
                     ChittaButton("Search tips", { picker = "tips" }, kind = ButtonKind.Link)
                 }
                 ui.problems.forEach { problem ->
                     Text("Not used: $problem", style = ChittaTheme.type.label, color = c.ink, modifier = Modifier.padding(horizontal = Dimens.Margin, vertical = Dimens.Space1))
                 }
             }
-            if (ui.lens.active && !selecting) {
+            if (ui.lens.active && !selecting && !typing) {
                 // Everyone / Mine (PDF p.31): which entries the list and its monthly totals show. Only while sharing is on.
                 val views = listOf(HouseholdSharing.VIEW_EVERYONE, HouseholdSharing.VIEW_MINE)
                 TextTabs(
@@ -122,7 +125,7 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
                 )
             }
             val tabs = LedgerTab.entries
-            TextTabs(
+            if (!typing) TextTabs(
                 labels = listOf("All", "Spending", "Income", "Upcoming"), selected = tabs.indexOf(ui.filter.tab),
                 onSelect = { vm.setTab(tabs[it]) },
                 modifier = Modifier.ownsSideways().horizontalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin),
