@@ -108,6 +108,15 @@ class MainActivity : FragmentActivity() {
             val vibrationKey by uiPrefs.vibration.collectAsState()
             val animationsOn by uiPrefs.animations.collectAsState()
             val mode = when (themeName) { "paper" -> ThemeMode.Paper; "ink" -> ThemeMode.Ink; else -> ThemeMode.System }
+            // The status and navigation bar icons follow the app's own theme (dark icons on Paper, light on Ink), not the phone's dark mode.
+            val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
+            val darkTheme = when (mode) { ThemeMode.Paper -> false; ThemeMode.Ink -> true; else -> systemDark }
+            androidx.compose.runtime.DisposableEffect(darkTheme) {
+                val bar = if (darkTheme) androidx.activity.SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                else androidx.activity.SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+                enableEdgeToEdge(statusBarStyle = bar, navigationBarStyle = bar)
+                onDispose { }
+            }
             var hide by rememberSaveable { mutableStateOf(security.hideAmounts.value) }
             // Kept on the phone so the home-screen widgets can mask too.
             val toggleHide = { hide = !hide; security.setHideAmounts(hide) }
