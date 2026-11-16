@@ -1,5 +1,15 @@
 # Changelog
 
+## Screen 06 Safe to spend, explained, to PDF p.14 (16 Nov 2026) - on branch `ui-06-safe-to-spend-explained`
+- The ⓘ sheet follows the page: title "How Safe to spend is worked out" with a Close button, the subtitle with an "As of" time, three two-line rows (November budget with its dates, Spent so far, Bills still to come with the bill count), a solid ink rule, then Safe to spend with "÷ 18 days = ₹1,528 a day" and the Cash check as a note naming the spending accounts.
+- Amounts in the sheet are whole rupees, as on the page and on Home. A taken-off figure has a muted "–" before it.
+- The sheet is as tall as its content (at most 80% of the screen, then it scrolls), not nearly full screen.
+- While any sheet is open the add button hides and the bottom bar steps aside, so a sheet reaches the bottom of the screen. This applies to every sheet.
+- Sinking-fund rows appear in the same style only when funds exist. The ESTIMATE stamp shows on the Cash check note only when a balance is over 7 days old.
+- When Home leads with the Cash check (no budget, "cash check first", or it is lower), the sheet is "How Cash check is worked out" with the same rows.
+- `Note` has an optional title and trailing stamp. New `SafeToSpendText` (sentences and the bill count, unit-tested).
+- Not compiled locally (no Android SDK here); GitHub Actions is the first build. Not verified on a phone.
+
 ## Screen 05 Home to PDF p.13 (16 Nov 2026) - on branch `ui-05-home`
 - Home now follows the page: budget line, "Safe to spend" with an info button, the hero, "About X a day for N days", the ring beside the hero with a swatch-only legend.
 - Two tiles under it: Budget left (of the limit) and Range. Per day is in the sentence.

@@ -38,6 +38,11 @@ import com.mansaketh.chitta.core.money.PaceStatus
 import com.mansaketh.chitta.core.money.Paise
 import com.mansaketh.chitta.core.money.RangeResult
 import com.mansaketh.chitta.ui.BottomOverlay
+import com.mansaketh.chitta.ui.sheetMax
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import com.mansaketh.chitta.core.domain.HeroData
+import com.mansaketh.chitta.core.money.CashCheck
 import com.mansaketh.chitta.ui.Choice
 import com.mansaketh.chitta.ui.ChoiceSheet
 import com.mansaketh.chitta.ui.categoryName
@@ -333,51 +338,116 @@ private fun LinkText(text: String, onClick: () -> Unit) {
 @Composable
 private fun Muted(text: String) = Text(text, style = ChittaTheme.type.body, color = ChittaTheme.colors.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2))
 
-/** Design page 10: the sum behind the big number, with the person's real figures. */
+/**
+ * Design page 14: the sum behind the big number, with the person's real figures. The sheet explains what Home leads with: Safe to spend
+ * (budget, spent, bills, then the Cash check as a note), or the Cash check on its own when it leads or there is no budget.
+ */
 @Composable
 private fun ExplainSheet(ui: HomeUi, onDismiss: () -> Unit) {
-    val c = ChittaTheme.colors
+    val hero = ui.hero
+    val cash = ui.cash
+    val safeLayout = hero != null && ui.choice?.hero != Hero.CashCheck
     BottomOverlay(onDismiss, handle = false) {
-        SheetHeader("How this is worked out")
-        Spacer(Modifier.height(Dimens.Gap3))
-        val hero = ui.hero
-        if (hero != null) {
-            Text("Safe to spend", style = ChittaTheme.type.bodyMedium, color = c.ink)
-            FigureLine("Budget", hero.summary.limit)
-            FigureLine("Already spent", hero.summary.spent, minus = true)
-            FigureLine("Bills still to come", hero.billsDue, minus = true)
-            if (!hero.sinking.reserved.isZero) FigureLine("Set aside in sinking funds", hero.sinking.reserved, minus = true)
-            if (!hero.sinking.covered.isZero) FigureLine("Spending your sinking funds already cover", hero.sinking.covered)
-            HairlineRule()
-            FigureLine("Safe to spend", hero.safe, strong = true)
-            Muted("Bills still to come are open money-out entries due before this period ends.")
-        }
-        val cash = ui.cash
-        if (cash != null) {
-            Spacer(Modifier.height(Dimens.Gap4))
-            Text("Cash check", style = ChittaTheme.type.bodyMedium, color = c.ink)
-            FigureLine("In your spending accounts", cash.balances)
-            FigureLine("Bills still to come", cash.bills, minus = true)
-            FigureLine("Goal savings set aside", cash.goalSavings, minus = true)
-            if (!cash.sinking.isZero) FigureLine("Set aside in sinking funds", cash.sinking, minus = true)
-            HairlineRule()
-            FigureLine("Cash check", cash.value, strong = true)
-            if (ui.cashStale) Row(verticalAlignment = Alignment.CenterVertically) {
-                Stamp("Estimate", tone = StampTone.Attention)
-                Spacer(Modifier.width(Dimens.Gap2))
-                Text("A spending account has had no entry for over 7 days.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.weight(1f))
+        SheetHeader(if (safeLayout) "How Safe to spend is worked out" else "How Cash check is worked out", onClose = onDismiss)
+        Column(Modifier.heightIn(max = sheetMax(Dimens.SheetMaxFraction)).verticalScroll(rememberScrollState())) {
+            when {
+                safeLayout && hero != null -> SafeToSpendBody(ui, hero)
+                cash != null -> CashCheckBody(ui, cash)
+                else -> Muted("Set a budget in Plan, or mark spending accounts in Customise Home.")
             }
-            Note("Home shows the smaller of the two, so you never plan around money the accounts do not hold.", Modifier.padding(top = Dimens.Gap2))
-        } else if (hero == null) {
-            Muted("Set a budget in Plan, or mark spending accounts in Customise Home.")
         }
     }
 }
 
 @Composable
-private fun FigureLine(label: String, amount: Paise, minus: Boolean = false, strong: Boolean = false) {
-    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin), verticalAlignment = Alignment.CenterVertically) {
-        Text(if (minus) "less  $label" else label, style = if (strong) ChittaTheme.type.bodyMedium else ChittaTheme.type.body, color = ChittaTheme.colors.ink, modifier = Modifier.weight(1f))
-        AmountText(amount, style = if (strong) ChittaTheme.type.amount else ChittaTheme.type.amountRow)
+private fun SheetSubtitle(text: String) {
+    Text(text, style = ChittaTheme.type.rowMeta14, color = ChittaTheme.colors.inkMuted, modifier = Modifier.padding(top = Dimens.Gap1, bottom = Dimens.Gap4))
+}
+
+/** The solid ink rule above a total (page 14), heavier than the hairlines between rows. */
+@Composable
+private fun InkRule() = Box(Modifier.fillMaxWidth().height(Dimens.Hairline).background(ChittaTheme.colors.ink))
+
+@Composable
+private fun SafeToSpendBody(ui: HomeUi, hero: HeroData) {
+    val sinkingReserved = !hero.sinking.reserved.isZero
+    val sinkingCovered = !hero.sinking.covered.isZero
+    SheetSubtitle("What your budget still allows after the bills you know are coming. As of ${SafeToSpendText.asOf(ui.nowMs, ui.zone)}.")
+    HairlineRule()
+    ListRow(
+        SafeToSpendText.budgetTitle(hero.budget.name), meta = SafeToSpendText.periodText(hero.summary.period, ui.zone),
+        trailing = { AmountText(hero.summary.limit, style = ChittaTheme.type.amountRow, roundToRupee = true) },
+    )
+    ListRow("Spent so far", meta = "Transfers not counted", trailing = { SignedAmount(hero.summary.spent, "–") })
+    ListRow(
+        "Bills still to come", meta = SafeToSpendText.billsLine(ui.billCount), trailing = { SignedAmount(hero.billsDue, "–") },
+        rule = sinkingReserved || sinkingCovered,
+    )
+    // Not drawn on page 14 (the sample has no sinking funds): the same two-line row, only when funds exist, so the sum still adds up.
+    if (sinkingReserved) ListRow(
+        "Set aside in sinking funds", meta = "This period's set-aside", trailing = { SignedAmount(hero.sinking.reserved, "–") },
+        rule = sinkingCovered,
+    )
+    if (sinkingCovered) ListRow(
+        "Spending your sinking funds cover", meta = "Already paid for by your funds", trailing = { SignedAmount(hero.sinking.covered, "+") },
+        rule = false,
+    )
+    InkRule()
+    val perDay = hero.perDay
+    ListRow(
+        "Safe to spend",
+        meta = SafeToSpendText.perDayLine(hero.safe.value < 0, hero.summary.daysLeft, perDay?.let { amt(it) }),
+        trailing = { AmountText(hero.safe, style = ChittaTheme.type.amountTile, roundToRupee = true) },
+        rule = false,
+    )
+    val cash = ui.cash
+    if (cash != null) {
+        Spacer(Modifier.height(Dimens.Gap3))
+        Note(
+            SafeToSpendText.cashSentence(ui.spendingAccountNames, !cash.sinking.isZero, amt(cash.value)),
+            title = "Cash check",
+            titleTrailing = if (ui.cashStale) ({ Stamp("Estimate", tone = StampTone.Attention) }) else null,
+        )
+    }
+}
+
+/** The Cash check on its own: when it leads Home (no budget, "cash check first", or lower than Safe to spend). Same rows and rules as page 14. */
+@Composable
+private fun CashCheckBody(ui: HomeUi, cash: CashCheck) {
+    val c = ChittaTheme.colors
+    val hero = ui.hero
+    val sinking = !cash.sinking.isZero
+    SheetSubtitle("What your accounts still hold after the bills you know are coming. As of ${SafeToSpendText.asOf(ui.nowMs, ui.zone)}.")
+    HairlineRule()
+    ListRow(
+        "Spending accounts", meta = SafeToSpendText.join(ui.spendingAccountNames).ifEmpty { null },
+        trailing = { AmountText(cash.balances, style = ChittaTheme.type.amountRow, roundToRupee = true) },
+    )
+    ListRow("Bills still to come", trailing = { SignedAmount(cash.bills, "–") })
+    ListRow("Goal savings set aside", trailing = { SignedAmount(cash.goalSavings, "–") }, rule = sinking)
+    if (sinking) ListRow("Set aside in sinking funds", trailing = { SignedAmount(cash.sinking, "–") }, rule = false)
+    InkRule()
+    ListRow("Cash check", trailing = { AmountText(cash.value, style = ChittaTheme.type.amountTile, roundToRupee = true) }, rule = false)
+    if (ui.cashStale) Row(verticalAlignment = Alignment.CenterVertically) {
+        Stamp("Estimate", tone = StampTone.Attention)
+        Spacer(Modifier.width(Dimens.Gap2))
+        Text("A spending account has had no entry for over 7 days.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.weight(1f))
+    }
+    if (hero != null && ui.choice?.warn == true) {
+        Spacer(Modifier.height(Dimens.Gap3))
+        Note("Safe to spend is ${amt(hero.safe)}. Home shows the lower figure, the cash check.")
+    }
+}
+
+/** A figure taken off (–) or added back (+) in the sum, the sign muted beside the amount (page 14). TalkBack says "minus" or "plus". */
+@Composable
+private fun SignedAmount(amount: Paise, sign: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            sign, style = ChittaTheme.type.amountRow, color = ChittaTheme.colors.inkMuted,
+            modifier = Modifier.clearAndSetSemantics { contentDescription = if (sign == "+") "plus" else "minus" },
+        )
+        Spacer(Modifier.width(Dimens.Gap1))
+        AmountText(amount, style = ChittaTheme.type.amountRow, roundToRupee = true)
     }
 }

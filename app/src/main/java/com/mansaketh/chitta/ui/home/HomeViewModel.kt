@@ -97,6 +97,10 @@ data class HomeUi(
     val preferCash: Boolean = false,
     /** The month Home links to as "<month> in review": the one before this, during the first days of a month, when it has entries. */
     val reviewMonth: YearMonth? = null,
+    /** "Bills still to come" in the Safe to spend sheet: how many open bills make up the figure (design page 14). Zero with no budget. */
+    val billCount: Int = 0,
+    /** Names of the rupee accounts marked "for spending", in account order: the Cash check sentence on the same sheet. */
+    val spendingAccountNames: List<String> = emptyList(),
 )
 
 @HiltViewModel
@@ -141,6 +145,8 @@ class HomeViewModel @Inject constructor(
             coming = HomeFigures.comingUp(r.entries, 3), comingTotal = HomeFigures.billsOut(r.entries, period), period = period,
             layout = p.layout, sections = sections, hasEntries = r.entries.isNotEmpty(), preferCash = p.preferCash,
             reviewMonth = com.mansaketh.chitta.core.domain.MonthReviews.homeMonth(r.entries, now, zone),
+            billCount = if (hero == null) 0 else SafeToSpendText.billCount(hero.budget, period, r.entries, r.categories),
+            spendingAccountNames = r.accounts.filter { it.id in p.cash && NetWorth.isRupee(it) }.map { it.name },
         )
     }
 

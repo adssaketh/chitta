@@ -258,7 +258,7 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                     top == "gallery" -> extra?.invoke(::pop)
                 }
                 if (top == null && tab != MORE && tab != TabKey.Accounts.key) {
-                    val fabP by animateFloatAsState(if (fabShown.value) 1f else 0f, animationSpec = if (motion) androidx.compose.animation.core.spring() else androidx.compose.animation.core.snap(), label = "addButton")
+                    val fabP by animateFloatAsState(if (fabShown.value && OverlayState.open == 0) 1f else 0f, animationSpec = if (motion) androidx.compose.animation.core.spring() else androidx.compose.animation.core.snap(), label = "addButton")
                     if (fabP > 0.01f) {
                         AddButton(
                             onClick = { openAdd() }, onLongClick = { addMenu = true },
@@ -268,11 +268,14 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                     }
                 }
             }
-            ChittaBottomNav(
-                items = tabLayout.slots.map { NavItem(it.key, it.label, FeatureIcons.tab(it)) } + NavItem(MORE, "More", ChittaIcons.More),
-                selectedKey = tab, onSelect = { tabChoice = it; stack = emptyList() }, modifier = Modifier.navigationBarsPadding(),
-                onLongPress = { push("customise") },
-            )
+            // A sheet covers the bar (design page 14): while one is open the bar steps aside.
+            if (OverlayState.open == 0) {
+                ChittaBottomNav(
+                    items = tabLayout.slots.map { NavItem(it.key, it.label, FeatureIcons.tab(it)) } + NavItem(MORE, "More", ChittaIcons.More),
+                    selectedKey = tab, onSelect = { tabChoice = it; stack = emptyList() }, modifier = Modifier.navigationBarsPadding(),
+                    onLongPress = { push("customise") },
+                )
+            }
         }
         if (addMenu) ChoiceSheet(
             "Add",

@@ -219,19 +219,31 @@ fun EmptyLine(
 private fun Modifier.wrapContentHeightCenter(): Modifier =
     this.then(Modifier.wrapContentHeight(Alignment.CenterVertically))
 
-/** A quiet boxed explanation (v8 §4.21): hairline outline, surface fill, 12 dp corners, 14 sp muted text, no shadow. */
+/**
+ * A quiet boxed explanation (v8 §4.21): hairline outline, surface fill, 12 dp corners, 14 sp muted text, no shadow. An optional [title] (14 medium, ink)
+ * sits on its own line above the text, with an optional [titleTrailing] (a stamp) beside it (design page 14, "Cash check").
+ */
 @Composable
-fun Note(text: String, modifier: Modifier = Modifier) {
+fun Note(text: String, modifier: Modifier = Modifier, title: String? = null, titleTrailing: (@Composable () -> Unit)? = null) {
     val c = ChittaTheme.colors
-    Text(
-        text.rupeeAware(),
-        style = ChittaTheme.type.rowMeta14,
-        color = c.inkMuted,
-        modifier = modifier
+    Column(
+        modifier
             .fillMaxWidth()
             .clip(Shapes.Control)
             .background(c.surface)
             .border(Dimens.Hairline, c.rule, Shapes.Control)
             .padding(Dimens.NoteInner),
-    )
+    ) {
+        if (title != null) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(title, style = ChittaTheme.type.chipSelected, color = c.ink, modifier = Modifier.weight(1f, fill = false))
+                if (titleTrailing != null) {
+                    Spacer(Modifier.width(Dimens.Gap2))
+                    titleTrailing()
+                }
+            }
+            Spacer(Modifier.height(Dimens.Gap1))
+        }
+        Text(text.rupeeAware(), style = ChittaTheme.type.rowMeta14, color = c.inkMuted)
+    }
 }

@@ -287,3 +287,18 @@ Checklist (Paper and Ink). Built to the page; none of it verified on a phone, an
 13. Bottom nav with a calendar Plan icon: built.
 Not drawn on the page, kept as the app has them: the "in review" row, the chosen sections, "Customise Home", the cash-check layout, the over-limit and no-budget states, the Estimate stamp, and the "Your cash is lower" line.
 Known leftovers: the "How Safe to spend is worked out" sheet is much taller than p.14 (Screen 06); the add button floats over that sheet (Screen 06); Customise shows the calendar icon for both Plan and the heatmap.
+
+## Screen 06 Safe to spend, explained (PDF p.14), 16 Nov 2026
+Built, not compiled locally and not verified on a phone. Branch `ui-06-safe-to-spend-explained`. Your screenshot of the old sheet showed: nearly full height, add button over the sheet, bottom bar under it, paise in amounts, hairline above the total, no Close, no subtitle, no sub-lines.
+1. Home behind a dimmed scrim: built (scrim from `BottomOverlay`); not verified on a phone.
+2. Sheet about 60% tall, handle, 28 dp top corners: built as content height capped at 80%; not verified on a phone.
+3. Two-line Fraunces title with Close: built.
+4. Subtitle with "As of": built.
+5. Three two-line rows with sub-lines and "–": built.
+6. Solid ink rule above the total: built.
+7. Total row with "÷ 18 days = ₹1,528 a day": built.
+8. Cash check note with title and the account names: built.
+9. Ink: same tokens; not verified on a phone.
+10. Add button hidden and bottom bar covered while a sheet is open: built for every sheet.
+Known leftover: Customise shows the calendar icon for both Plan and the heatmap (screen 29).
+

@@ -75,12 +75,24 @@ fun sheetMax(fraction: Float): androidx.compose.ui.unit.Dp =
     (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * fraction).dp
 
 /**
+ * How many sheets are open. While it is above zero the add button hides and the bottom bar steps aside, so a sheet reaches the bottom of the
+ * screen and the scrim covers the whole page, as drawn on design page 14.
+ */
+object OverlayState {
+    var open by mutableIntStateOf(0)
+}
+
+/**
  * A dimmed backdrop with [content] sitting at the bottom as a sheet. Tapping the backdrop dismisses. The sheet rises on a spring with
  * no bounce and the backdrop fades in (master section 3, Motion); with animations off it appears at once.
  */
 @Composable
 fun BottomOverlay(onDismiss: () -> Unit, modifier: Modifier = Modifier, handle: Boolean = true, content: @Composable ColumnScope.() -> Unit) {
     val motion = com.mansaketh.chitta.core.design.theme.rememberMotionEnabled()
+    DisposableEffect(Unit) {
+        OverlayState.open += 1
+        onDispose { OverlayState.open -= 1 }
+    }
     val rise = androidx.compose.runtime.remember { androidx.compose.animation.core.Animatable(if (motion) 0f else 1f) }
     androidx.compose.runtime.LaunchedEffect(Unit) {
         if (motion) rise.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy, stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow))
