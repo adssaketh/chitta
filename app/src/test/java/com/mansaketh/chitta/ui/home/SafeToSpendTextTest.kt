@@ -13,7 +13,7 @@ import com.mansaketh.chitta.core.money.Paise
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import kotlin.test.Test
+import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
