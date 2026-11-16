@@ -272,6 +272,11 @@ private fun share(context: Context, text: String) {
 private fun SearchBox(value: String, onValueChange: (String) -> Unit, modifier: Modifier = Modifier) {
     val c = ChittaTheme.colors
     val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+    // The box keeps its own text and cursor. Handing it a plain String that comes back from the ViewModel a moment
+    // later resets the cursor to the start after the first letter, so "happy" became "appyh". The only outside
+    // change taken in is a clear (the clear button); what is typed always stays as typed.
+    var field by remember { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue(value)) }
+    LaunchedEffect(value) { if (value.isEmpty() && field.text.isNotEmpty()) field = androidx.compose.ui.text.input.TextFieldValue("") }
     Row(
         modifier.fillMaxWidth().heightIn(min = Dimens.ButtonHeight)
             .clip(com.mansaketh.chitta.core.design.tokens.Shapes.Control)
@@ -283,15 +288,15 @@ private fun SearchBox(value: String, onValueChange: (String) -> Unit, modifier: 
         Icon(ChittaIcons.Search, contentDescription = null, tint = c.inkMuted, modifier = Modifier.size(Dimens.IconSmall))
         Spacer(Modifier.width(Dimens.Gap2))
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-            if (value.isEmpty()) Text("Search", style = ChittaTheme.type.body, color = c.inkMuted)
+            if (field.text.isEmpty()) Text("Search", style = ChittaTheme.type.body, color = c.inkMuted)
             BasicTextField(
-                value = value, onValueChange = onValueChange, singleLine = true,
+                value = field, onValueChange = { changed -> val textChanged = changed.text != field.text; field = changed; if (textChanged) onValueChange(changed.text) }, singleLine = true,
                 textStyle = ChittaTheme.type.body.copy(color = c.ink), cursorBrush = SolidColor(c.ink),
                 modifier = Modifier.fillMaxWidth().focusRequester(focus)
                     .semantics { contentDescription = "Search title, note, category or account" },
             )
         }
-        if (value.isNotEmpty()) IconAction(ChittaIcons.Close, "Clear search", { onValueChange("") })
+        if (field.text.isNotEmpty()) IconAction(ChittaIcons.Close, "Clear search", { field = androidx.compose.ui.text.input.TextFieldValue(""); onValueChange("") })
         else Spacer(Modifier.width(Dimens.Gap3))
     }
     LaunchedEffect(Unit) { focus.requestFocus() }
