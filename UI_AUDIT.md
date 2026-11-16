@@ -320,3 +320,17 @@ Checklist (Paper and Ink). "Built" means written to the page; nothing is marked 
 | 11 | No scrolling at the default text size; sheet about 74% of the screen | Built as content height (cap 80%); about 40 dp taller than the page because of the keyboard link |
 Known leftovers: the Home page behind the sheet still shows the hide-amounts eye (kept on Screen 05); the PDF draws no empty, foreign-currency, transfer or large-text state, so those follow the same styles by judgement; Customise shows the calendar icon for both Plan and the heatmap.
 
+
+## Screen 10 Ledger filtered (PDF p.18), 16 Nov 2026, branch `ui-10-ledger-filtered`, exact match rule
+Checklist (Paper and Ink). "Built" means written to the page; nothing is marked "matches" because nothing was compiled or checked on a phone.
+| # | Element on p.18 | State |
+| --- | --- | --- |
+| 1 | Book icon and "Ledger" | Unchanged |
+| 2 | Search field: icon, mono query, x, rule border, surface fill | Built (border was the darker mark colour) |
+| 3 | "Search tips" small, muted, underlined, right | Built |
+| 4 | Chips: Food & dining, Over ₹200, November, then "Clear all" | Built (typed filters and the month chip are new) |
+| 5 | "5 entries" and the total, hairline under | Built (new) |
+| 6 | Margin date, glyph circle, title, account line, Split tag, amount | Built; second line is the account alone while narrowed |
+| 7 | No day totals, hairline under every row | Built |
+| 8 | Add button, bottom bar | Unchanged |
+Known leftovers: "Search tips" and "Clear all" keep a 48 dp tap area, so the gap above the chips may be a little taller than the page; the rule border on the field has less contrast than the old mark border; multi-month results and the empty state are not drawn on the page and follow the same styles by judgement.

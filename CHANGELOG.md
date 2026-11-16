@@ -1,5 +1,14 @@
 # Changelog
 
+## Screen 10 Ledger filtered to PDF p.18 (16 Nov 2026) - on branch `ui-10-ledger-filtered`
+- Typed filters now show as chips under the search box, as on the page: `cat:food` shows "Food & dining", `amt>200` shows "Over ₹200", and `from:` plus `to:` over one calendar month show "November". The query stays in the box; tapping x on a chip removes those words from it.
+- A line under the chips shows "N entries" and the total of what matches (money out in ink, money in in green, or In and Out together when both are present).
+- While the list is narrowed: no Day total rows, rows show the account on the second line, and the month header is dropped (one month) or shows only the month's name (several months).
+- The search field has the page's rule border and a mono query. "Search tips" is small, muted and underlined; "Clear all" is muted and plain.
+- Ledger tabs are text only (no icons).
+- Not changed: what is searched or filtered, any total, Everyone / Mine, the funnel and search icons.
+- Smoother search: when the keyboard opens for the search box, "Search tips", Everyone / Mine and the tabs now fold away over about 0.2 s instead of vanishing in one frame, and unfold the same way when the keyboard closes.
+
 ## Screen 09 Search, bug fix (16 Nov 2026) - on branch `ui-09-search-cursor`
 - Fixed: typing in the Ledger search box scrambled the words (typing "happy" gave "appyh", "Saketh" gave "akeths"), so the list showed "Nothing matches" or the wrong rows. The cursor jumped to the start after the first letter. The box now keeps its own text and cursor; the clear button still empties it. The search rules themselves are unchanged. Not run on a phone yet.
 - Fixed: with the keyboard open the Ledger list could barely scroll, because the pinned header (search, Everyone / Mine, tabs, month) left room for about one row. The first drag on the list now closes the keyboard. Nothing was removed or moved.

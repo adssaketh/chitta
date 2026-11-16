@@ -72,6 +72,8 @@ fun LedgerDay(
     dayTotal: Paise,
     modifier: Modifier = Modifier,
     selecting: Boolean = false,
+    /** False while the Ledger is filtered: the page (p.18) draws no day total, so every row keeps its hairline under it. */
+    showDayTotal: Boolean = true,
     onEntryClick: (LedgerEntry) -> Unit = {},
     onEntryLongClick: (LedgerEntry) -> Unit = {},
 ) {
@@ -85,10 +87,10 @@ fun LedgerDay(
                 stamp = e.stamp, stampTone = e.stampTone,
                 selectMark = if (selecting) e.selected else null,
                 onClick = { onEntryClick(e) }, onLongClick = { onEntryLongClick(e) },
-                rule = i != entries.lastIndex,
+                rule = !showDayTotal || i != entries.lastIndex,
             )
         }
-        Row(
+        if (showDayTotal) Row(
             Modifier.fillMaxWidth().heightIn(min = Dimens.Gap8).padding(start = Dimens.EntryMarginColumn, top = Dimens.Gap2),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End,
@@ -96,8 +98,10 @@ fun LedgerDay(
             Text("Day total", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(end = Dimens.Gap2))
             AmountText(dayTotal, style = ChittaTheme.type.amountSmall, color = c.inkMuted)
         }
-        HairlineRule()
-        Box(Modifier.height(Dimens.Gap2))
+        if (showDayTotal) {
+            HairlineRule()
+            Box(Modifier.height(Dimens.Gap2))
+        }
     }
 }
 
