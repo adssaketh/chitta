@@ -255,6 +255,8 @@ fun GalleryCharts() = GallerySection("Charts") {
             style = ChittaTheme.type.bodyMedium, color = ChittaTheme.colors.ink,
         )
         MonthRule(GallerySample.DAYS_IN_PERIOD, s.cumulative, s.budget)
+        RingSwatchLegend()
+        MonthRuleThin(GallerySample.DAYS_IN_PERIOD, GallerySample.DAYS_ELAPSED, s.spent, s.budget, limitDay = 27)
         GaugeBar(Segments.gauge(s.spent, s.budget, 10), "Food budget")
         GaugeBar(Segments.gauge(s.spent, s.budget, 20), "Food budget, 20 segments")
         GaugeBar(Segments.gauge(Paise.rupees(66_300), s.budget, 10), "Over the limit")

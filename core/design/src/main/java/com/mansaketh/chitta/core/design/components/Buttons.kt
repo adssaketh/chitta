@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,7 +49,7 @@ fun rememberOnce(windowMillis: Long = 700, action: () -> Unit): () -> Unit {
 
 /**
  * The accent add button, bottom-right on every main screen. Tap adds a transaction; long-press opens the
- * extra-add menu (master section 6). 56 dp, sindoor, the plus tinted for contrast.
+ * extra-add menu (master section 6). 56 dp rounded square (PDF p.13), sindoor, the plus tinted for contrast.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -62,7 +63,7 @@ fun AddButton(
     Box(
         modifier
             .size(Dimens.ButtonHeight)
-            .clip(CircleShape)
+            .clip(RoundedCornerShape(Dimens.CornerFab))
             .background(c.sindoor)
             .combinedClickable(
                 role = Role.Button,

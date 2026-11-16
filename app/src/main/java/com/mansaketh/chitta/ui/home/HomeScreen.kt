@@ -22,6 +22,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.CircleShape
+import com.mansaketh.chitta.core.design.theme.rupeeAware
 import androidx.compose.ui.unit.dp
 import com.mansaketh.chitta.core.design.components.*
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
@@ -100,99 +103,102 @@ fun HomeScreen(
                 if (ui.hasEntries) EmptyState(FeatureIcons.tab(TabKey.Budgets), null, "No budget runs today. Add one in Plan and Safe to spend appears here.", "Open Plan", onOpenPlan)
                 else Text("Nothing here yet. Add your first transaction with the plus button.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.SectionGap))
             } else {
-                // budget selector, only when there is more than one to choose from
-                if (ui.budgetOptions.size > 1 && hero != null) {
-                    Row(
-                        Modifier.heightIn(min = Dimens.TouchTarget).pressClickable(role = Role.Button, onClickLabel = "Change budget") { sheet = "budget" },
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(hero.budget.name, style = ChittaTheme.type.labelMedium, color = c.ink)
-                        Spacer(Modifier.width(Dimens.Gap1))
-                        Icon(ChittaIcons.CaretDown, contentDescription = null, tint = c.ink, modifier = Modifier.size(Dimens.IconSmall))
-                    }
+                val cashLeads = choice.hero == Hero.CashCheck
+                // Page 13: the budget line, then Safe to spend with its info button, the hero, the per-day sentence, and the ring beside them.
+                if (hero != null && (!cashLeads || ui.budgetOptions.size > 1)) {
+                    BudgetLine(hero.budget.name, canChange = ui.budgetOptions.size > 1) { sheet = "budget" }
                 }
-                Text(if (choice.hero == Hero.CashCheck) "Cash check" else "Safe to spend", style = ChittaTheme.type.label, color = c.inkMuted)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    AmountText(choice.value, style = ChittaTheme.type.amountHero, roundToRupee = true, modifier = Modifier.weight(1f, fill = false))
-                    Spacer(Modifier.width(Dimens.Gap3))
-                    if (ui.cashStale && choice.hero == Hero.CashCheck) Stamp("Estimate", tone = StampTone.Attention)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        InfoLabel(if (cashLeads) "Cash check" else "Safe to spend") { sheet = "explain" }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            AmountText(
+                                choice.value, style = ChittaTheme.type.amountHero,
+                                fallbackStyles = listOf(ChittaTheme.type.amountLarge, ChittaTheme.type.amount),
+                                roundToRupee = true, modifier = Modifier.weight(1f, fill = false),
+                            )
+                            Spacer(Modifier.width(Dimens.Gap3))
+                            if (ui.cashStale && cashLeads) Stamp("Estimate", tone = StampTone.Attention)
+                        }
+                        val pd = hero?.perDay
+                        if (!cashLeads && hero != null && pd != null) {
+                            val d = hero.summary.daysLeft
+                            Text("About ${amt(pd)} a day for $d ${if (d == 1) "day" else "days"}".rupeeAware(), style = ChittaTheme.type.rowMeta14, color = c.inkMuted)
+                        }
+                    }
+                    if (!cashLeads && hero != null) {
+                        Spacer(Modifier.width(Dimens.FigureGap))
+                        BudgetRing(hero.ring, diameter = Dimens.RingHome, animate = true)
+                    }
                 }
                 if (choice.warn) {
                     Text("Your cash is lower than your budget says. The cash figure is the safer one.", style = ChittaTheme.type.body, color = c.warningText, modifier = Modifier.padding(top = Dimens.Gap2))
                 }
-                LinkText("How this is worked out") { sheet = "explain" }
 
-                // The budget block (ring, per day, range, month line) stays under the cash check, named, so one budget never passes for all your money (D187).
                 if (hero != null) {
-                    if (choice.hero == Hero.CashCheck) {
-                        // The link's own 16 dp of air is the gap above the rule; the rule is followed by one section gap and a heading.
-                        HairlineRule()
+                    if (cashLeads) {
+                        // The budget block stays under the cash check, named, so one budget never passes for all your money (D187).
                         Section(hero.budget.name + " budget")
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.FigureGap)) {
+                            BudgetRing(hero.ring, diameter = Dimens.RingHome, animate = true)
+                            RingSwatchLegend(Modifier.weight(1f))
+                        }
                     } else {
-                        Spacer(Modifier.height(Dimens.HeadingGap))
+                        Spacer(Modifier.height(Dimens.Space3))
+                        RingSwatchLegend()
                     }
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.FigureGap)) {
-                        BudgetRing(hero.ring, diameter = Dimens.RingSmall, animate = true)
-                        RingLegend(Paise((hero.summary.spent.value - hero.sinking.covered.value).coerceAtLeast(0)), hero.billsDue + hero.sinking.reserved, hero.safe, Modifier.weight(1f))
-                    }
+                    val s = hero.summary
                     Spacer(Modifier.height(Dimens.SectionGap))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Dimens.FigureGap)) {
-                        Column(Modifier.weight(1f)) {
-                            Text("Per day", style = ChittaTheme.type.label, color = c.inkMuted)
-                            val pd = hero.perDay
-                            // A figure steps down a size when it does not fit its half-width column.
-                            if (pd != null) AmountText(pd, style = ChittaTheme.type.figure, fallbackStyles = ChittaTheme.type.figureSteps, roundToRupee = true)
-                            else Text("None", style = ChittaTheme.type.figure, color = c.ink)
-                            Text(if (hero.summary.daysLeft == 1) "for the 1 day left" else "for the ${hero.summary.daysLeft} days left", style = ChittaTheme.type.label, color = c.inkMuted)
+                        Tile("Budget left", Modifier.weight(1f)) {
+                            AmountText(s.left, style = ChittaTheme.type.amountTile, fallbackStyles = listOf(ChittaTheme.type.amountRow), roundToRupee = true)
+                            Text("of ${amt(s.limit)}".rupeeAware(), style = ChittaTheme.type.rowMeta14, color = c.inkMuted)
                         }
-                        Column(Modifier.weight(1f)) {
-                            Text("Range", style = ChittaTheme.type.label, color = c.inkMuted)
+                        Tile("Range", Modifier.weight(1f)) {
                             when (val r = hero.range) {
-                                is RangeResult.Days -> Text(if (r.days == 1) "1 day" else "${r.days} days", style = ChittaTheme.type.figure, color = c.ink, maxLines = 1)
+                                is RangeResult.Days -> Text(if (r.days == 1) "1 day" else "${r.days} days", style = ChittaTheme.type.amountTile, color = c.ink, maxLines = 1)
                                 RangeResult.NotEnoughData -> Text("Not enough data yet", style = ChittaTheme.type.body, color = c.inkMuted)
                                 RangeResult.NoSpending -> Text("No spending yet", style = ChittaTheme.type.body, color = c.inkMuted)
                             }
-                            hero.rangeShortDays?.let { Text(if (it == 1) "1 day short" else "$it days short", style = ChittaTheme.type.label, color = c.warningText) }
+                            hero.rangeShortDays?.let { Text(if (it == 1) "1 day short" else "$it days short", style = ChittaTheme.type.rowMeta14, color = c.warningText) }
                         }
                     }
-                    Spacer(Modifier.height(Dimens.SectionGap))
-                    val s = hero.summary
-                    // Label and amount sit on one baseline; the stamp is centred on the row.
+                    Spacer(Modifier.height(Dimens.Space6))
+                    // Page 13: "₹26,520 spent" with the pace stamp at the end. OVER PACE and ON PACE are ink-outlined; only OVER LIMIT is red.
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Spent", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.weight(1f).alignByBaseline())
-                        AmountText(s.spent, style = ChittaTheme.type.amount, fallbackStyles = listOf(ChittaTheme.type.amountRow), modifier = Modifier.alignByBaseline())
+                        Text("${amt(s.spent)} spent".rupeeAware(), style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.weight(1f))
                         Spacer(Modifier.width(Dimens.InlineGap))
-                        Stamp(
-                            when (s.pace) { PaceStatus.OnPace -> "On pace"; PaceStatus.OverPace -> "Ahead of pace"; PaceStatus.OverLimit -> "Over budget" },
-                            tone = if (s.pace == PaceStatus.OnPace) StampTone.Neutral else StampTone.Attention,
-                        )
+                        when (s.pace) {
+                            PaceStatus.OnPace -> Stamp("On pace", tone = StampTone.Ink)
+                            PaceStatus.OverPace -> Stamp("Over pace", tone = StampTone.Ink)
+                            PaceStatus.OverLimit -> Stamp("Over limit", tone = StampTone.Attention)
+                        }
                     }
                     Spacer(Modifier.height(Dimens.HeadingGap))
-                    MonthRule(s.daysInPeriod, s.cumulative, s.limit)
+                    MonthRuleThin(s.daysInPeriod, s.dayOfPeriod, s.spent, s.limit, s.limitDay)
                     Row(Modifier.fillMaxWidth().padding(top = Dimens.Space1), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Today · day ${s.dayOfPeriod}", style = ChittaTheme.type.label, color = c.inkMuted)
+                        Text("Today · day ${s.dayOfPeriod}", style = ChittaTheme.type.rowMeta14, color = c.inkMuted)
                         s.limitDay?.let { d ->
                             val date = Periods.date(s.period.startMs, ui.zone).plusDays((d - 1).toLong())
-                            Text("Limit ~${date.format(dayMonth)}", style = ChittaTheme.type.label, color = c.inkMuted)
+                            Text("Limit ~${date.format(dayMonth)}", style = ChittaTheme.type.rowMeta14, color = c.warningText)
                         }
                     }
                 }
             }
 
             if (ui.coming.isNotEmpty()) {
-                Section("Coming up", note = "See all", onNote = onOpenPlan)
-                HairlineRule()
-                val lui = LedgerUi(categories = ui.categories, accounts = ui.accounts)
-                ui.coming.forEachIndexed { i, t ->
-                    val row = t.toRow(lui, c.inkMuted) { id -> c.categoryTint(id) }
-                    val date = java.time.Instant.ofEpochMilli(t.dateMs).atZone(ui.zone).toLocalDate()
-                    EntryRow(
-                        title = row.title, meta = row.category, glyph = row.glyph, glyphColor = row.categoryColor, amount = row.amount, tone = row.tone,
-                        marginDay = date.dayOfMonth, weekday = date.weekdayShort(),
-                        // one stamp only: on the first, nearest bill
-                        stamp = if (i == 0) "Upcoming" else null,
-                        onClick = { onOpenEntry(t.id) },
-                    )
+                // Page 13: the heading carries what is due in total (open bills due this period); no "See all", no stamp on the first row.
+                Section("Coming up", note = if (ui.comingTotal.value > 0) "${amt(ui.comingTotal)} due" else null) {
+                    val lui = LedgerUi(categories = ui.categories, accounts = ui.accounts)
+                    ui.coming.forEach { t ->
+                        val row = t.toRow(lui, c.inkMuted) { id -> c.categoryTint(id) }
+                        val date = java.time.Instant.ofEpochMilli(t.dateMs).atZone(ui.zone).toLocalDate()
+                        EntryRow(
+                            title = row.title, meta = row.category, glyph = row.glyph, glyphColor = row.categoryColor, amount = row.amount, tone = row.tone,
+                            marginDay = date.dayOfMonth, weekday = date.weekdayShort(),
+                            onClick = { onOpenEntry(t.id) },
+                        )
+                    }
                 }
             }
 
@@ -260,6 +266,58 @@ fun HomeScreen(
             onPick = { vm.pickBudget(it); sheet = null }, onDismiss = { sheet = null },
         )
         "explain" -> ExplainSheet(ui, onDismiss = { sheet = null })
+    }
+}
+
+/** Money in a sentence. Reads the hide-amounts setting, because a plain string would not be masked by AmountText. */
+@Composable
+@ReadOnlyComposable
+private fun amt(p: Paise): String = if (ChittaTheme.hideAmounts) "₹ ••••" else IndianFormat.rupeesRounded(p)
+
+/** "November budget" (page 13). A budget already named "... budget" is not given the word twice. The caret shows only when there is another budget to pick. */
+@Composable
+private fun BudgetLine(name: String, canChange: Boolean, onClick: () -> Unit) {
+    val c = ChittaTheme.colors
+    val text = if (name.endsWith("budget", ignoreCase = true)) name else "$name budget"
+    Box(Modifier.fillMaxWidth().height(Dimens.Space8), contentAlignment = Alignment.CenterStart) {
+        Row(
+            Modifier.then(if (canChange) Modifier.requiredHeight(Dimens.TouchTarget).pressClickable(role = Role.Button, onClickLabel = "Change budget", onClick = onClick) else Modifier),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(text, style = ChittaTheme.type.body, color = c.inkMuted)
+            if (canChange) {
+                Spacer(Modifier.width(Dimens.Gap1))
+                Icon(ChittaIcons.CaretDown, contentDescription = null, tint = c.inkMuted, modifier = Modifier.size(Dimens.IconSmall))
+            }
+        }
+    }
+}
+
+/** "Safe to spend ⓘ" (page 13). The info button opens the sum; its 48 dp target overflows the 24 dp line so the page's spacing holds. */
+@Composable
+private fun InfoLabel(text: String, onInfo: () -> Unit) {
+    val c = ChittaTheme.colors
+    Row(Modifier.height(Dimens.Space6), verticalAlignment = Alignment.CenterVertically) {
+        Text(text, style = ChittaTheme.type.body, color = c.ink)
+        Spacer(Modifier.width(Dimens.Space1))
+        Box(
+            Modifier.requiredSize(Dimens.TouchTarget).clip(CircleShape).pressClickable(role = Role.Button, shape = CircleShape, onClick = onInfo),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(ChittaIcons.Info, contentDescription = "How $text is worked out", tint = c.inkMuted, modifier = Modifier.size(Dimens.IconSmall))
+        }
+    }
+}
+
+/** One of the two figures under the hero (page 13): an ink rule on top, a muted label, then the figure. */
+@Composable
+private fun Tile(label: String, modifier: Modifier, content: @Composable ColumnScope.() -> Unit) {
+    val c = ChittaTheme.colors
+    Column(modifier) {
+        Box(Modifier.fillMaxWidth().height(Dimens.Hairline).background(c.ink))
+        Spacer(Modifier.height(Dimens.Space3))
+        Text(label, style = ChittaTheme.type.rowMeta14, color = c.inkMuted)
+        content()
     }
 }
 

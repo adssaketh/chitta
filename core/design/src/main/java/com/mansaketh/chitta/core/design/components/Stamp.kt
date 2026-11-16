@@ -15,8 +15,11 @@ enum class StampTone {
     /** Status that is just information: PAID, UPCOMING, SKIPPED, LENT, COLLECTED, STALE, ESTIMATE. */
     Neutral,
 
-    /** The one thing that needs attention: OVERDUE, OVER PACE. Red only here. */
+    /** The one thing that needs attention: OVERDUE, OVER LIMIT. Red only here. */
     Attention,
+
+    /** An ink-outlined stamp with ink text: OVER PACE and ON PACE on Home (PDF p.13). */
+    Ink,
 
     /** Money in. */
     Income,
@@ -37,6 +40,7 @@ fun Stamp(
     val tint = when (tone) {
         StampTone.Neutral -> colors.inkMuted
         StampTone.Attention -> colors.warningText
+        StampTone.Ink -> colors.ink
         StampTone.Income -> colors.green
     }
     Text(

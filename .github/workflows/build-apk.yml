@@ -2,7 +2,7 @@ name: Build APK
 on:
   workflow_dispatch:
   push:
-    branches: ['phase-*', main]
+    branches: ['phase-*', 'ui-*', main]
 
 permissions:
   contents: write

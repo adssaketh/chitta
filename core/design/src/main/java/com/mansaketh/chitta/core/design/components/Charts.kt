@@ -4,7 +4,11 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -200,5 +204,107 @@ private fun LegendRow(label: String, swatch: Color, amount: Paise, outlined: Boo
         Box(Modifier.width(Dimens.Gap3))
         Text(label, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.weight(1f).alignByBaseline())
         AmountText(amount, style = ChittaTheme.type.amountSmall, modifier = Modifier.alignByBaseline())
+    }
+}
+
+/**
+ * The v8 month rule (final design p.13): one thin rule along the days of the period, so the whole month is one glance.
+ *  - A tick per day along the rule.
+ *  - A solid ink bar for money spent, measured in days of budget: spent / limit of the rule's length.
+ *  - A short ink line across the rule at today, and a dashed line under it that ends at today (the ideal pace is "today's share of the limit").
+ *    A solid bar that runs past the today line means spending is ahead of pace.
+ *  - A dotted run from the end of the bar to the end of the period (from day 7 only, when a forecast exists).
+ *  - A sindoor tick on the day the forecast reaches the limit.
+ * The numbers all come from [BudgetFigures]; this only draws them. Mapping decision: D287.
+ */
+@Composable
+fun MonthRuleThin(
+    daysInPeriod: Int,
+    dayOfPeriod: Int,
+    spent: Paise,
+    limit: Paise,
+    limitDay: Int?,
+    modifier: Modifier = Modifier,
+) {
+    val c = ChittaTheme.colors
+    val days = daysInPeriod.coerceAtLeast(1)
+    val today = dayOfPeriod.coerceIn(0, days)
+    val spentShare = if (limit.value > 0) (spent.value.toFloat() / limit.value).coerceIn(0f, 1f) else 0f
+    val forecast = BudgetFigures.forecast(spent, today, days)
+    val ideal = BudgetFigures.idealSpend(limit, today, days)
+    val spoken = buildString {
+        append("Spent ${IndianFormat.spoken(spent)} by day $today of $days. ")
+        if (ideal != null) append("Ideal pace ${IndianFormat.spoken(ideal)}. ")
+        if (forecast != null) append("At this rate ${IndianFormat.spoken(forecast)} by the end. ")
+        if (limitDay != null) append("The limit is reached on day $limitDay.")
+    }
+    Canvas(
+        modifier
+            .fillMaxWidth()
+            .height(Dimens.MonthRuleHeight)
+            .clearAndSetSemantics { contentDescription = spoken },
+    ) {
+        val baseY = 11.dp.toPx()
+        val w = size.width
+        fun x(day: Int) = day.toFloat() / days * w
+        val barEnd = spentShare * w
+        val todayX = x(today)
+
+        // beyond the bar: dotted when there is a forecast, else a plain hairline
+        if (barEnd < w) {
+            if (forecast != null) {
+                drawLine(
+                    c.ink, Offset(barEnd, baseY), Offset(w, baseY), strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round,
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(0.1f, 6.dp.toPx())),
+                )
+            } else {
+                drawLine(c.rule, Offset(barEnd, baseY), Offset(w, baseY), strokeWidth = 1.dp.toPx())
+            }
+        }
+        // money spent: the solid bar
+        if (barEnd > 0f) drawLine(c.ink, Offset(0f, baseY), Offset(barEnd, baseY), strokeWidth = 5.dp.toPx())
+        // the ideal pace: dashed, under the bar, ending at today
+        if (ideal != null && today > 0) {
+            drawLine(
+                c.mark, Offset(0f, baseY + 10.dp.toPx()), Offset(todayX, baseY + 10.dp.toPx()), strokeWidth = 1.5.dp.toPx(),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 4.dp.toPx())),
+            )
+        }
+        // a tick per day; on the solid bar it cuts through in the page colour
+        for (d in 0..days) {
+            val tx = x(d)
+            drawLine(if (tx <= barEnd) c.background else c.ink, Offset(tx, baseY - 3.dp.toPx()), Offset(tx, baseY + 3.dp.toPx()), strokeWidth = 1.dp.toPx())
+        }
+        // today
+        drawLine(c.ink, Offset(todayX, baseY - 9.dp.toPx()), Offset(todayX, baseY + 12.dp.toPx()), strokeWidth = 1.5.dp.toPx())
+        // where the forecast reaches the limit: the one red mark
+        if (limitDay != null) {
+            drawLine(c.sindoor, Offset(x(limitDay), baseY - 9.dp.toPx()), Offset(x(limitDay), baseY + 9.dp.toPx()), strokeWidth = 3.dp.toPx())
+        }
+    }
+}
+
+/** The swatch-only legend beside the Home ring (final design p.13): a square per part, no amounts. Wraps at large text. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun RingSwatchLegend(modifier: Modifier = Modifier) {
+    val c = ChittaTheme.colors
+    FlowRow(
+        modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Dimens.Space4),
+        verticalArrangement = Arrangement.spacedBy(Dimens.Space1),
+    ) {
+        SwatchItem("Spent", c.ink)
+        SwatchItem("Bills", c.mark)
+        SwatchItem("Safe to spend", c.rule)
+    }
+}
+
+@Composable
+private fun SwatchItem(label: String, color: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(Dimens.LegendSwatch).background(color))
+        Spacer(Modifier.width(Dimens.InlineGap))
+        Text(label, style = ChittaTheme.type.rowMeta14, color = ChittaTheme.colors.inkMuted)
     }
 }

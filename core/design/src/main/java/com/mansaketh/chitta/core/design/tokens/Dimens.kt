@@ -117,6 +117,16 @@ object Dimens {
     val LogoSmall = 64.dp
     val LogoLarge = 80.dp
     val RingSmall = 120.dp
+
+    /** v8 Home (PDF p.13): the budget ring beside the hero, measured off the page at about 100 dp. */
+    val RingHome = 100.dp
+
+    /** v8 Home: the legend swatch (a square) and the thin month rule's height and strokes. */
+    val LegendSwatch = 10.dp
+    val MonthRuleHeight = 28.dp
+
+    /** The add button's corner (PDF p.13 draws a rounded square; measured at about 16 dp, D278 lists no corner for it). */
+    val CornerFab = 16.dp
     val TrendHeight = 80.dp
 
     /** One day cell of the bill calendar. */

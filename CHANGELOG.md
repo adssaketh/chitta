@@ -1,5 +1,14 @@
 # Changelog
 
+## Screen 05 Home to PDF p.13 (16 Nov 2026) - on branch `ui-05-home`
+- Home now follows the page: budget line, "Safe to spend" with an info button, the hero, "About X a day for N days", the ring beside the hero with a swatch-only legend.
+- Two tiles under it: Budget left (of the limit) and Range. Per day is in the sentence.
+- "X spent" with an ink-outlined OVER PACE / ON PACE stamp (OVER LIMIT stays red), then the thin ticked month rule with Today and Limit lines.
+- "Coming up" shows the total due in its heading; "See all" and the stamp on the first row are gone.
+- The add button is a rounded square on every screen; the Plan icon is a calendar.
+- Kept as it was, not on the page: the hide-amounts eye, the "in review" row, the chosen sections and "Customise Home".
+- Not compiled locally (no Android SDK here); CI builds and re-records the screenshots. Not verified on a phone.
+
 ## Phase 11d: plan and review screens (16 Nov 2026) - on branch `phase-11d-plan-review`
 - Look only. Screens 16 to 26 of the v8 design: Budgets, Budget detail, Goals, Loans, Bills, Bill calendar, Pay a bill, Insights, Accounts, Mutual funds import.
 - Plan rows with a gauge: name and stamp, the gauge, then the figure with its small print under it (also used on Home).

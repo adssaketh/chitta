@@ -269,3 +269,21 @@ Left as is
 - Sinking funds tab and the other detail screens' stacked buttons (not in the 11d list), except Delete, which is the Danger button.
 - Stale `DatePickerDialog` imports remain in `EntryDetailScreen` and `QuickAddSheet`; the 11e audit removes them.
 Not verified on a phone: everything. Not compiled locally.
+
+## Screen 05 Home (16 Nov 2026, branch `ui-05-home`, PDF p.13, exact match rule)
+Checklist (Paper and Ink). Built to the page; none of it verified on a phone, and nothing compiled locally.
+1. Top bar: tab icon, title, bell with count badge, gear. Built. The hide-amounts eye is also there (your answer), so it differs from the page.
+2. "November budget" line: built; the caret shows only with more than one budget (your answer).
+3. "Safe to spend" with info button: built.
+4. Hero amount: built (steps down a size when it does not fit beside the ring).
+5. "About X a day for N days": built.
+6. Ring beside the hero, 100 dp: built from the page's measure.
+7. Swatch-only legend: built.
+8. Budget left and Range tiles with an ink rule on top: built.
+9. "X spent" and the ink-outlined stamp: built.
+10. Month rule, Today and Limit lines: built; the drawing is my reading of the page (D287 item 1).
+11. Coming up with the total due: built.
+12. Rounded-square add button: built; the 16 dp corner is measured.
+13. Bottom nav with a calendar Plan icon: built.
+Not drawn on the page, kept as the app has them: the "in review" row, the chosen sections, "Customise Home", the cash-check layout, the over-limit and no-budget states, the Estimate stamp, and the "Your cash is lower" line.
+Known leftovers: the "How Safe to spend is worked out" sheet is much taller than p.14 (Screen 06); the add button floats over that sheet (Screen 06); Customise shows the calendar icon for both Plan and the heatmap.
