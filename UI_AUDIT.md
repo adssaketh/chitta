@@ -255,3 +255,17 @@ Left as is, needs your decision
 - Date sheet, Saved with Undo, Ledger first use, Delete layout: already on the kit from 11b / earlier in 11c.
 Not verified on a phone: everything. Not compiled locally.
 
+## Phase 11d: plan and review screens (16 Nov 2026, branch `phase-11d-plan-review`)
+Matched to the PDF: Budgets p.24, Budget detail p.25 (Delete only), Goals p.26, Loans p.27, Bills p.28, Bill calendar p.29, Pay a bill p.30, Insights p.31, Accounts p.32, Mutual funds p.33 (unchanged), Import holdings p.34.
+Not built (not in app)
+- Budget detail p.25: the Spent / Forecast pair, the legend under the chart and the "Limits by category / Rollover / Alerts / History" rows. The app's detail screen has its own sections and stays as it is.
+- Goals p.26: the month-savings note. Loans p.27: the "Owed to you / You owe" totals and the green "owed to you" amount.
+- Bills p.28: the "Coming up" total beside the heading and "Show 6 paid". Calendar p.29: the day's bills inline under the grid (the app opens a sheet).
+- Pay a bill p.30: the Full / Minimum / Other amount choice and the "Paid from" / "Paid on" rows. Insights p.31: "Compared with" line stays as the app words it.
+- Accounts p.32: the Net worth heading and glyph circles on account rows; account groups for spending and cards. Mutual funds p.33: "Your funds" heading, the Invested / Gain pair.
+Copy kept
+- Titles and labels as the app words them ("Budget", "Show n more", "Reminders and auto-pay", "Choose file"). New headings only where the prompt asks for headed groups on Accounts.
+Left as is
+- Sinking funds tab and the other detail screens' stacked buttons (not in the 11d list), except Delete, which is the Danger button.
+- Stale `DatePickerDialog` imports remain in `EntryDetailScreen` and `QuickAddSheet`; the 11e audit removes them.
+Not verified on a phone: everything. Not compiled locally.

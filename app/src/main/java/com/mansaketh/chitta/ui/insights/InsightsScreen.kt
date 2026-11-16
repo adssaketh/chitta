@@ -3,6 +3,10 @@ package com.mansaketh.chitta.ui.insights
 import com.mansaketh.chitta.core.design.kit.SheetHeader
 import androidx.compose.foundation.background
 import com.mansaketh.chitta.core.design.kit.Section
+import com.mansaketh.chitta.core.design.kit.PickerChip
+import com.mansaketh.chitta.core.design.kit.Segmented
+import androidx.compose.foundation.shape.CircleShape
+import com.mansaketh.chitta.ui.categoryTint
 import com.mansaketh.chitta.core.design.kit.ValueRow
 import com.mansaketh.chitta.core.design.kit.TopBarMain
 import com.mansaketh.chitta.core.design.kit.ButtonKind
@@ -163,8 +167,11 @@ fun InsightsScreen(vm: InsightsViewModel, onOpenEntry: (String) -> Unit) {
 private fun CurrentTab(ui: InsightsUi, onRange: () -> Unit, onAccounts: () -> Unit, onIncome: (Boolean) -> Unit, onDrill: (String) -> Unit) {
     val c = ChittaTheme.colors
     val s = ui.summary ?: return
-    ValueRow("Range", rangeLabel(ui.range, ui.zone), onClick = onRange)
-    ValueRow("Accounts", accountsLabel(ui), onClick = onAccounts)
+    // Range and Accounts as two chips on one line (PDF page 31).
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Dimens.InlineGap)) {
+        PickerChip(rangeLabel(ui.range, ui.zone), onRange, Modifier.weight(1f, fill = false), onClickLabel = "Change the range")
+        PickerChip(accountsLabel(ui), onAccounts, Modifier.weight(1f, fill = false), onClickLabel = "Choose accounts")
+    }
     val cmp = ui.comparison
     Text(
         if (cmp != null) "${periodText(cmp.current, ui.zone)}, compared with ${periodText(cmp.previous, ui.zone)}" else ui.period?.let { periodText(it, ui.zone) }.orEmpty(),
@@ -231,7 +238,7 @@ private fun CurrentTab(ui: InsightsUi, onRange: () -> Unit, onAccounts: () -> Un
     } else {
         val top = ui.bars.maxOf { it.amount.value }.coerceAtLeast(1L)
         var donut by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
-        TextTabs(listOf("Bars", "Donut"), if (donut) 1 else 0, { donut = it == 1 })
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { Segmented(listOf("Bars", "Donut"), if (donut) 1 else 0, { donut = it == 1 }) }
         Spacer(Modifier.height(Dimens.Gap2))
         if (donut) {
             val slices = com.mansaketh.chitta.core.domain.Donut.slices(ui.bars)
@@ -243,7 +250,7 @@ private fun CurrentTab(ui: InsightsUi, onRange: () -> Unit, onAccounts: () -> Un
                     Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).let { m -> if (sl.categoryId != null) m.pressClickable(role = Role.Button, onClickLabel = "Open $name") { onDrill(sl.categoryId!!) } else m },
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.Gap3),
                 ) {
-                    Box(Modifier.size(Dimens.Space3).background(if (sl.categoryId == null) c.inkMuted else c.category[i % c.category.size]))
+                    Box(Modifier.size(Dimens.Space3).background(if (sl.categoryId == null) c.inkMuted else c.category[i % c.category.size], CircleShape))
                     Text("$name · ${sl.percent}%", style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.weight(1f))
                     com.mansaketh.chitta.core.design.components.AmountText(sl.amount)
                 }
@@ -251,7 +258,7 @@ private fun CurrentTab(ui: InsightsUi, onRange: () -> Unit, onAccounts: () -> Un
         } else
         ui.bars.forEach { bar ->
             Box(Modifier.fillMaxWidth().pressClickable(role = Role.Button, onClickLabel = "Open ${categoryName(bar.categoryId, ui.categories)}") { onDrill(bar.categoryId) }) {
-                LedgerBar(categoryName(bar.categoryId, ui.categories), bar.amount, bar.amount.value.coerceAtLeast(0L).toFloat() / top)
+                LedgerBar(categoryName(bar.categoryId, ui.categories), bar.amount, bar.amount.value.coerceAtLeast(0L).toFloat() / top, dot = c.categoryTint(bar.categoryId))
             }
         }
         Text("Tap a category to see what is in it.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))

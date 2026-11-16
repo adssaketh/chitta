@@ -2,12 +2,12 @@ package com.mansaketh.chitta.ui.plan
 
 import com.mansaketh.chitta.core.design.kit.SheetHeader
 import com.mansaketh.chitta.ui.DatePick
-import android.app.DatePickerDialog
 import com.mansaketh.chitta.core.design.kit.CategoryChip
 import com.mansaketh.chitta.core.design.kit.CheckRow
 import com.mansaketh.chitta.core.design.kit.ValueRow
 import com.mansaketh.chitta.core.design.kit.ButtonKind
 import com.mansaketh.chitta.core.design.kit.ChittaButton
+import com.mansaketh.chitta.core.design.kit.ButtonPair
 import com.mansaketh.chitta.ui.sheetMax
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -66,7 +66,7 @@ fun AmountAccountSheet(
     var account by remember { mutableStateOf(initialAccountId?.takeIf { id -> active.any { it.id == id } } ?: active.firstOrNull()?.id ?: "") }
     var problem by remember { mutableStateOf<String?>(null) }
     BottomOverlay(onDismiss, handle = false) {
-        SheetHeader(title)
+        SheetHeader(title, onClose = onDismiss)
         if (note != null) Text(note, style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted, modifier = Modifier.padding(top = Dimens.Gap1))
         Spacer(Modifier.height(Dimens.Gap4))
         ChittaField(amount, { amount = it; problem = null }, problem ?: amountLabel, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal))
@@ -77,7 +77,11 @@ fun AmountAccountSheet(
             items(active) { a -> CategoryChip(a.name, selected = a.id == account, onClick = { account = a.id }, modifier = Modifier.padding(bottom = Dimens.Gap1)) }
         }
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton(confirmLabel, { onSave(amount, account) { problem = it } }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
+        // Cancel and the confirm button side by side (PDF page 30); only the confirm is filled.
+        ButtonPair(
+            first = { m -> ChittaButton("Cancel", onDismiss, m, kind = ButtonKind.Secondary) },
+            second = { m -> ChittaButton(confirmLabel, { onSave(amount, account) { problem = it } }, m, confirmHaptic = true) },
+        )
     }
 }
 

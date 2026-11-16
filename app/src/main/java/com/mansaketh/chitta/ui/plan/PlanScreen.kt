@@ -9,6 +9,18 @@ import com.mansaketh.chitta.core.design.kit.EmptyState
 import com.mansaketh.chitta.core.design.kit.Section
 import com.mansaketh.chitta.core.design.kit.TopBarMain
 import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ButtonPair
+import com.mansaketh.chitta.core.design.kit.EntryRow
+import com.mansaketh.chitta.ui.ledger.LedgerUi
+import com.mansaketh.chitta.ui.ledger.toRow
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import com.mansaketh.chitta.core.design.kit.ChittaButton
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -40,7 +52,10 @@ import java.time.YearMonth
 
 val PLAN_TABS = listOf("Budgets", "Goals", "Loans", "Bills", "Calendar", "Sinking funds")
 
-/** One row in a Plan list: a title with an amount on the right, an optional gauge, a line of small text and an optional stamp. */
+/**
+ * One row in a Plan list (v8, PDF pages 24 and 26). With a gauge: the name and stamp, the gauge, then the figure with its small print on its own line
+ * under it. Without one: the name and small print on the left and the amount on the right.
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PlanRow(
@@ -49,15 +64,27 @@ fun PlanRow(
 ) {
     val c = ChittaTheme.colors
     Column(Modifier.fillMaxWidth().heightIn(min = Dimens.RowTall).combinedClickable(role = Role.Button, onClick = onClick, onLongClick = onLongClick).padding(vertical = Dimens.RowPadV)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(title, style = ChittaTheme.type.rowTitle, color = c.ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                if (subtitle != null) Text(subtitle, style = ChittaTheme.type.rowMeta, color = c.inkMuted, maxLines = 3, overflow = TextOverflow.Ellipsis)
+        if (gauge != null && amount != null) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(title, style = ChittaTheme.type.rowTitle, color = c.ink, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                if (stamp != null) { Spacer(Modifier.width(Dimens.InlineGap)); Stamp(stamp, tone = if (attention) StampTone.Attention else StampTone.Neutral) }
             }
-            if (stamp != null) { Spacer(Modifier.width(Dimens.InlineGap)); Stamp(stamp, tone = if (attention) StampTone.Attention else StampTone.Neutral) }
-            if (amount != null) { Spacer(Modifier.width(Dimens.TitleAmountGap)); AmountText(amount, fallbackStyles = listOf(ChittaTheme.type.amountSmall)) }
+            Spacer(Modifier.height(Dimens.Gap2))
+            GaugeBar(gauge, gaugeLabel)
+            Spacer(Modifier.height(Dimens.Gap2))
+            AmountText(amount, style = ChittaTheme.type.amountRow, fallbackStyles = listOf(ChittaTheme.type.amountSmall))
+            if (subtitle != null) Text(subtitle, style = ChittaTheme.type.rowMeta, color = c.inkMuted, maxLines = 3, overflow = TextOverflow.Ellipsis)
+        } else {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(title, style = ChittaTheme.type.rowTitle, color = c.ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    if (subtitle != null) Text(subtitle, style = ChittaTheme.type.rowMeta, color = c.inkMuted, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                }
+                if (stamp != null) { Spacer(Modifier.width(Dimens.InlineGap)); Stamp(stamp, tone = if (attention) StampTone.Attention else StampTone.Neutral) }
+                if (amount != null) { Spacer(Modifier.width(Dimens.TitleAmountGap)); AmountText(amount, fallbackStyles = listOf(ChittaTheme.type.amountSmall)) }
+            }
+            if (gauge != null) { Spacer(Modifier.height(Dimens.Gap2)); GaugeBar(gauge, gaugeLabel) }
         }
-        if (gauge != null) { Spacer(Modifier.height(Dimens.Gap2)); GaugeBar(gauge, gaugeLabel) }
     }
     HairlineRule()
 }
@@ -134,6 +161,25 @@ private fun GoalsTab(ui: PlanUi, onOpen: (String) -> Unit, onSheet: (String) -> 
 }
 
 // ---------------------------------------------------------------- Loans
+/** A loan on the Loans tab (PDF page 27): an [EntryRow] with the loan glyph, and the repayment gauge under it where the loan has one. */
+@Composable
+private fun LoanLine(
+    title: String, meta: String, amount: Paise, gauge: Segments.Gauge? = null, gaugeLabel: String = "", stamp: String? = null,
+    onClick: () -> Unit = {}, onLongClick: (() -> Unit)? = null,
+) {
+    Column(Modifier.fillMaxWidth()) {
+        EntryRow(
+            title = title, meta = meta, glyph = FeatureIcons.tab(TabKey.Loans), glyphColor = ChittaTheme.colors.inkMuted, amount = amount, tone = AmountTone.Neutral,
+            stamp = stamp, onClick = onClick, onLongClick = onLongClick, rule = gauge == null,
+        )
+        if (gauge != null) {
+            GaugeBar(gauge, gaugeLabel, Modifier.padding(start = Dimens.GlyphCircle + Dimens.Space3))
+            Spacer(Modifier.height(Dimens.Gap2))
+            HairlineRule()
+        }
+    }
+}
+
 @Composable
 private fun LoansTab(vm: PlanViewModel, ui: PlanUi, onOpen: (String) -> Unit, onSheet: (String) -> Unit) {
     val loans = ui.objectives.filter { Loans.isLoan(it) && !it.archived }
@@ -154,26 +200,28 @@ private fun LoansTab(vm: PlanViewModel, ui: PlanUi, onOpen: (String) -> Unit, on
             if (t != null) {
                 val p = Instalments.progress(t, linked.sumOf { it.amount }, ui.zone)
                 val next = Instalments.next(t, ui.zone)
-                PlanRow(o.name, p.outstanding, (if (o.income) "Lent" else "Borrowed") + (next?.let { " · next ${rupees(it.totalDue)} on ${dateText(it.dueMs, ui.zone)}" } ?: " · all instalments ticked"), p.gauge, "${o.name} repaid", onClick = { onOpen("loan:${o.id}") }, onLongClick = { onSheet("edit-loan:${o.id}") })
+                LoanLine(o.name, (if (o.income) "Lent" else "Borrowed") + (next?.let { " · next ${rupees(it.totalDue)} on ${dateText(it.dueMs, ui.zone)}" } ?: " · all instalments ticked"), p.outstanding, p.gauge, "${o.name} repaid", onClick = { onOpen("loan:${o.id}") }, onLongClick = { onSheet("edit-loan:${o.id}") })
             } else {
                 val p = Loans.progress(o, ui.entries)
-                PlanRow(o.name, p.outstanding, (if (o.income) "Lent" else "Borrowed") + " · repaid ${rupees(p.repaid)} of ${rupees(p.total)}", p.gauge, "${o.name} repaid", onClick = { onOpen("loan:${o.id}") }, onLongClick = { onSheet("edit-loan:${o.id}") })
+                LoanLine(o.name, (if (o.income) "Lent" else "Borrowed") + " · repaid ${rupees(p.repaid)} of ${rupees(p.total)}", p.outstanding, p.gauge, "${o.name} repaid", onClick = { onOpen("loan:${o.id}") }, onLongClick = { onSheet("edit-loan:${o.id}") })
             }
         }
         if (sharedViews.loans.isNotEmpty()) item { Section("Shared with you") }
         items(sharedViews.loans, key = { "sl-" + it.docId }) { v ->
             val f = v.figures(ui.zone)
-            PlanRow(v.loan.name, f?.left, "Shared by ${v.owner} · " + (if (v.loan.lent) "Lent" else "Borrowed") + (f?.let { " · paid ${rupees(it.repaid)} of ${rupees(it.total)}" } ?: ""), f?.gauge, "${v.loan.name} repaid", onClick = { viewingShared = v })
+            val meta = "Shared by ${v.owner} · " + (if (v.loan.lent) "Lent" else "Borrowed") + (f?.let { " · paid ${rupees(it.repaid)} of ${rupees(it.total)}" } ?: "")
+            if (f != null) LoanLine(v.loan.name, meta, f.left, f.gauge, "${v.loan.name} repaid", onClick = { viewingShared = v })
+            else PlanRow(v.loan.name, null, meta, onClick = { viewingShared = v })
         }
         if (sharedViews.loans.isNotEmpty()) item { Text("These are not in your Net worth or loan totals. Tap one to open it.", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted) }
         if (open.isNotEmpty()) item { Section("Lent and borrowed once") }
         items(open, key = { it.id }) { t ->
             val lent = t.kind == TransactionKind.LENT
-            PlanRow(t.name.ifBlank { if (lent) "Lent" else "Borrowed" }, Paise(Math.abs(t.amount)), (if (lent) "Lent " else "Borrowed ") + friendlyDay(t.dateMs, ui.nowMs, ui.zone), stamp = if (lent) "Lent" else "Borrowed", onClick = { acting = t })
+            LoanLine(t.name.ifBlank { if (lent) "Lent" else "Borrowed" }, (if (lent) "Lent " else "Borrowed ") + friendlyDay(t.dateMs, ui.nowMs, ui.zone), Paise(Math.abs(t.amount)), stamp = if (lent) "Lent" else "Borrowed", onClick = { acting = t })
         }
         if (done.isNotEmpty()) item { Section("Collected recently") }
         items(done, key = { it.id }) { t ->
-            PlanRow(t.name.ifBlank { "Entry" }, Paise(Math.abs(t.amount)), "Collected", stamp = "Collected", onClick = { acting = t })
+            LoanLine(t.name.ifBlank { "Entry" }, "Collected", Paise(Math.abs(t.amount)), stamp = "Collected", onClick = { acting = t })
         }
         item { Spacer(Modifier.height(Dimens.SectionGap)); ChittaButton("Add a loan", { onSheet("new-loan") }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth()) }
     }
@@ -221,14 +269,21 @@ private fun BillsTab(vm: PlanViewModel, ui: PlanUi, onSheet: (String) -> Unit, o
     var dismissedOpen by rememberSaveable { mutableStateOf(false) }
     var picked by remember { mutableStateOf<SubscriptionSuggestion?>(null) }
 
+    val ledgerUi = remember(ui.categories, ui.accounts) { LedgerUi(categories = ui.categories, accounts = ui.accounts) }
+    val tint = ChittaTheme.colors
+
+    // A bill is an entry that is still to come, so it reads like one (PDF page 28): glyph, name, when it is due, the amount.
     @Composable fun Bill(t: Transaction) {
         val st = Bills.status(t, ui.nowMs, ui.zone)
         val repeating = Bills.isRepeating(t)
-        PlanRow(
-            t.name.ifBlank { categoryName(t.categoryId, ui.categories) }, if (Bills.needsAmount(t)) null else Paise(Math.abs(t.amount)),
-            (if (Bills.needsAmount(t)) "Amount not set · " else "") + friendlyDay(Bills.dueMs(t), ui.nowMs, ui.zone) + (if (repeating) " · repeats ${repeatLabel(t.repeat!!, t.periodLength ?: 1)}" else "") + (if (t.income) " · to receive" else ""),
+        val row = t.toRow(ledgerUi, tint.inkMuted) { id -> tint.categoryTint(id) }
+        EntryRow(
+            title = t.name.ifBlank { categoryName(t.categoryId, ui.categories) },
+            meta = (if (Bills.needsAmount(t)) "Amount not set · " else "") + friendlyDay(Bills.dueMs(t), ui.nowMs, ui.zone) + (if (repeating) " · repeats ${repeatLabel(t.repeat!!, t.periodLength ?: 1)}" else "") + (if (t.income) " · to receive" else ""),
+            glyph = row.glyph, glyphColor = row.categoryColor, amount = row.amount, tone = row.tone,
             stamp = if (st == BillStatus.Overdue) "Overdue" else if (t.kind == TransactionKind.SUBSCRIPTION) "Subscription" else null,
-            attention = st == BillStatus.Overdue, onClick = { acting = t },
+            stampTone = if (st == BillStatus.Overdue) StampTone.Attention else StampTone.Neutral,
+            onClick = { acting = t },
         )
     }
 
@@ -253,12 +308,14 @@ private fun BillsTab(vm: PlanViewModel, ui: PlanUi, onSheet: (String) -> Unit, o
         items(overdue, key = { it.id }) { Bill(it) }
         if (future.isNotEmpty()) item { Section("Coming up") }
         items(shown, key = { it.id }) { Bill(it) }
-        if (future.size >= 3 && !expanded) item { ChittaButton("Show ${future.size - 2} more", { expanded = true }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth()) }
+        if (future.size >= 3 && !expanded) item { ChittaButton("Show ${future.size - 2} more", { expanded = true }, kind = ButtonKind.Link) }
+        // One "Add a bill" at a time (your request, 16 Nov): with no bills it is the empty state's button, so this block starts with the link;
+        // with bills it is the one here. "Reminders and auto-pay" sits directly under whichever is showing.
         item {
-            Column(Modifier.padding(top = Dimens.SectionGap), verticalArrangement = Arrangement.spacedBy(Dimens.InlineGap)) {
-                ChittaButton("Add a bill", { onSheet("new-bill") }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
-                if (dismissed.isNotEmpty()) ChittaButton("Not subscriptions (${dismissed.size})", { dismissedOpen = true }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
-                ChittaButton("Reminders and auto-pay", onSettings, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
+            Column(Modifier.padding(top = if (scheduled.isEmpty()) Dimens.Gap2 else Dimens.SectionGap), verticalArrangement = Arrangement.spacedBy(Dimens.InlineGap)) {
+                if (scheduled.isNotEmpty()) ChittaButton("Add a bill", { onSheet("new-bill") }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
+                ChittaButton("Reminders and auto-pay", onSettings, kind = ButtonKind.Link)
+                if (dismissed.isNotEmpty()) ChittaButton("Not subscriptions (${dismissed.size})", { dismissedOpen = true }, kind = ButtonKind.Link)
             }
         }
     }
@@ -320,7 +377,8 @@ private fun BillsTab(vm: PlanViewModel, ui: PlanUi, onSheet: (String) -> Unit, o
 
 private fun plainAmount(t: Transaction) = if (t.amount == 0L) "" else com.mansaketh.chitta.core.money.IndianFormat.rupees(Paise(Math.abs(t.amount)), symbol = "").replace(",", "")
 
-// ---------------------------------------------------------------- Bill calendar (PDF p.22)
+// ---------------------------------------------------------------- Bill calendar (PDF p.29)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun CalendarTab(vm: PlanViewModel, ui: PlanUi) {
     var epoch by rememberSaveable { mutableStateOf(YearMonth.from(java.time.Instant.ofEpochMilli(ui.nowMs).atZone(ui.zone)).let { it.year * 12 + it.monthValue - 1 }) }
@@ -333,18 +391,27 @@ private fun CalendarTab(vm: PlanViewModel, ui: PlanUi) {
         MonthStepper("${month.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH)} ${month.year}", { epoch -= 1 }, { epoch += 1 })
         Text(if (toPay.isZero) "Nothing left to pay this month." else "${rupees(toPay)} still to pay this month.", style = ChittaTheme.type.label, color = c.inkMuted)
         Spacer(Modifier.height(Dimens.Gap3))
-        Row(Modifier.fillMaxWidth()) { listOf("M", "T", "W", "T", "F", "S", "S").forEach { Text(it, Modifier.weight(1f), style = ChittaTheme.type.label, color = c.inkMuted) } }
+        Row(Modifier.fillMaxWidth()) { listOf("M", "T", "W", "T", "F", "S", "S").forEach { Text(it, Modifier.weight(1f), style = ChittaTheme.type.mono, color = c.inkMuted, textAlign = TextAlign.Center) } }
         val lead = month.atDay(1).dayOfWeek.value - 1
         val cells: List<CalendarDay?> = List(lead) { null } + days
+        val today = remember(ui.nowMs, ui.zone) { Periods.date(ui.nowMs, ui.zone) }
         cells.chunked(7).forEach { week ->
             Row(Modifier.fillMaxWidth()) {
                 week.forEach { d ->
-                    Box(Modifier.weight(1f).heightIn(min = Dimens.CalendarCell).then(if (d != null && d.items.isNotEmpty()) Modifier.pressClickable(role = Role.Button, onClickLabel = "Show bills") { day = d } else Modifier)) {
-                        if (d != null) Column {
-                            Text(d.date.dayOfMonth.toString(), style = ChittaTheme.type.body, color = c.ink)
-                            if (d.items.isNotEmpty()) Row {
-                                val tint = if (d.items.any { it.status == BillStatus.Overdue }) c.warningText else c.inkMuted
-                                d.items.take(3).forEach { StatusMark(markOf(it.status, it.projected), tint) }
+                    // Equal-height cells (PDF page 29). Today has a ring, the chosen day an ink fill; bills are small drawn marks under the number.
+                    Box(
+                        Modifier.weight(1f).height(Dimens.CalendarCell).then(if (d != null && d.items.isNotEmpty()) Modifier.pressClickable(role = Role.Button, onClickLabel = "Show bills") { day = d } else Modifier),
+                        contentAlignment = Alignment.TopCenter,
+                    ) {
+                        if (d != null) Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            val chosen = day?.date == d.date
+                            Box(
+                                Modifier.size(Dimens.CalendarDay).clip(CircleShape).background(if (chosen) c.ink else Color.Transparent)
+                                    .then(if (d.date == today && !chosen) Modifier.border(Dimens.ChipBorderSelected, c.ink, CircleShape) else Modifier),
+                                contentAlignment = Alignment.Center,
+                            ) { Text(d.date.dayOfMonth.toString(), style = ChittaTheme.type.body, color = if (chosen) c.background else c.ink) }
+                            if (d.items.isNotEmpty()) Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Space1)) {
+                                d.items.take(3).forEach { StatusMark(markOf(it.status, it.projected), if (it.status == BillStatus.Overdue && !it.projected) c.warningText else c.ink) }
                             }
                         }
                     }
@@ -353,10 +420,12 @@ private fun CalendarTab(vm: PlanViewModel, ui: PlanUi) {
             }
         }
         Spacer(Modifier.height(Dimens.Gap3))
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
-            listOf(Mark.Due to "due", Mark.Overdue to "overdue", Mark.Paid to "paid", Mark.Skipped to "skipped", Mark.Later to "comes later").forEach { (m, w) ->
-                StatusMark(m, c.inkMuted)
-                Text(w, style = ChittaTheme.type.label, color = c.inkMuted)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap3), verticalArrangement = Arrangement.spacedBy(Dimens.Gap1)) {
+            listOf<Pair<Mark?, String>>(Mark.Due to "due", Mark.Overdue to "overdue", Mark.Paid to "paid", Mark.Skipped to "skipped", Mark.Later to "comes later", null to "today").forEach { (m, w) ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.Space1)) {
+                    if (m != null) StatusMark(m, c.inkMuted) else Box(Modifier.size(Dimens.IconSmall).border(Dimens.Hairline, c.inkMuted, CircleShape))
+                    Text(w, style = ChittaTheme.type.label, color = c.inkMuted)
+                }
             }
         }
     }
@@ -375,9 +444,13 @@ private fun CalendarTab(vm: PlanViewModel, ui: PlanUi) {
                             AmountText(Paise(Math.abs(item.amount.value)))
                         }
                         Text(when { item.projected -> "Comes after the one before it is paid"; else -> item.status.name.lowercase().replaceFirstChar { it.uppercase() } }, style = ChittaTheme.type.label, color = c.inkMuted)
-                        if (t != null && !item.projected) Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
+                        if (t != null && !item.projected) {
+                            Spacer(Modifier.height(Dimens.Gap2))
                             when (item.status) {
-                                BillStatus.Upcoming, BillStatus.Overdue -> { ChittaButton("Pay", { vm.pay(t); day = null }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth()); ChittaButton("Skip", { vm.skip(t); day = null }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth()) }
+                                BillStatus.Upcoming, BillStatus.Overdue -> ButtonPair(
+                                    first = { m -> ChittaButton("Pay", { vm.pay(t); day = null }, m, confirmHaptic = true) },
+                                    second = { m -> ChittaButton("Skip", { vm.skip(t); day = null }, m, kind = ButtonKind.Secondary) },
+                                )
                                 BillStatus.Paid -> ChittaButton("Undo payment", { vm.undoPaid(t); day = null }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
                                 BillStatus.Skipped -> ChittaButton("Undo skip", { vm.undoSkip(t); day = null }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
                             }

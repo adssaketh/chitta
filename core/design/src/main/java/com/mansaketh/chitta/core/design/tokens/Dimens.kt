@@ -122,6 +122,9 @@ object Dimens {
     /** One day cell of the bill calendar. */
     val CalendarCell = 52.dp
 
+    /** The ring or fill behind a day number on the bill calendar (today, chosen); the bill marks sit under it inside [CalendarCell]. */
+    val CalendarDay = 34.dp
+
     /** The width of a quiet Close button over a full-screen picture. */
     val CloseWidth = 120.dp
 

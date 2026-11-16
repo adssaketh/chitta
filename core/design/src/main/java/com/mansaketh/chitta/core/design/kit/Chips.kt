@@ -71,6 +71,35 @@ fun CategoryChip(
 }
 
 /**
+ * A chip that opens a picker (Range, Accounts on Insights; PDF page 31): 40 dp high, 1 dp rule border, surface fill, the current choice in ink and
+ * a muted caret (18). It is a button, not a pick-one choice, so TalkBack does not call it a radio button. The text shortens before the caret does.
+ */
+@Composable
+fun PickerChip(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onClickLabel: String? = null,
+) {
+    val c = ChittaTheme.colors
+    HitBox(onClick = onClick, modifier = modifier, role = Role.Button, onClickLabel = onClickLabel) {
+        Row(
+            Modifier
+                .heightIn(min = Dimens.ChipHeight)
+                .clip(Shapes.Control)
+                .background(c.surface)
+                .border(Dimens.Hairline, c.rule, Shapes.Control)
+                .padding(horizontal = Dimens.Space3),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(text, style = ChittaTheme.type.chip, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+            Spacer(Modifier.width(Dimens.InlineGap))
+            Icon(ChittaIcons.CaretDown, contentDescription = null, tint = c.inkMuted, modifier = Modifier.size(Dimens.IconCaret))
+        }
+    }
+}
+
+/**
  * An active filter: 36 dp high, surface fill, 14 sp text, a muted x (14) at the end. Tapping removes it. TalkBack reads "Remove filter: [label]".
  */
 @Composable
