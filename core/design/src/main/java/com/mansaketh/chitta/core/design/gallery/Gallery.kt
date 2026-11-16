@@ -58,6 +58,8 @@ import com.mansaketh.chitta.core.design.components.ListRow
 import com.mansaketh.chitta.core.design.components.LoadingPlaceholder
 import com.mansaketh.chitta.core.design.components.MonthHeader
 import com.mansaketh.chitta.core.design.components.MonthRule
+import com.mansaketh.chitta.core.design.components.MonthRuleThin
+import com.mansaketh.chitta.core.design.components.RingSwatchLegend
 import com.mansaketh.chitta.core.design.components.NavDestination
 import com.mansaketh.chitta.core.design.components.RingLegend
 import com.mansaketh.chitta.core.design.components.SheetSurface
