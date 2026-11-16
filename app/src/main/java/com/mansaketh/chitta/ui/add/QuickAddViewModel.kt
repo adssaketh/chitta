@@ -6,6 +6,8 @@ import com.mansaketh.chitta.core.database.AccountRepository
 import com.mansaketh.chitta.core.database.CategoryRepository
 import com.mansaketh.chitta.core.database.LedgerRepository
 import com.mansaketh.chitta.core.database.PinnedRepository
+import com.mansaketh.chitta.core.database.PlanRepository
+import com.mansaketh.chitta.data.UiPrefs
 import com.mansaketh.chitta.core.database.RatesRepository
 import com.mansaketh.chitta.core.database.TitleRepository
 import com.mansaketh.chitta.core.domain.*
@@ -34,6 +36,8 @@ data class QuickAddUi(
     val problem: String? = null,
     val preview: Paise? = null,
     val rateText: String? = null,
+    /** What Save would record, in the account's currency (the amount in "Save ₹486"). Null until the draft is ready. */
+    val saveAmount: Paise? = null,
 )
 
 data class CategoryChoice(val category: Category, val parentName: String? = null)
@@ -47,6 +51,8 @@ class QuickAddViewModel @Inject constructor(
     ruleRepo: com.mansaketh.chitta.core.database.RuleRepository,
     private val pinnedRepo: PinnedRepository,
     private val ratesRepo: RatesRepository,
+    private val plan: PlanRepository,
+    private val prefs: UiPrefs,
     private val fetcher: RateFetcher,
     private val actions: EntryActions,
     householdView: com.mansaketh.chitta.cloud.HouseholdView,
@@ -101,8 +107,26 @@ class QuickAddViewModel @Inject constructor(
             ready = result is QuickAddResult.Ready,
             problem = (result as? QuickAddResult.Invalid)?.reason,
             preview = preview, rateText = rateText,
+            saveAmount = (result as? QuickAddResult.Ready)?.entries?.firstOrNull()?.let { Paise(Math.abs(it.amount)) },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), QuickAddUi(QuickAddDraft(dateMs = clock.nowMs())))
+
+    private data class PlanInputs(val budgets: List<Budget>, val objectives: List<Objective>, val sinking: List<SinkingFund>)
+    private data class HomeChoices(val cash: Set<String>, val preferCash: Boolean, val heroId: String?)
+    private val planInputs = combine(plan.observeBudgets(), plan.observeObjectives(), plan.observeSinkingFunds()) { b, o, s -> PlanInputs(b, o, s) }
+    private val homeChoices = combine(prefs.cashAccounts, prefs.preferCash, prefs.heroBudgetId) { c, p, h -> HomeChoices(c, p, h) }
+
+    /**
+     * "Safe to spend after this" (PDF p.15): the figure Home leads with, as it would be once this expense is saved. Null for income and transfers,
+     * for an amount that cannot be saved yet, and when Home is not leading with Safe to spend (see [QuickAddFigures]).
+     */
+    val safeAfter: StateFlow<Paise?> = combine(ui, base, planInputs, homeChoices) { u, b, p, h ->
+        if (u.draft.type != EntryType.Expense || !u.ready) return@combine null
+        val d = u.draft.copy(rate = u.rateText.takeIf { u.draft.originalCurrency != null })
+        val built = QuickAdd.build(d, u.accounts, ids::newId) as? QuickAddResult.Ready ?: return@combine null
+        QuickAddFigures.safeAfter(b.entries, built.entries, p.budgets, p.objectives, b.categories, b.accounts, p.sinking, h.cash, h.preferCash, h.heroId, clock.nowMs(), clock.zone())
+    }.flowOn(kotlinx.coroutines.Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** Opens a clean sheet, optionally of a given type or filled from a pinned entry. */
     fun reset(type: EntryType = EntryType.Expense, pin: PinnedEntry? = null) {

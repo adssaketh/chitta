@@ -34,6 +34,7 @@ import com.mansaketh.chitta.core.design.components.pressScale
 import com.mansaketh.chitta.core.design.components.rememberOnce
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
+import com.mansaketh.chitta.core.design.theme.rupeeAware
 import com.mansaketh.chitta.core.design.tokens.Dimens
 import com.mansaketh.chitta.core.design.tokens.Shapes
 
@@ -110,7 +111,7 @@ fun ChittaButton(
             Icon(leading, contentDescription = null, tint = content, modifier = Modifier.size(Dimens.GlyphIcon))
             Spacer(Modifier.width(Dimens.Space2))
         }
-        Text(text, style = textStyle, color = content, textAlign = TextAlign.Center)
+        Text(text.rupeeAware(), style = textStyle, color = content, textAlign = TextAlign.Center)
     }
 }
 

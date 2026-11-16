@@ -51,6 +51,18 @@ import com.mansaketh.chitta.core.design.tokens.Dimens
  * Sheets and groups (v8 kit, PDF pages 16 and 36).
  */
 
+/** The sheet handle on its own (36 x 4, rule colour), for a sheet whose page draws no title (Quick Add, PDF p.15). */
+@Composable
+fun SheetHandle(modifier: Modifier = Modifier) {
+    Box(
+        modifier
+            .width(Dimens.SheetHandleSizeW)
+            .height(Dimens.SheetHandleSizeH)
+            .clip(RoundedCornerShape(Dimens.SheetHandleRadius))
+            .background(ChittaTheme.colors.rule),
+    )
+}
+
 /**
  * The head of every sheet (v8 §4.19): the handle (36 x 4, rule colour), 6 dp under it the title in Fraunces 22 medium, and an optional Close
  * button at the end. It draws its own handle, so a sheet that uses it is hosted by `SheetSurface(handle = false)`.
@@ -63,14 +75,7 @@ fun SheetHeader(
 ) {
     val c = ChittaTheme.colors
     Column(modifier.fillMaxWidth()) {
-        Box(
-            Modifier
-                .align(Alignment.CenterHorizontally)
-                .width(Dimens.SheetHandleSizeW)
-                .height(Dimens.SheetHandleSizeH)
-                .clip(RoundedCornerShape(Dimens.SheetHandleRadius))
-                .background(c.rule),
-        )
+        SheetHandle(Modifier.align(Alignment.CenterHorizontally))
         Spacer(Modifier.height(Dimens.SheetHandleGap))
         Row(Modifier.fillMaxWidth().heightIn(min = Dimens.TouchTarget), verticalAlignment = Alignment.CenterVertically) {
             Text(

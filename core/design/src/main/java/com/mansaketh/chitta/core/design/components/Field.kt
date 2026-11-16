@@ -19,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.tokens.Dimens
 import com.mansaketh.chitta.core.design.tokens.Shapes
@@ -31,20 +33,26 @@ import com.mansaketh.chitta.core.design.tokens.Shapes
 fun ChittaField(
     value: String,
     onValueChange: (String) -> Unit,
-    label: String,
+    label: String?,
     modifier: Modifier = Modifier,
     placeholder: String = "",
     singleLine: Boolean = true,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     /** Lets a screen open the keyboard straight away. */
     focusRequester: androidx.compose.ui.focus.FocusRequester? = null,
+    /** The box's least height. Quick Add's title is 48 (PDF p.15); every other field keeps 56. */
+    minHeight: androidx.compose.ui.unit.Dp = Dimens.ButtonHeight,
+    /** What TalkBack calls the field when [label] is null (no label is drawn above it). */
+    description: String? = null,
 ) {
     val c = ChittaTheme.colors
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     Column(modifier.fillMaxWidth()) {
-        Text(label, style = ChittaTheme.type.labelMedium, color = c.inkMuted)
-        Box(Modifier.padding(top = Dimens.Gap2))
+        if (label != null) {
+            Text(label, style = ChittaTheme.type.labelMedium, color = c.inkMuted)
+            Box(Modifier.padding(top = Dimens.Gap2))
+        }
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
@@ -53,12 +61,14 @@ fun ChittaField(
             textStyle = ChittaTheme.type.body.copy(color = c.ink),
             cursorBrush = SolidColor(c.ink),
             interactionSource = interaction,
-            modifier = Modifier.fillMaxWidth().then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier),
+            modifier = Modifier.fillMaxWidth()
+                .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
+                .then(if (label == null && description != null) Modifier.semantics { contentDescription = description } else Modifier),
             decorationBox = { inner ->
                 Box(
                     Modifier
                         .fillMaxWidth()
-                        .heightIn(min = Dimens.ButtonHeight)
+                        .heightIn(min = minHeight)
                         .clip(Shapes.Control)
                         .background(c.surface)
                         .fieldBorder(focused, c.mark, c.ink)

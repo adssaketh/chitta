@@ -227,6 +227,11 @@ object Dimens {
     /** Inside a Note: all four sides. */
     val NoteInner = Space4
 
+    /** Quick Add (PDF p.15): the caret after the typed amount, and how far the keypad and the top-right icons reach into the side margins. */
+    val AmountCaretWidth = 2.dp
+    val KeypadBleed = Space3
+    val TopActionsBleed = Space6
+
     /** A pressed entry row or chip keeps its hit area at least this tall even when it draws smaller. */
     val HitMin = TouchTarget
 }

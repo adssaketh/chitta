@@ -302,3 +302,21 @@ Built, not compiled locally and not verified on a phone. Branch `ui-06-safe-to-s
 10. Add button hidden and bottom bar covered while a sheet is open: built for every sheet.
 Known leftover: Customise shows the calendar icon for both Plan and the heatmap (screen 29).
 
+## Screen 07 Quick Add (PDF p.15), 16 Nov 2026, branch `ui-07-quick-add`, exact match rule
+
+Checklist (Paper and Ink). "Built" means written to the page; nothing is marked "matches" because it has not been checked on a phone.
+| # | Element on p.15 | State |
+| --- | --- | --- |
+| 1 | Handle only, no title, no close button | Built |
+| 2 | Expense / Income / Transfer at the top left (was squeezed to "Expense | Inco") | Built, bug fixed |
+| 3 | Pin and Split icons at the top right | Built; always drawn, dimmed until usable; glyphs end 12 dp from the screen edge (PDF: touching it) |
+| 4 | Small muted ₹, hero figure, caret (sindoor Paper, ink Ink) | Built |
+| 5 | "Safe to spend after this: ₹…" | Built (new); expense only |
+| 6 | Title field, no label, 48 dp | Built |
+| 7 | Category chips with coloured icons, selected 1.5 dp ink, no "Category" label, run under the screen edge | Built |
+| 8 | Summary line "account · date · who sees it" and "More options" | Built |
+| 9 | Hairline, then keypad without tiles, muted operators | Built |
+| 10 | Save in sindoor with the amount ("Save ₹486"), brighter in Ink | Built |
+| 11 | No scrolling at the default text size; sheet about 74% of the screen | Built as content height (cap 80%); about 40 dp taller than the page because of the keyboard link |
+Known leftovers: the Home page behind the sheet still shows the hide-amounts eye (kept on Screen 05); the PDF draws no empty, foreign-currency, transfer or large-text state, so those follow the same styles by judgement; Customise shows the calendar icon for both Plan and the heatmap.
+

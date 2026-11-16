@@ -1,5 +1,18 @@
 # Changelog
 
+## Screen 07 Quick Add to PDF p.15 (16 Nov 2026) - on branch `ui-07-quick-add`
+- The sheet follows the page: the handle only (no "Add a transaction" title, no close button; the title is kept as a hidden screen-reader title, and the scrim and Back still close it), then Expense / Income / Transfer at the top left with Pin and Split icons at the top right.
+- Fixed: the type switch no longer squeezes to "Expense | Inco" with Transfer missing. Income and Transfer are reachable again, with or without a category chosen.
+- The amount is a small muted ₹, the figure in the hero size and a solid caret (sindoor in Paper, ink in Ink). Under it: "Safe to spend after this: ₹27,016" for an expense, worked out with Home's own figure plus the entry (it shows nothing when Home leads with the cash check or there is no budget).
+- The title field has no label above it (a "Title" placeholder inside) and is 48 dp tall. The "Category" label is gone; the chips scroll under the screen edge.
+- Account, date and who sees it are one muted summary line ("HDFC UPI · Today · Everyone"), each part opening its own picker; "More options" sits at the end of the line and opens Note and Currency in place. Currency also shows by itself when it is not the account's, and Note when one is already there. "Who sees it" appears only when sharing is on. A transfer reads "From → To · Today".
+- The keypad has no key tiles: plain figures, muted operators, a hairline above it. Save is the sindoor button with the amount in it ("Save ₹486"); the keypad and Save stay in place and only the form above them scrolls.
+- Pin and Split are always drawn and dimmed until they can be used (Pin needs a category; Split needs an amount that can be saved).
+- Kept though p.15 does not draw them (the master prompt needs them): the Pinned strip and title suggestions between the title and the chips, and "Use the phone keyboard" as a small link between the keypad and Save.
+- Currency codes show in capitals.
+- New: `SheetHandle`, `IconAction(enabled)`, `ChittaField(label = null, minHeight)`, tokens `AmountCaretWidth`, `KeypadBleed`, `TopActionsBleed`, `QuickAddFigures` (unit-tested with the p.15 numbers).
+- Not compiled locally (no Android SDK here); CI builds and re-records the screenshots. Not verified on a phone.
+
 ## Screen 06 Safe to spend, explained, to PDF p.14 (16 Nov 2026) - on branch `ui-06-safe-to-spend-explained`
 - The ⓘ sheet follows the page: title "How Safe to spend is worked out" with a Close button, the subtitle with an "As of" time, three two-line rows (November budget with its dates, Spent so far, Bills still to come with the bill count), a solid ink rule, then Safe to spend with "÷ 18 days = ₹1,528 a day" and the Cash check as a note naming the spending accounts.
 - Amounts in the sheet are whole rupees, as on the page and on Home. A taken-off figure has a muted "–" before it.

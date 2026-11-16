@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
@@ -44,7 +45,8 @@ private val OPERATOR_NAMES = mapOf('+' to "plus", '−' to "minus", '×' to "tim
 
 /**
  * Full-width number pad with calculator operators. Digits on the left, operators in a muted column on the
- * right. Keys are at least 56 dp tall; each key gives a light tick (turn off with [haptics]).
+ * right. Keys have no tile (PDF p.15): plain figures, 48 dp tall with a 4 dp gap; a pressed key shows the rule colour.
+ * Each key gives a light tick (turn off with [haptics]).
  * Only sends keys: the calculator itself is built in Phase 4.
  */
 @Composable
@@ -92,14 +94,14 @@ private fun RowScope.Key(label: String, description: String, muted: Boolean = fa
     Box(
         Modifier
             .weight(1f)
-            .heightIn(min = Dimens.ButtonHeight)
+            .heightIn(min = Dimens.TouchTarget)
             .clip(Shapes.Control)
-            .background(if (pressed) c.rule else c.background)
+            .background(if (pressed) c.rule else Color.Transparent)
             .clickable(interactionSource = source, indication = null, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, style = ChittaTheme.type.amount, color = if (muted) c.inkMuted else c.ink)
+        Text(label, style = if (muted) ChittaTheme.type.amountSmall else ChittaTheme.type.amountTile, color = if (muted) c.inkMuted else c.ink)
     }
 }
 
@@ -111,9 +113,9 @@ private fun RowScope.IconKey(description: String, onClick: () -> Unit) {
     Box(
         Modifier
             .weight(1f)
-            .heightIn(min = Dimens.ButtonHeight)
+            .heightIn(min = Dimens.TouchTarget)
             .clip(Shapes.Control)
-            .background(if (pressed) c.rule else c.background)
+            .background(if (pressed) c.rule else Color.Transparent)
             .clickable(interactionSource = source, indication = null, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {

@@ -1,6 +1,13 @@
 package com.mansaketh.chitta.core.design.components
 
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import com.mansaketh.chitta.core.design.tokens.Dimens
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -62,7 +69,10 @@ fun AmountText(
     )
 }
 
-/** Live display of the amount being typed on the keypad, grouped as you type. */
+/**
+ * Live display of the amount being typed on the keypad, grouped as you type (Quick Add, PDF p.15): a small muted rupee sign, the figure in
+ * the hero size, and a solid caret after it (sindoor in Paper, ink in Ink). The sign, figure and caret sit on one baseline.
+ */
 @Composable
 fun AmountEntryText(
     raw: String,
@@ -70,14 +80,36 @@ fun AmountEntryText(
     style: TextStyle = ChittaTheme.type.amountHero,
     color: Color = ChittaTheme.colors.ink,
 ) {
-    val shown = IndianFormat.RUPEE + IndianFormat.entry(raw.ifEmpty { "0" })
-    TabularText(
-        text = shown,
-        modifier = modifier.clearAndSetSemantics { contentDescription = "amount $raw" },
-        style = style,
-        color = color,
-    )
+    val c = ChittaTheme.colors
+    val figure = IndianFormat.entry(raw.ifEmpty { "0" })
+    val caretHeight = with(LocalDensity.current) { (style.fontSize * CARET_SHARE).toDp() }
+    Row(modifier.clearAndSetSemantics { contentDescription = "amount $raw" }) {
+        Text(
+            IndianFormat.RUPEE,
+            style = ChittaTheme.type.amountRow,
+            color = c.inkMuted,
+            modifier = Modifier.alignByBaseline().padding(end = Dimens.Space1),
+        )
+        TabularText(text = figure, modifier = Modifier.alignByBaseline(), style = style, color = color)
+        Caret(caretHeight, if (c.isDark) c.ink else c.sindoor)
+    }
 }
+
+/** The caret: a 2 dp bar whose bottom is its baseline, so it lines up with the figure's baseline in the row. */
+@Composable
+private fun RowScope.Caret(height: Dp, color: Color) {
+    Layout(
+        content = {},
+        modifier = Modifier.padding(start = Dimens.Space1).alignByBaseline().drawBehind { drawRect(color) },
+    ) { _, _ ->
+        val w = Dimens.AmountCaretWidth.roundToPx()
+        val h = height.roundToPx()
+        layout(w, h, alignmentLines = mapOf(FirstBaseline to h)) {}
+    }
+}
+
+/** The caret is this share of the figure's font size tall: the height of its digits. */
+private const val CARET_SHARE = 0.72f
 
 /** What the last measure pass decided; the draw pass reads it. Plain fields, not snapshot state. */
 private class TabularPlan {
