@@ -3,6 +3,7 @@
 ## Screen 09 Search, bug fix (16 Nov 2026) - on branch `ui-09-search-cursor`
 - Fixed: typing in the Ledger search box scrambled the words (typing "happy" gave "appyh", "Saketh" gave "akeths"), so the list showed "Nothing matches" or the wrong rows. The cursor jumped to the start after the first letter. The box now keeps its own text and cursor; the clear button still empties it. The search rules themselves are unchanged. Not run on a phone yet.
 - Fixed: with the keyboard open the Ledger list could barely scroll, because the pinned header (search, Everyone / Mine, tabs, month) left room for about one row. The first drag on the list now closes the keyboard. Nothing was removed or moved.
+- While the keyboard is open, "Search tips", Everyone / Mine and the All / Spending / Income / Upcoming tabs are hidden so the list has room; they come back when the keyboard closes.
 
 ## Screen 07 Quick Add to PDF p.15 (16 Nov 2026) - on branch `ui-07-quick-add`
 - The sheet follows the page: the handle only (no "Add a transaction" title, no close button; the title is kept as a hidden screen-reader title, and the scrim and Back still close it), then Expense / Income / Transfer at the top left with Pin and Split icons at the top right.
