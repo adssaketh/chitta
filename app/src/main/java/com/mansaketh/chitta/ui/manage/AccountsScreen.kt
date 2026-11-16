@@ -12,6 +12,7 @@ import com.mansaketh.chitta.core.design.kit.ValueRow
 import com.mansaketh.chitta.core.design.kit.TopBarDetail
 import com.mansaketh.chitta.core.design.kit.ButtonKind
 import com.mansaketh.chitta.core.design.kit.ChittaButton
+import com.mansaketh.chitta.core.design.kit.ButtonPair
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -75,12 +76,14 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                     AmountText(total, style = ChittaTheme.type.amountHero, alwaysShowPaise = true)
                     if (live.size != rupee.size) FootNote("Accounts in other currencies are listed below and not added in.")
                     notice?.let { FootNote(it) }
-                    Row(horizontalArrangement = Arrangement.spacedBy(Dimens.InlineGap), modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.Gap3)) {
-                        ChittaButton("Move money", onTransfer, modifier = Modifier.weight(1f), kind = ButtonKind.Secondary, enabled = live.size >= 2)
-                        ChittaButton("Exchange rates", { sheet = AccSheet.Rates }, modifier = Modifier.weight(1f), kind = ButtonKind.Secondary)
-                    }
-                    HairlineRule()
+                    ButtonPair(
+                        first = { m -> ChittaButton("Move money", onTransfer, m, kind = ButtonKind.Secondary, enabled = live.size >= 2) },
+                        second = { m -> ChittaButton("Exchange rates", { sheet = AccSheet.Rates }, m, kind = ButtonKind.Secondary) },
+                        modifier = Modifier.padding(vertical = Dimens.Gap3),
+                    )
                 }
+                // Headed groups (PDF page 32): the accounts first, then deposits, investments and what Net worth counts.
+                item { Section("Accounts", first = true) }
                 if (ui.loading) item { LoadingPlaceholder() }
                 if (!ui.loading && live.isEmpty()) item { EmptyState(FeatureIcons.tab(TabKey.Accounts), null, "No accounts yet. Add one to start.", "Add an account", { sheet = AccSheet.Add }) }
                 items(live, key = { it.id }) { a -> AccountRow(a, ui.balances[a.id] ?: Paise.ZERO, ui.cards[a.id]) { sheet = AccSheet.Actions(a) } }
@@ -88,7 +91,6 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                     Section("Archived", note = if (showArchived) "Hide" else "Show", onNote = { showArchived = !showArchived })
                 }
                 if (showArchived) items(archived, key = { "x-" + it.id }) { a -> AccountRow(a, ui.balances[a.id] ?: Paise.ZERO, null) { sheet = AccSheet.Actions(a) } }
-                item { Spacer(Modifier.height(Dimens.SectionGap)) }
                 // Fixed deposits (Phase 8b). Worth shown is today's value; Net worth counts them only when switched on.
                 item { Section("Fixed deposits", note = "Add", onNote = { sheet = AccSheet.DepositEdit(null) }) }
                 if (ui.deposits.isEmpty() && !ui.loading) item {
@@ -98,6 +100,15 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                     DepositRow(d, ui.nowMs, ui.zone) { sheet = AccSheet.Deposit(d) }
                 }
                 sharedDepositSection(sharedViews.deposits, ui.nowMs, ui.zone) { sheet = AccSheet.SharedDeposit(it) }
+                // Investments: mutual funds (Phase 8c) and gold, EPF and PPF typed in by hand (Phase 8i) each have their own screen.
+                item { Section("Investments") }
+                item {
+                    val t = com.mansaketh.chitta.core.domain.MutualFunds.totals(ui.funds)
+                    ValueRow("Mutual funds", if (ui.funds.isEmpty()) "None yet" else if (t.priced > 0) maskedRupees(t.value) else "${t.count} ${if (t.count == 1) "fund" else "funds"}", onClick = onOpenFunds)
+                }
+                item { NavRow("Gold, EPF and PPF", onOpenAssets) }
+                // The two Net worth switches share one headed group.
+                item { Section("Net worth includes") }
                 if (ui.deposits.isNotEmpty()) {
                     val open = ui.deposits.count { !it.closed }
                     item {
@@ -105,13 +116,6 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                         FootNote(if (ui.nwDeposits) "$open open at today's value, as of ${dateText(ui.nowMs, ui.zone)}." else "Off, so Net worth leaves them out.")
                     }
                 }
-                // Mutual funds (Phase 8c) have their own screen.
-                item {
-                    val t = com.mansaketh.chitta.core.domain.MutualFunds.totals(ui.funds)
-                    ValueRow("Mutual funds", if (ui.funds.isEmpty()) "None yet" else if (t.priced > 0) maskedRupees(t.value) else "${t.count} ${if (t.count == 1) "fund" else "funds"}", onClick = onOpenFunds)
-                }
-                // Gold, EPF and PPF typed in by hand (Phase 8i) have their own screen.
-                item { NavRow("Gold, EPF and PPF", onOpenAssets) }
                 item { SwitchRow("Count instalment loans in Net worth", ui.nwInstalments, { vm.setNetWorthInstalments(it) }) }
                 // Cards read from bank messages (Phase 8b).
                 val owed = CardDues.owedByCard(ui.dues)

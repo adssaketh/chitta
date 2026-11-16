@@ -42,6 +42,7 @@ import com.mansaketh.chitta.core.design.kit.MessageBar
 import com.mansaketh.chitta.core.design.kit.MessageKind
 import com.mansaketh.chitta.core.design.kit.MonthStepper
 import com.mansaketh.chitta.core.design.kit.NavRow
+import com.mansaketh.chitta.core.design.kit.PickerChip
 import com.mansaketh.chitta.core.design.kit.Note
 import com.mansaketh.chitta.core.design.kit.Section
 import com.mansaketh.chitta.core.design.kit.Segmented
@@ -178,6 +179,10 @@ fun GalleryKitControls() = KitSection("Kit: buttons, chips and steppers") {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Dimens.Space2), itemVerticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             filters.forEach { f -> FilterChip(f, { filters = filters - f }) }
             if (filters.isNotEmpty()) ChittaButton("Clear all", { filters = emptyList() }, kind = ButtonKind.Link)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Space2)) {
+            PickerChip("1-12 Nov", {}, Modifier.weight(1f, fill = false))
+            PickerChip("All accounts", {}, Modifier.weight(1f, fill = false))
         }
         Segmented(listOf("Bars", "Donut"), bars, { bars = it })
         Segmented(listOf("Expense", "Income", "Transfer"), kind, { kind = it })

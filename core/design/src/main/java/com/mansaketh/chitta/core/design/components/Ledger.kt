@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -217,6 +218,8 @@ fun LedgerBar(
     fraction: Float,
     modifier: Modifier = Modifier,
     accent: Boolean = false,
+    /** The category's colour as a round dot before the name (v8 PDF page 31). The bar itself stays ink. */
+    dot: Color? = null,
 ) {
     val c = ChittaTheme.colors
     val shown = fraction.coerceIn(0f, 1f)
@@ -231,7 +234,13 @@ fun LedgerBar(
         verticalArrangement = Arrangement.spacedBy(Dimens.Gap2),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(label, style = ChittaTheme.type.body, color = c.ink)
+            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                if (dot != null) {
+                    Box(Modifier.size(Dimens.Space3).background(dot, CircleShape))
+                    Spacer(Modifier.width(Dimens.Space2))
+                }
+                Text(label, style = ChittaTheme.type.body, color = c.ink)
+            }
             AmountText(amount, style = ChittaTheme.type.amountSmall)
         }
         Box(Modifier.fillMaxWidth().height(Dimens.BarHeight).background(c.rule)) {

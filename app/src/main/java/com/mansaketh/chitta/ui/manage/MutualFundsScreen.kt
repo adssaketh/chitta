@@ -3,6 +3,7 @@ package com.mansaketh.chitta.ui.manage
 import com.mansaketh.chitta.core.design.kit.SheetHeader
 import android.net.Uri
 import com.mansaketh.chitta.core.design.kit.SwitchRow
+import com.mansaketh.chitta.core.design.kit.NavRow
 import com.mansaketh.chitta.core.design.kit.EmptyState
 import com.mansaketh.chitta.core.design.kit.Section
 import com.mansaketh.chitta.core.design.kit.ValueRow
@@ -350,14 +351,15 @@ private fun ImportHoldingsSheet(nps: Boolean, onStatement: () -> Unit, onByHand:
         )
         Spacer(Modifier.height(Dimens.Gap2))
         HairlineRule()
+        // Every source has a leading icon (PDF page 34). The Zerodha row does nothing yet, so it stays a plain row with no caret.
         if (nps) {
-            ValueRow("NPS statement (PDF from the CRA)", "Choose file", onClick = onStatement)
-            ValueRow("By hand", "Add an account", onClick = onByHand)
+            NavRow("NPS statement (PDF from the CRA)", onStatement, icon = ChittaIcons.CatShieldCheck, value = "Choose file")
+            NavRow("By hand", onByHand, icon = ChittaIcons.Pencil, value = "Add an account")
         } else {
-            ValueRow("CAMS, KFintech or MFCentral summary (PDF)", "Choose file", onClick = onStatement)
-            ValueRow("Holdings report (Excel, .xlsx)", "Choose file", onClick = onStatement)
+            NavRow("CAMS, KFintech or MFCentral summary (PDF)", onStatement, icon = ChittaIcons.CatArticle, value = "Choose file")
+            NavRow("Holdings report (Excel, .xlsx)", onStatement, icon = ChittaIcons.CatChartBar, value = "Choose file")
             ValueRow("Zerodha Console file", "Not built yet")
-            ValueRow("By hand", "Add a fund", onClick = onByHand)
+            NavRow("By hand", onByHand, icon = ChittaIcons.Pencil, value = "Add a fund")
         }
     }
 }

@@ -1,5 +1,19 @@
 # Changelog
 
+## Phase 11d: plan and review screens (16 Nov 2026) - on branch `phase-11d-plan-review`
+- Look only. Screens 16 to 26 of the v8 design: Budgets, Budget detail, Goals, Loans, Bills, Bill calendar, Pay a bill, Insights, Accounts, Mutual funds import.
+- Plan rows with a gauge: name and stamp, the gauge, then the figure with its small print under it (also used on Home).
+- Loans: every loan row is the shared entry row with the loan glyph; the repayment gauge sits under it. "Shared with you" keeps its heading.
+- Bills: each bill is an entry row with its category glyph. One "Add a bill" at a time (your request): with no bills it is the empty state's button, with bills it is the one at the bottom; "Reminders and auto-pay" is a link directly under it, then "Not subscriptions (n)" as a link. "Show n more" is a link.
+- Bill calendar: equal-height cells, today ringed, the chosen day filled, bill marks under the number, a legend that includes Today, Pay / Skip as a button pair.
+- Pay a bill (and the other amount-and-account sheets): Close in the header and a Cancel / confirm pair.
+- Insights: Range and Accounts are two chips on one line; Bars / Donut is a small switch; each bar has its category colour dot (bars stay ink); donut legend dots are round.
+- Accounts: headed groups (Accounts, Fixed deposits, Investments, Net worth includes); "Move money" / "Exchange rates" are a button pair.
+- Import holdings: each source has a leading icon.
+- Delete this budget / goal / loan / fund is the red-text Danger button.
+- New kit pieces: `PickerChip`, a `dot` on `LedgerBar`, `Dimens.CalendarDay`.
+- Not compiled locally (no Android SDK here); GitHub Actions is the first build.
+
 ## Phase 11c: daily screens (16 Nov 2026) - on branch `phase-11c-daily`
 - Look only. Screens 05 to 15 of the v8 design: Home, Quick Add, Ledger, Entry detail, Split, Delete confirm.
 - Home: Coming up rows carry the date in the margin and the category glyph; Budgets, Goals and Loans use the Plan row with a gauge; the cash-check explanation is a Note.

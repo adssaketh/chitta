@@ -124,7 +124,7 @@ fun BudgetDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit
             if (b.addedTransactionsOnly) Text("This was an \"added only\" budget in the old Paddhu Pusthakam app. This app cannot tell which entries were added to it, so it counts every matching entry.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap3))
             Text("Counts paid entries only. Lent and borrowed money is ${if (Budgets.filterOn(b.filters, BudgetFilter.INCLUDE_DEBT_AND_CREDIT)) "included" else "left out"}.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
             Spacer(Modifier.height(Dimens.Gap4))
-            ChittaButton("Delete this budget", { deleting = true }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
+            ChittaButton("Delete this budget", { deleting = true }, kind = ButtonKind.Danger, modifier = Modifier.fillMaxWidth())
         }
     }
     editing?.let { l ->
@@ -174,7 +174,7 @@ fun GoalDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit: 
             linked.forEach { EntryLine(it, ui) { onOpenEntry(it.id) } }
             Text("Counts paid entries linked to this goal.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
             Spacer(Modifier.height(Dimens.Gap4))
-            ChittaButton("Delete this goal", { deleting = true }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
+            ChittaButton("Delete this goal", { deleting = true }, kind = ButtonKind.Danger, modifier = Modifier.fillMaxWidth())
         }
         if (adding) AmountAccountSheet(if (o.income) "Add money" else "Add a payment", "Amount", ui.accounts, o.accountId, confirmLabel = "Save", onSave = { amount, account, problem -> if (vm.contribute(o, amount, account, problem)) adding = false }, onDismiss = { adding = false })
         if (deleting) ConfirmSheet("Delete ${o.name}?", listOf("The ${linked.size} linked ${if (linked.size == 1) "entry stays" else "entries stay"} in your ledger but are no longer linked to a goal.", "You can undo this for 10 seconds."), "Delete", { vm.deleteObjective(id); deleting = false; onBack() }, { deleting = false })
@@ -244,7 +244,7 @@ fun LoanDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit: 
                 linked.forEach { EntryLine(it, ui) { onOpenEntry(it.id) } }
             }
             Spacer(Modifier.height(Dimens.Gap4))
-            ChittaButton("Delete this loan", { deleting = true }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
+            ChittaButton("Delete this loan", { deleting = true }, kind = ButtonKind.Danger, modifier = Modifier.fillMaxWidth())
         }
         when (action) {
             "repay", "more" -> {

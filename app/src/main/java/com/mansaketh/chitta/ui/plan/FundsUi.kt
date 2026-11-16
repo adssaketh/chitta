@@ -122,7 +122,7 @@ fun FundSheet(
                 }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
                 if (existing != null) {
                     Spacer(Modifier.height(Dimens.Gap2))
-                    ChittaButton("Delete this fund", { deleting = true }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
+                    ChittaButton("Delete this fund", { deleting = true }, kind = ButtonKind.Danger, modifier = Modifier.fillMaxWidth())
                 }
             }
         }
