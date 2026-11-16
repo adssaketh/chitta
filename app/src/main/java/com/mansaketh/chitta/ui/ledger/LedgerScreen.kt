@@ -27,6 +27,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,6 +70,16 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
     val said by vm.message.collectAsState()
     LaunchedEffect(said) { said?.let { notice = it; vm.messageShown() } }
     val c = ChittaTheme.colors
+    // With the keyboard open the pinned header leaves room for about one row, so the first drag on the list closes the keyboard and gives the list its space back.
+    val keyboard = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+    val hideKeyboardOnScroll = remember(keyboard) {
+        object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
+            override fun onPreScroll(available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
+                if (source == androidx.compose.ui.input.nestedscroll.NestedScrollSource.UserInput && available.y != 0f) keyboard?.hide()
+                return androidx.compose.ui.geometry.Offset.Zero
+            }
+        }
+    }
     val zone = remember { java.time.ZoneId.systemDefault() }
     val now = remember { System.currentTimeMillis() }
 
@@ -145,7 +156,7 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
                 ui.loading -> LoadingPlaceholder(Modifier.padding(Dimens.Margin))
                 ui.totalEntries == 0 -> EmptyState(FeatureIcons.tab(TabKey.Ledger), null, "No transactions yet. Add one.", "Add a transaction", onAdd, Modifier.padding(horizontal = Dimens.Margin))
                 ui.matching == 0 -> Text("Nothing matches. Clear the search or filters.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(Dimens.Margin))
-                else -> LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), state = listState, contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
+                else -> LazyColumn(Modifier.fillMaxSize().nestedScroll(hideKeyboardOnScroll).padding(horizontal = Dimens.Margin), state = listState, contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
                     ui.months.forEach { month ->
                         stickyHeader(key = "m-${month.month}") {
                             MonthHeader(monthLabel(month.month), month.flow.moneyIn, month.flow.moneyOut)
@@ -272,6 +283,11 @@ private fun share(context: Context, text: String) {
 private fun SearchBox(value: String, onValueChange: (String) -> Unit, modifier: Modifier = Modifier) {
     val c = ChittaTheme.colors
     val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+    // The box keeps its own text and cursor. Handing it a plain String that comes back from the ViewModel a moment
+    // later resets the cursor to the start after the first letter, so "happy" became "appyh". The only outside
+    // change taken in is a clear (the clear button); what is typed always stays as typed.
+    var field by remember { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue(value)) }
+    LaunchedEffect(value) { if (value.isEmpty() && field.text.isNotEmpty()) field = androidx.compose.ui.text.input.TextFieldValue("") }
     Row(
         modifier.fillMaxWidth().heightIn(min = Dimens.ButtonHeight)
             .clip(com.mansaketh.chitta.core.design.tokens.Shapes.Control)
@@ -283,15 +299,15 @@ private fun SearchBox(value: String, onValueChange: (String) -> Unit, modifier: 
         Icon(ChittaIcons.Search, contentDescription = null, tint = c.inkMuted, modifier = Modifier.size(Dimens.IconSmall))
         Spacer(Modifier.width(Dimens.Gap2))
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-            if (value.isEmpty()) Text("Search", style = ChittaTheme.type.body, color = c.inkMuted)
+            if (field.text.isEmpty()) Text("Search", style = ChittaTheme.type.body, color = c.inkMuted)
             BasicTextField(
-                value = value, onValueChange = onValueChange, singleLine = true,
+                value = field, onValueChange = { changed -> val textChanged = changed.text != field.text; field = changed; if (textChanged) onValueChange(changed.text) }, singleLine = true,
                 textStyle = ChittaTheme.type.body.copy(color = c.ink), cursorBrush = SolidColor(c.ink),
                 modifier = Modifier.fillMaxWidth().focusRequester(focus)
                     .semantics { contentDescription = "Search title, note, category or account" },
             )
         }
-        if (value.isNotEmpty()) IconAction(ChittaIcons.Close, "Clear search", { onValueChange("") })
+        if (field.text.isNotEmpty()) IconAction(ChittaIcons.Close, "Clear search", { field = androidx.compose.ui.text.input.TextFieldValue(""); onValueChange("") })
         else Spacer(Modifier.width(Dimens.Gap3))
     }
     LaunchedEffect(Unit) { focus.requestFocus() }
