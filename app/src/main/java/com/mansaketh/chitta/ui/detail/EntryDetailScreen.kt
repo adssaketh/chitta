@@ -1,6 +1,13 @@
 package com.mansaketh.chitta.ui.detail
 
+import com.mansaketh.chitta.core.design.kit.DateSheet
+import com.mansaketh.chitta.ui.LocalFirstDay
 import android.app.DatePickerDialog
+import com.mansaketh.chitta.core.design.kit.NavRow
+import com.mansaketh.chitta.core.design.kit.ValueRow
+import com.mansaketh.chitta.core.design.kit.TopBarDetail
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -48,7 +55,7 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            ChittaTopBar("Entry", onBack = onBack)
+            TopBarDetail("Entry", onBack = onBack)
             when {
                 ui.loading -> LoadingPlaceholder(Modifier.padding(Dimens.Margin))
                 e == null -> Text("This entry is gone. It may have been deleted.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(Dimens.Margin))
@@ -74,7 +81,7 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
                         }
                         if (canEdit && com.mansaketh.chitta.core.intake.hasCheckMark(e.note)) {
                             Text("Added automatically from a bank message on a best guess. Change what is wrong, or confirm it.", style = ChittaTheme.type.label, color = c.inkMuted)
-                            ChittaButton("Looks right", vm::confirmCheck, style = ButtonStyle.Quiet)
+                            ChittaButton("Looks right", vm::confirmCheck, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
                         }
                         HairlineRule()
                         ValueRow("Title", e.name.ifBlank { "No title" }, onClick = if (locked) null else ({ edit = Edit.Title }))
@@ -84,7 +91,7 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
                         if (transfer) ui.twin?.let { ValueRow("Other half", accountName(it.accountId, ui.accounts)) }
                         ValueRow("Date", dayAndTime(e.dateMs, zone), onClick = if (canEdit) ({ edit = Edit.Date }) else null)
                         ValueRow("Note", e.note.ifBlank { "No note" }, onClick = if (canEdit) ({ edit = Edit.Note }) else null)
-                        if (remember(e.note) { com.mansaketh.chitta.intake.PingBridge.viewIntent(context, e.note) != null }) ValueRow("View SMS in Ping", "", onClick = { com.mansaketh.chitta.intake.PingBridge.open(context, e.note) })
+                        if (remember(e.note) { com.mansaketh.chitta.intake.PingBridge.viewIntent(context, e.note) != null }) NavRow("View SMS in Ping", { com.mansaketh.chitta.intake.PingBridge.open(context, e.note) })
                         if (plan != null && canEdit && !neutral && e.kind != TransactionKind.LENT && e.kind != TransactionKind.BORROWED) ValueRow("Repeat", e.repeat?.let { com.mansaketh.chitta.ui.plan.repeatLabel(it, e.periodLength ?: 1) } ?: "Does not repeat", onClick = { edit = Edit.Repeat })
                         if (ui.siblings.isNotEmpty()) {
                             Text("Part of a split of ${IndianFormat.rupees(Paise(Math.abs(e.amount) + ui.siblings.sumOf { Math.abs(it.amount) }), alwaysShowPaise = true)}. Other lines:", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
@@ -97,10 +104,10 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
                         ValueRow("History", "${ui.history.size} ${if (ui.history.size == 1) "version" else "versions"}", onClick = onHistory)
                         Spacer(Modifier.height(Dimens.Gap4))
                         Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
-                            if (!neutral && canEdit) ChittaButton("Duplicate", { vm.duplicate(onBack) }, style = ButtonStyle.Quiet)
-                            if (!neutral && canEdit) ChittaButton("Pin", vm::pin, style = ButtonStyle.Quiet)
-                            if (!neutral && canEdit && e.kind == null && e.splitGroupId == null) ChittaButton("Split", { edit = Edit.Split }, style = ButtonStyle.Quiet)
-                            if (ui.canDelete) ChittaButton("Delete", { impact = vm.deleteImpact(); edit = Edit.Delete }, style = ButtonStyle.Quiet)
+                            if (!neutral && canEdit) ChittaButton("Duplicate", { vm.duplicate(onBack) }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
+                            if (!neutral && canEdit) ChittaButton("Pin", vm::pin, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
+                            if (!neutral && canEdit && e.kind == null && e.splitGroupId == null) ChittaButton("Split", { edit = Edit.Split }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
+                            if (ui.canDelete) ChittaButton("Delete", { impact = vm.deleteImpact(); edit = Edit.Delete }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
                         }
                     }
                 }
@@ -116,12 +123,13 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
             Edit.Note -> TextSheet("Note", "Note", e.note, { vm.setNote(it); edit = Edit.None }, { edit = Edit.None }, singleLine = false)
             Edit.Category -> ChoiceSheet("Category", ui.categories.filter { it.mainCategoryId == null && !it.archived && it.income == e.income }.map { Choice(it.name, it.id, selected = it.id == e.categoryId) }, { vm.setCategory(it); edit = Edit.None }, { edit = Edit.None })
             Edit.Account -> ChoiceSheet("Account", ui.accounts.filter { !it.archived && !com.mansaketh.chitta.core.domain.HouseholdSharing.isPlaceholderAccountId(it.id) }.map { Choice(it.name, it.id, selected = it.id == e.accountId) }, { id -> vm.setAccount(id, ui.accounts.firstOrNull { it.id == id }?.currency); edit = Edit.None }, { edit = Edit.None })
-            Edit.Date -> LaunchedEffect(Unit) {
-                val day = Instant.ofEpochMilli(e.dateMs).atZone(zone).toLocalDate()
-                DatePickerDialog(context, { _, y, m, d ->
-                    val t = Instant.ofEpochMilli(e.dateMs).atZone(zone).toLocalTime()
-                    vm.setDate(LocalDate.of(y, m + 1, d).atTime(t).atZone(zone).toInstant().toEpochMilli()); edit = Edit.None
-                }, day.year, day.monthValue - 1, day.dayOfMonth).apply { setOnCancelListener { edit = Edit.None } }.show()
+            Edit.Date -> BottomOverlay({ edit = Edit.None }, handle = false) {
+                val t = Instant.ofEpochMilli(e.dateMs).atZone(zone).toLocalTime()
+                DateSheet(
+                    initial = Instant.ofEpochMilli(e.dateMs).atZone(zone).toLocalDate(), today = LocalDate.now(zone), firstDayOfWeek = LocalFirstDay.current,
+                    onUse = { d -> vm.setDate(d.atTime(t).atZone(zone).toInstant().toEpochMilli()); edit = Edit.None },
+                    onClose = { edit = Edit.None },
+                )
             }
             Edit.Delete -> impact?.let { im ->
                 val lines = buildList {
@@ -179,7 +187,7 @@ fun EntryHistoryScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> 
     val c = ChittaTheme.colors
     val zone = remember { ZoneId.systemDefault() }
     Column(Modifier.fillMaxSize()) {
-        ChittaTopBar("History", onBack = onBack)
+        TopBarDetail("History", onBack = onBack)
         if (ui.history.isEmpty()) Text("No history yet.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(Dimens.Margin))
         LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
             val versions = ui.history.sortedByDescending { it.id }
@@ -194,7 +202,7 @@ fun EntryHistoryScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> 
                     }
                     if (ui.canEdit && (i > 0 || v.action == HistoryAction.DELETED)) {
                         Spacer(Modifier.height(Dimens.InlineGap))
-                        ChittaButton("Restore this version", { vm.restore(v) }, style = ButtonStyle.Quiet)
+                        ChittaButton("Restore this version", { vm.restore(v) }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
                     }
                 }
             }

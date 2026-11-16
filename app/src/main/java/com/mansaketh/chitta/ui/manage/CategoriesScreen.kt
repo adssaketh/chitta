@@ -1,6 +1,8 @@
 package com.mansaketh.chitta.ui.manage
 
 import androidx.compose.foundation.clickable
+import com.mansaketh.chitta.core.design.kit.EmptyState
+import com.mansaketh.chitta.core.design.kit.TopBarDetail
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -40,11 +42,11 @@ fun CategoriesScreen(vm: ManageViewModel, onBack: () -> Unit) {
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            ChittaTopBar("Categories", onBack = onBack, actions = { IconAction(ChittaIcons.Plus, "Add a category", onClick = { sheet = CatSheet.Add }) })
+            TopBarDetail("Categories", onBack = onBack, actions = { IconAction(ChittaIcons.Plus, "Add a category", onClick = { sheet = CatSheet.Add }) })
             TextTabs(listOf("Spending", "Income"), if (income) 1 else 0, { income = it == 1 }, Modifier.padding(horizontal = Dimens.Margin))
             HairlineRule()
             notice?.let { Text(it, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(horizontal = Dimens.Margin, vertical = Dimens.Gap2)) }
-            if (!ui.loading && mains.isEmpty()) EmptyState("No categories here yet.", "Add a category", { sheet = CatSheet.Add }, Modifier.padding(horizontal = Dimens.Margin))
+            if (!ui.loading && mains.isEmpty()) EmptyState(null, null, "No categories here yet.", "Add a category", { sheet = CatSheet.Add }, Modifier.padding(horizontal = Dimens.Margin))
             LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
                 mains.forEach { main ->
                     item(key = main.id) { CategoryRow(main, 0, vm.entriesIn(main)) { sheet = CatSheet.Actions(main) } }

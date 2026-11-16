@@ -1,6 +1,11 @@
 package com.mansaketh.chitta.ui.settings
 
+import com.mansaketh.chitta.core.design.kit.SheetHeader
 import android.os.Handler
+import com.mansaketh.chitta.core.design.kit.SwitchRow
+import com.mansaketh.chitta.core.design.kit.NavRow
+import com.mansaketh.chitta.core.design.kit.ExpandGroup
+import com.mansaketh.chitta.core.design.kit.ValueRow
 import android.os.Looper
 import android.os.Process
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -29,10 +34,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
-import com.mansaketh.chitta.core.design.components.ButtonStyle
-import com.mansaketh.chitta.core.design.components.ChittaButton
-import com.mansaketh.chitta.core.design.components.ChittaTopBar
-import com.mansaketh.chitta.core.design.components.ExpandGroup
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
+import com.mansaketh.chitta.core.design.kit.TopBarDetail
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
 import com.mansaketh.chitta.core.design.components.FootNote
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
@@ -44,7 +48,6 @@ import com.mansaketh.chitta.core.domain.RestorePoints
 import com.mansaketh.chitta.ui.Choice
 import com.mansaketh.chitta.ui.ChoiceSheet
 import com.mansaketh.chitta.ui.ConfirmSheet
-import com.mansaketh.chitta.ui.ValueRow
 import com.mansaketh.chitta.ui.dayAndTime
 import com.mansaketh.chitta.ui.lock.BiometricGate
 import java.time.ZoneId
@@ -93,11 +96,11 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
     }
 
     Column(Modifier.fillMaxSize()) {
-        ChittaTopBar("Settings", onBack = onBack)
+        TopBarDetail("Settings", onBack = onBack)
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
             if (ui.notice != null) {
                 Text(ui.notice!!, style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(vertical = Dimens.Gap2))
-                ChittaButton("Dismiss", { vm.dismissNotice() }, style = ButtonStyle.Quiet)
+                ChittaButton("Dismiss", { vm.dismissNotice() }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(Dimens.Gap4))
             }
             if (ui.busy) Text("Working. Keep this screen open.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2))
@@ -105,7 +108,7 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
             ExpandGroup("Look and feel", summary = "Theme, vibration, animations", icon = ChittaIcons.Gear, initiallyExpanded = true) {
                 ValueRow("Theme", themeLabel(theme), onClick = { sheet = "theme" })
                 ValueRow("Vibration strength", com.mansaketh.chitta.ui.VibrationLevel.of(vibrate).label, onClick = { sheet = "vibration" })
-                ValueRow("Animations", if (animations) "On" else "Off", onClick = { sheet = "animations" })
+                SwitchRow("Animations", animations, { vm.setAnimations(it) })
             }
 
             ExpandGroup("Security", summary = "App lock ${onOff(ui.lockEnabled).lowercase()}", icon = ChittaIcons.Lock) {
@@ -116,17 +119,17 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
             }
 
             ExpandGroup("Household", summary = "Share chosen entries with others", icon = ChittaIcons.Users) {
-                ValueRow("Household", "", onClick = { onOpen("household") })
+                NavRow("Household", { onOpen("household") })
                 FootNote("Share chosen entries with up to 8 people, each signed in with their own Google account. Your book stays private unless you share.")
             }
 
             ExpandGroup("Backup and restore", summary = "Drive, sync, restore points, backup files", icon = ChittaIcons.Download) {
-                ValueRow("Google Drive backup", "", onClick = { onOpen("cloud-backup") })
-                ValueRow("Sync between phones", "", onClick = { onOpen("sync") })
+                NavRow("Google Drive backup", { onOpen("cloud-backup") })
+                NavRow("Sync between phones", { onOpen("sync") })
                 ValueRow("Restore points", "${ui.points.size}", onClick = { vm.refreshPoints(); onOpen("restore-points") })
-                ValueRow("Make a restore point now", "", onClick = { vm.makePoint() })
-                ValueRow("Save a backup file", "", onClick = { saveBackup.launch(RestorePoints.exportName(System.currentTimeMillis(), zone)) })
-                ValueRow("Bring back a backup file", "", onClick = { openBackup.launch(arrayOf("*/*")) })
+                NavRow("Make a restore point now", { vm.makePoint() })
+                NavRow("Save a backup file", { saveBackup.launch(RestorePoints.exportName(System.currentTimeMillis(), zone)) })
+                NavRow("Bring back a backup file", { openBackup.launch(arrayOf("*/*")) })
                 FootNote(
                     "A restore point is a copy of your book kept on this phone: one a day, and one before every restore, CSV import and delete. " +
                         "Receipt photos stay on this phone and are not in restore points or backup files.",
@@ -134,12 +137,12 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
             }
 
             ExpandGroup("Import and export", summary = if (waiting > 0) "$waiting bank messages waiting" else "Rules, automation, CSV, your Paddhu book", icon = ChittaIcons.Transfer) {
-                ValueRow("Rules", "", onClick = { onOpen("rules") })
-                ValueRow("Automation", "", onClick = { onOpen("automation") })
+                NavRow("Rules", { onOpen("rules") })
+                NavRow("Automation", { onOpen("automation") })
                 ValueRow("Bank messages and UPI", if (waiting > 0) "$waiting waiting" else "", onClick = { onOpen("intake") })
-                ValueRow("Import entries from CSV", "", onClick = { onOpen("csv-import") })
-                ValueRow("Export entries to CSV", "", onClick = { sheet = "csv-account" })
-                ValueRow("Bring over your Paddhu book", "", onClick = { onOpen("import") })
+                NavRow("Import entries from CSV", { onOpen("csv-import") })
+                NavRow("Export entries to CSV", { sheet = "csv-account" })
+                NavRow("Bring over your Paddhu book", { onOpen("import") })
             }
 
             val errorCount = com.mansaketh.chitta.diagnostics.Diagnostics.count()
@@ -148,18 +151,13 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
             }
 
             ExpandGroup("Data", summary = "Delete everything", icon = ChittaIcons.Trash) {
-                ValueRow("Delete everything", "", onClick = { sheet = "delete" })
+                NavRow("Delete everything", { sheet = "delete" })
                 FootNote("This empties the book on this phone. A restore point is made first, so you can bring it back from Restore points.")
             }
         }
     }
 
     when (sheet) {
-        "animations" -> ChoiceSheet(
-            "Animations",
-            listOf(Choice("On", true, selected = animations), Choice("Off", false, selected = !animations)),
-            { vm.setAnimations(it); sheet = null }, { sheet = null },
-        )
         "vibration" -> ChoiceSheet(
             "Vibration strength",
             com.mansaketh.chitta.ui.VibrationLevel.entries.map { Choice(it.label, it.key, selected = it.key == vibrate) },
@@ -170,9 +168,9 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
             listOf("system" to "Follow the phone", "paper" to "Paper (light)", "ink" to "Ink (dark)").map { (k, label) -> Choice(label, k, selected = k == theme) },
             { vm.setThemeMode(it); sheet = null }, { sheet = null },
         )
-        "diagnostics" -> com.mansaketh.chitta.ui.BottomOverlay({ sheet = null }) {
+        "diagnostics" -> com.mansaketh.chitta.ui.BottomOverlay({ sheet = null }, handle = false) {
             var report by remember { mutableStateOf(com.mansaketh.chitta.diagnostics.Diagnostics.report(context)) }
-            Text("Diagnostics", style = ChittaTheme.type.title, color = c.ink)
+            SheetHeader("Diagnostics")
             Spacer(Modifier.height(Dimens.Gap2))
             Text(
                 "Errors the app hit on this phone, with the phone and app version. Nothing is sent anywhere. Read it, then share it only if you are happy to.",
@@ -188,9 +186,9 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
                     type = "text/plain"; putExtra(android.content.Intent.EXTRA_SUBJECT, "Paddhu Pusthakam diagnostics"); putExtra(android.content.Intent.EXTRA_TEXT, report)
                 }
                 context.startActivity(android.content.Intent.createChooser(send, "Share diagnostics"))
-            }, confirmHaptic = true)
+            }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(Dimens.InlineGap))
-            ChittaButton("Clear", { com.mansaketh.chitta.diagnostics.Diagnostics.clear(); report = com.mansaketh.chitta.diagnostics.Diagnostics.report(context) }, style = ButtonStyle.Quiet)
+            ChittaButton("Clear", { com.mansaketh.chitta.diagnostics.Diagnostics.clear(); report = com.mansaketh.chitta.diagnostics.Diagnostics.report(context) }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
         }
         "timeout" -> ChoiceSheet("Lock after leaving", LockTimeout.entries.map { Choice(it.label, it, selected = it == ui.timeout) }, { vm.setTimeout(it); sheet = null }, { sheet = null })
         "csv-account" -> ChoiceSheet(
@@ -232,7 +230,7 @@ fun RestorePointsScreen(vm: SettingsViewModel, onBack: () -> Unit) {
     var confirm by remember { mutableStateOf<RestorePoint?>(null) }
 
     Column(Modifier.fillMaxSize()) {
-        ChittaTopBar("Restore points", onBack = onBack)
+        TopBarDetail("Restore points", onBack = onBack)
         if (ui.notice != null) {
             Text(ui.notice!!, style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(horizontal = Dimens.Margin, vertical = Dimens.Gap2))
         }

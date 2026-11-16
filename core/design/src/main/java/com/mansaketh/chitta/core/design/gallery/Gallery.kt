@@ -33,17 +33,19 @@ import com.mansaketh.chitta.core.design.components.AmountEntryText
 import com.mansaketh.chitta.core.design.components.AmountText
 import com.mansaketh.chitta.core.design.components.AmountTone
 import com.mansaketh.chitta.core.design.components.BudgetRing
-import com.mansaketh.chitta.core.design.components.ButtonStyle
+import com.mansaketh.chitta.core.design.kit.ButtonKind
 import com.mansaketh.chitta.core.design.components.CardAction
 import com.mansaketh.chitta.core.design.components.ChittaBottomNav
-import com.mansaketh.chitta.core.design.components.ChittaButton
+import com.mansaketh.chitta.core.design.kit.ChittaButton
 import com.mansaketh.chitta.core.design.components.ChittaField
-import com.mansaketh.chitta.core.design.components.ChittaTopBar
-import com.mansaketh.chitta.core.design.components.EmptyState
-import com.mansaketh.chitta.core.design.components.ExpandGroup
+import com.mansaketh.chitta.core.design.kit.TopBarDetail
+import com.mansaketh.chitta.core.design.kit.TopBarMain
+import com.mansaketh.chitta.core.design.kit.EmptyState
+import com.mansaketh.chitta.core.design.kit.ExpandGroup
 import com.mansaketh.chitta.core.design.components.FootNote
-import com.mansaketh.chitta.core.design.components.ErrorState
-import com.mansaketh.chitta.core.design.components.GaugeBar
+import com.mansaketh.chitta.core.design.kit.MessageKind
+import com.mansaketh.chitta.core.design.kit.GaugeBar
+import com.mansaketh.chitta.core.design.kit.Section
 import com.mansaketh.chitta.core.design.components.HairlineRule
 import com.mansaketh.chitta.core.design.components.HideAmountsAction
 import com.mansaketh.chitta.core.design.components.Keypad
@@ -58,12 +60,11 @@ import com.mansaketh.chitta.core.design.components.MonthHeader
 import com.mansaketh.chitta.core.design.components.MonthRule
 import com.mansaketh.chitta.core.design.components.NavDestination
 import com.mansaketh.chitta.core.design.components.RingLegend
-import com.mansaketh.chitta.core.design.components.SectionHeader
 import com.mansaketh.chitta.core.design.components.SheetSurface
 import com.mansaketh.chitta.core.design.components.Stamp
 import com.mansaketh.chitta.core.design.components.TimelineItem
 import com.mansaketh.chitta.core.design.components.StampTone
-import com.mansaketh.chitta.core.design.components.UndoBar
+import com.mansaketh.chitta.core.design.kit.MessageBar
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.theme.ThemeMode
@@ -105,10 +106,10 @@ object GallerySample {
 @Composable
 fun GallerySection(title: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Column(modifier.fillMaxWidth().padding(horizontal = Dimens.Margin).padding(top = Dimens.SectionGap)) {
-        SectionHeader(title)
-        HairlineRule()
-        Box(Modifier.height(Dimens.Gap4))
-        content()
+        Section(title, first = true) {
+            Box(Modifier.height(Dimens.Gap4))
+            content()
+        }
         Box(Modifier.height(Dimens.Gap4))
     }
 }
@@ -221,9 +222,9 @@ fun GalleryRows() = GallerySection("Rows, tags and groups") {
 fun GalleryControls() = GallerySection("Controls") {
     var text by remember { mutableStateOf("") }
     Column(verticalArrangement = Arrangement.spacedBy(Dimens.Gap3)) {
-        ChittaButton("Save", onClick = {}, confirmHaptic = true)
-        ChittaButton("Pay now", onClick = {}, style = ButtonStyle.Attention)
-        ChittaButton("Skip this one", onClick = {}, style = ButtonStyle.Quiet)
+        ChittaButton("Save", onClick = {}, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
+        ChittaButton("Pay now", onClick = {}, modifier = Modifier.fillMaxWidth())
+        ChittaButton("Skip this one", onClick = {}, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
         ChittaField(text, { text = it }, label = "Title", placeholder = "What was it for?")
         FlowRow(
             verticalArrangement = Arrangement.spacedBy(Dimens.Gap3),
@@ -233,7 +234,7 @@ fun GalleryControls() = GallerySection("Controls") {
             AddButton(onClick = {}, onLongClick = {})
             Stamp("Paid"); Stamp("Stale"); Stamp("Income", tone = StampTone.Income)
         }
-        ChittaTopBar("Home", actions = { HideAmountsAction(hidden = false, onToggle = {}); CardAction(onClick = {}) })
+        TopBarMain("Home", ChittaIcons.Home, actions = { HideAmountsAction(hidden = false, onToggle = {}); CardAction(onClick = {}) })
     }
 }
 
@@ -285,7 +286,7 @@ fun GalleryNav() = GallerySection("Navigation and sheets") {
     var dest by remember { mutableStateOf(NavDestination.Home) }
     Column(verticalArrangement = Arrangement.spacedBy(Dimens.Gap6)) {
         ChittaBottomNav(dest, { dest = it })
-        UndoBar("Saved ₹340 to Food", onUndo = {})
+        MessageBar("Saved ₹340 to Food", actionLabel = "Undo", onAction = {})
         SheetSurface {
             Text("Safe to spend, explained", style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
             Box(Modifier.height(Dimens.Gap3))
@@ -297,9 +298,9 @@ fun GalleryNav() = GallerySection("Navigation and sheets") {
 @Composable
 fun GalleryStates() = GallerySection("States") {
     Column(verticalArrangement = Arrangement.spacedBy(Dimens.Gap4)) {
-        EmptyState("No transactions this week.", "Add one", onAction = {})
+        EmptyState(ChittaIcons.Ledger, null, "No transactions this week.", "Add one", onAction = {})
         HairlineRule()
-        ErrorState("Backup did not finish.", "Nothing was lost. Your entries are still on this phone.", onRetry = {})
+        MessageBar("Backup did not finish. Nothing was lost.", kind = MessageKind.Error, actionLabel = "Retry", onAction = {}, onClose = {})
         HairlineRule()
         LoadingPlaceholder()
     }
@@ -329,10 +330,10 @@ fun ComponentGallery(
 ) {
     val c = ChittaTheme.colors
     Column(modifier.fillMaxSize().background(c.background).statusBarsPadding().verticalScroll(rememberScrollState())) {
-        ChittaTopBar("Component gallery", actions = { HideAmountsAction(hideAmounts) { onHideAmountsChange(!hideAmounts) } })
+        TopBarDetail("Component gallery", actions = { HideAmountsAction(hideAmounts) { onHideAmountsChange(!hideAmounts) } })
         Row(Modifier.padding(horizontal = Dimens.Margin), horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
             ThemeMode.entries.forEach { m ->
-                ChittaButton(m.name, { onModeChange(m) }, Modifier.weight(1f), style = if (m == mode) ButtonStyle.Primary else ButtonStyle.Quiet)
+                ChittaButton(m.name, { onModeChange(m) }, Modifier.weight(1f), kind = if (m == mode) ButtonKind.Primary else ButtonKind.Secondary)
             }
         }
         GalleryColors(); GalleryType(); GalleryAmounts(); GalleryLedger(); GalleryRows(); GalleryControls()

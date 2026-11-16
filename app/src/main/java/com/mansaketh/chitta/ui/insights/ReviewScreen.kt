@@ -1,6 +1,9 @@
 package com.mansaketh.chitta.ui.insights
 
 import androidx.compose.foundation.layout.*
+import com.mansaketh.chitta.core.design.kit.MonthStepper
+import com.mansaketh.chitta.core.design.kit.Section
+import com.mansaketh.chitta.core.design.kit.TopBarDetail
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -37,7 +40,7 @@ private fun YearMonth.nameWithYear() = name() + " " + year
 fun MonthReviewScreen(vm: InsightsViewModel, onBack: () -> Unit) {
     val ui by vm.ui.collectAsState()
     Column(Modifier.fillMaxSize()) {
-        ChittaTopBar("Month in review", onBack = onBack)
+        TopBarDetail("Month in review", onBack = onBack)
         HairlineRule()
         if (ui.loading) LoadingPlaceholder(Modifier.padding(Dimens.Margin))
         else Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
@@ -60,8 +63,8 @@ internal fun MonthReviewContent(ui: InsightsUi, onMonth: (YearMonth) -> Unit) {
     }
     val months = ui.reviewMonths // newest first
     val at = months.indexOf(review.month)
-    MonthStepper(review.month, hasEarlier = at in 0 until months.lastIndex, hasLater = at > 0,
-        onEarlier = { onMonth(months[at + 1]) }, onLater = { onMonth(months[at - 1]) })
+    MonthStepper(review.month.nameWithYear(), { onMonth(months[at + 1]) }, { onMonth(months[at - 1]) },
+        canEarlier = at in 0 until months.lastIndex, canLater = at > 0)
 
     val previous = review.previous
     Row(Modifier.fillMaxWidth().padding(top = Dimens.Gap2), horizontalArrangement = Arrangement.spacedBy(Dimens.Gap6)) {
@@ -78,8 +81,7 @@ internal fun MonthReviewContent(ui: InsightsUi, onMonth: (YearMonth) -> Unit) {
         }
     }
 
-    Spacer(Modifier.height(Dimens.SectionGap))
-    SectionHeader("Totals")
+    Section("Totals")
     HairlineRule()
     ReviewRow("Money in", review.moneyIn)
     ReviewRow("Money out", review.moneyOut)
@@ -89,8 +91,7 @@ internal fun MonthReviewContent(ui: InsightsUi, onMonth: (YearMonth) -> Unit) {
         style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2),
     )
 
-    Spacer(Modifier.height(Dimens.SectionGap))
-    SectionHeader("Biggest changes")
+    Section("Biggest changes")
     HairlineRule()
     when {
         previous == null -> Text(
@@ -113,23 +114,12 @@ internal fun MonthReviewContent(ui: InsightsUi, onMonth: (YearMonth) -> Unit) {
         }
     }
 
-    Spacer(Modifier.height(Dimens.SectionGap))
-    SectionHeader("Budgets")
+    Section("Budgets")
     HairlineRule()
     if (review.budgets.isEmpty()) {
         Text("No spending budget ended in ${review.month.name()}.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap3))
     } else {
         review.budgets.forEach { BudgetRow(it, review, ui) }
-    }
-}
-
-@Composable
-private fun MonthStepper(month: YearMonth, hasEarlier: Boolean, hasLater: Boolean, onEarlier: () -> Unit, onLater: () -> Unit) {
-    val c = ChittaTheme.colors
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        if (hasEarlier) IconAction(ChittaIcons.ArrowLeft, "Earlier month", onEarlier) else Spacer(Modifier.size(Dimens.TouchTarget))
-        Text(month.nameWithYear(), style = ChittaTheme.type.title, color = c.ink, modifier = Modifier.weight(1f), maxLines = 1)
-        if (hasLater) IconAction(ChittaIcons.ArrowLeft, "Later month", onLater, Modifier.rotate(180f)) else Spacer(Modifier.size(Dimens.TouchTarget))
     }
 }
 

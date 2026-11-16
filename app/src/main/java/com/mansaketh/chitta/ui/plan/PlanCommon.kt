@@ -1,6 +1,13 @@
 package com.mansaketh.chitta.ui.plan
 
+import com.mansaketh.chitta.core.design.kit.SheetHeader
+import com.mansaketh.chitta.ui.DatePick
 import android.app.DatePickerDialog
+import com.mansaketh.chitta.core.design.kit.CategoryChip
+import com.mansaketh.chitta.core.design.kit.CheckRow
+import com.mansaketh.chitta.core.design.kit.ValueRow
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
 import com.mansaketh.chitta.ui.sheetMax
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,7 +26,6 @@ import com.mansaketh.chitta.core.model.Repeat
 import com.mansaketh.chitta.core.money.IndianFormat
 import com.mansaketh.chitta.core.money.Paise
 import com.mansaketh.chitta.ui.BottomOverlay
-import com.mansaketh.chitta.ui.ChoiceChip
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -40,13 +46,13 @@ fun periodText(p: Period, zone: ZoneId): String {
 
 fun rupees(p: Paise) = IndianFormat.rupees(p)
 
-/** The system date picker. Keeps the time of day of [ms]. */
-fun pickDate(context: android.content.Context, ms: Long, zone: ZoneId, onPick: (Long) -> Unit, onCancel: () -> Unit = {}) {
-    val d = Instant.ofEpochMilli(ms).atZone(zone).toLocalDate()
-    DatePickerDialog(context, { _, y, m, day ->
-        val t = Instant.ofEpochMilli(ms).atZone(zone).toLocalTime()
-        onPick(LocalDate.of(y, m + 1, day).atTime(t).atZone(zone).toInstant().toEpochMilli())
-    }, d.year, d.monthValue - 1, d.dayOfMonth).apply { setOnCancelListener { onCancel() } }.show()
+/** Opens the app's date sheet (D283). Keeps the time of day of [ms]; [onPick] gets the new moment in milliseconds. */
+fun pickDate(ms: Long, zone: ZoneId, onPick: (Long) -> Unit, onCancel: () -> Unit = {}) {
+    val t = Instant.ofEpochMilli(ms).atZone(zone).toLocalTime()
+    DatePick.request = DatePick.Request(
+        Instant.ofEpochMilli(ms).atZone(zone).toLocalDate(), zone,
+        { d -> onPick(d.atTime(t).atZone(zone).toInstant().toEpochMilli()) }, onCancel,
+    )
 }
 
 /** An amount and an account in one sheet: contributions, repayments, collecting part, paying a bill a different amount. */
@@ -59,8 +65,8 @@ fun AmountAccountSheet(
     var amount by remember { mutableStateOf(initialAmount) }
     var account by remember { mutableStateOf(initialAccountId?.takeIf { id -> active.any { it.id == id } } ?: active.firstOrNull()?.id ?: "") }
     var problem by remember { mutableStateOf<String?>(null) }
-    BottomOverlay(onDismiss) {
-        Text(title, style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
+    BottomOverlay(onDismiss, handle = false) {
+        SheetHeader(title)
         if (note != null) Text(note, style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted, modifier = Modifier.padding(top = Dimens.Gap1))
         Spacer(Modifier.height(Dimens.Gap4))
         ChittaField(amount, { amount = it; problem = null }, problem ?: amountLabel, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal))
@@ -68,10 +74,10 @@ fun AmountAccountSheet(
         Text("Account", style = ChittaTheme.type.labelMedium, color = ChittaTheme.colors.inkMuted)
         Spacer(Modifier.height(Dimens.Gap2))
         LazyColumn(Modifier.heightIn(max = sheetMax(0.2f))) {
-            items(active) { a -> ChoiceChip(a.name, selected = a.id == account, onClick = { account = a.id }, modifier = Modifier.padding(bottom = Dimens.Gap1)) }
+            items(active) { a -> CategoryChip(a.name, selected = a.id == account, onClick = { account = a.id }, modifier = Modifier.padding(bottom = Dimens.Gap1)) }
         }
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton(confirmLabel, { onSave(amount, account) { problem = it } }, confirmHaptic = true)
+        ChittaButton(confirmLabel, { onSave(amount, account) { problem = it } }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -79,17 +85,17 @@ fun AmountAccountSheet(
 @Composable
 fun MultiPickSheet(title: String, options: List<Pair<String, String>>, selected: Set<String>, allLabel: String, onDone: (Set<String>) -> Unit, onDismiss: () -> Unit) {
     var picked by remember { mutableStateOf(selected) }
-    BottomOverlay(onDismiss) {
-        Text(title, style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
+    BottomOverlay(onDismiss, handle = false) {
+        SheetHeader(title)
         Text(if (picked.isEmpty()) allLabel else "${picked.size} chosen", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted)
         Spacer(Modifier.height(Dimens.Gap2))
         LazyColumn(Modifier.heightIn(max = sheetMax(0.45f))) {
             items(options) { (id, label) ->
-                com.mansaketh.chitta.ui.ValueRow(label, if (id in picked) "Chosen" else "", onClick = { picked = if (id in picked) picked - id else picked + id })
+                CheckRow(label, id in picked, { picked = if (it) picked + id else picked - id })
             }
         }
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton("Done", { onDone(picked) }, confirmHaptic = true)
+        ChittaButton("Done", { onDone(picked) }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -99,20 +105,20 @@ fun RepeatFields(repeat: Repeat?, onRepeat: (Repeat?) -> Unit, length: String, o
     Text("Repeats", style = ChittaTheme.type.labelMedium, color = ChittaTheme.colors.inkMuted)
     Spacer(Modifier.height(Dimens.Gap2))
     Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
-        ChoiceChip("Never", repeat == null, { onRepeat(null) })
-        ChoiceChip("Daily", repeat == Repeat.DAILY, { onRepeat(Repeat.DAILY) })
-        ChoiceChip("Weekly", repeat == Repeat.WEEKLY, { onRepeat(Repeat.WEEKLY) })
+        CategoryChip("Never", repeat == null, { onRepeat(null) })
+        CategoryChip("Daily", repeat == Repeat.DAILY, { onRepeat(Repeat.DAILY) })
+        CategoryChip("Weekly", repeat == Repeat.WEEKLY, { onRepeat(Repeat.WEEKLY) })
     }
     Spacer(Modifier.height(Dimens.Gap2))
     Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
-        ChoiceChip("Monthly", repeat == Repeat.MONTHLY, { onRepeat(Repeat.MONTHLY) })
-        ChoiceChip("Yearly", repeat == Repeat.YEARLY, { onRepeat(Repeat.YEARLY) })
+        CategoryChip("Monthly", repeat == Repeat.MONTHLY, { onRepeat(Repeat.MONTHLY) })
+        CategoryChip("Yearly", repeat == Repeat.YEARLY, { onRepeat(Repeat.YEARLY) })
     }
     if (repeat != null) {
         Spacer(Modifier.height(Dimens.Gap3))
         ChittaField(length, onLength, "Every how many (1 is every ${repeatUnit(repeat)})", keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number))
-        com.mansaketh.chitta.ui.ValueRow("Ends", endMs?.let { dateText(it, zone) } ?: "Never", onClick = onEnd)
-        if (endMs != null) ChittaButton("Remove end date", onClearEnd, style = ButtonStyle.Quiet)
+        ValueRow("Ends", endMs?.let { dateText(it, zone) } ?: "Never", onClick = onEnd)
+        if (endMs != null) ChittaButton("Remove end date", onClearEnd, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
     }
 }
 

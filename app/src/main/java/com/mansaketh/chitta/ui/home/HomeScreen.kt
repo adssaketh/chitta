@@ -1,6 +1,14 @@
 package com.mansaketh.chitta.ui.home
 
+import com.mansaketh.chitta.core.design.kit.SheetHeader
 import androidx.compose.foundation.background
+import com.mansaketh.chitta.ui.FeatureIcons
+import com.mansaketh.chitta.core.domain.TabKey
+import com.mansaketh.chitta.core.design.kit.GaugeBar
+import com.mansaketh.chitta.core.design.kit.EmptyState
+import com.mansaketh.chitta.core.design.kit.Section
+import com.mansaketh.chitta.core.design.kit.BadgedIconAction
+import com.mansaketh.chitta.core.design.kit.TopBarMain
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -65,17 +73,9 @@ fun HomeScreen(
     val c = ChittaTheme.colors
 
     Column(Modifier.fillMaxSize()) {
-        ChittaTopBar("Home", titleIcon = ChittaIcons.Home, actions = {
-            // The bell: bank messages the app was not sure about wait here. The number shows only when something waits.
-            Box(contentAlignment = Alignment.TopEnd) {
-                IconAction(ChittaIcons.Bell, if (waiting > 0) "Bank messages, $waiting waiting" else "Bank messages", onOpenBell)
-                if (waiting > 0) {
-                    Text(
-                        if (waiting > 99) "99+" else waiting.toString(), style = ChittaTheme.type.stamp, color = c.onSindoor,
-                        modifier = Modifier.padding(top = 4.dp, end = 2.dp).background(c.sindoor, androidx.compose.foundation.shape.CircleShape).defaultMinSize(minWidth = 18.dp, minHeight = 18.dp).wrapContentSize(Alignment.Center),
-                    )
-                }
-            }
+        TopBarMain("Home", ChittaIcons.Home, actions = {
+            // The bell: bank messages the app was not sure about wait here. The count shows only when something waits.
+            BadgedIconAction(ChittaIcons.Bell, "Bank messages", waiting, onOpenBell)
             IconAction(ChittaIcons.Gear, "Customise Home", onCustomise)
             HideAmountsAction(hidden, onToggleHide)
         })
@@ -94,15 +94,19 @@ fun HomeScreen(
             val hero = ui.hero
             val choice = ui.choice
             if (choice == null) {
-                if (ui.hasEntries) EmptyState("No budget runs today. Add one in Plan and Safe to spend appears here.", "Open Plan", onOpenPlan)
+                if (ui.hasEntries) EmptyState(FeatureIcons.tab(TabKey.Budgets), null, "No budget runs today. Add one in Plan and Safe to spend appears here.", "Open Plan", onOpenPlan)
                 else Text("Nothing here yet. Add your first transaction with the plus button.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.SectionGap))
             } else {
                 // budget selector, only when there is more than one to choose from
                 if (ui.budgetOptions.size > 1 && hero != null) {
-                    Text(
-                        hero.budget.name + "  ▾", style = ChittaTheme.type.labelMedium, color = c.ink,
-                        modifier = Modifier.heightIn(min = Dimens.TouchTarget).pressClickable(role = Role.Button, onClickLabel = "Change budget") { sheet = "budget" }.wrapContentHeight(Alignment.CenterVertically),
-                    )
+                    Row(
+                        Modifier.heightIn(min = Dimens.TouchTarget).pressClickable(role = Role.Button, onClickLabel = "Change budget") { sheet = "budget" },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(hero.budget.name, style = ChittaTheme.type.labelMedium, color = c.ink)
+                        Spacer(Modifier.width(Dimens.Gap1))
+                        Icon(ChittaIcons.CaretDown, contentDescription = null, tint = c.ink, modifier = Modifier.size(Dimens.IconSmall))
+                    }
                 }
                 Text(if (choice.hero == Hero.CashCheck) "Cash check" else "Safe to spend", style = ChittaTheme.type.label, color = c.inkMuted)
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -120,8 +124,7 @@ fun HomeScreen(
                     if (choice.hero == Hero.CashCheck) {
                         // The link's own 16 dp of air is the gap above the rule; the rule is followed by one section gap and a heading.
                         HairlineRule()
-                        Spacer(Modifier.height(Dimens.SectionGap))
-                        SectionHeader(hero.budget.name + " budget")
+                        Section(hero.budget.name + " budget")
                     } else {
                         Spacer(Modifier.height(Dimens.HeadingGap))
                     }
@@ -174,8 +177,7 @@ fun HomeScreen(
             }
 
             if (ui.coming.isNotEmpty()) {
-                Spacer(Modifier.height(Dimens.SectionGap))
-                SectionHeader("Coming up", action = "See all", onAction = onOpenPlan)
+                Section("Coming up", note = "See all", onNote = onOpenPlan)
                 HairlineRule()
                 val lui = LedgerUi(categories = ui.categories, accounts = ui.accounts)
                 ui.coming.forEachIndexed { i, t ->
@@ -195,7 +197,7 @@ fun HomeScreen(
 
             ui.layout.shown.forEach { cfg ->
                 val data = ui.sections[cfg.section] ?: return@forEach
-                Section(cfg.section.title, rule = true) {
+                Section(cfg.section.title) {
                     when (data) {
                         is SectionData.BudgetsData -> if (data.rows.isEmpty()) Muted("No budgets yet.") else data.rows.forEach { r ->
                             Column(Modifier.fillMaxWidth().pressClickable(role = Role.Button) { onOpenBudget(r.budget.id) }.padding(vertical = Dimens.RowPadV)) {
@@ -290,8 +292,8 @@ private fun Muted(text: String) = Text(text, style = ChittaTheme.type.body, colo
 @Composable
 private fun ExplainSheet(ui: HomeUi, onDismiss: () -> Unit) {
     val c = ChittaTheme.colors
-    BottomOverlay(onDismiss) {
-        Text("How this is worked out", style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onDismiss, handle = false) {
+        SheetHeader("How this is worked out")
         Spacer(Modifier.height(Dimens.Gap3))
         val hero = ui.hero
         if (hero != null) {

@@ -98,6 +98,7 @@ fun GroupHeader(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
+    summary: String? = null,
 ) {
     val c = ChittaTheme.colors
     Column(modifier.fillMaxWidth()) {
@@ -114,14 +115,11 @@ fun GroupHeader(
                 Icon(icon, contentDescription = null, tint = c.ink, modifier = Modifier.size(Dimens.IconRowLeading))
                 Spacer(Modifier.width(Dimens.Space3))
             }
-            Text(
-                title,
-                style = ChittaTheme.type.bodyMedium,
-                color = c.ink,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
+            // The summary line is the app's own words under the group title; the prompt keeps copy as it is, so it stays.
+            Column(Modifier.weight(1f)) {
+                Text(title, style = ChittaTheme.type.bodyMedium, color = c.ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                if (summary != null) Text(summary, style = ChittaTheme.type.rowMeta14, color = c.inkMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
             Spacer(Modifier.width(Dimens.TitleAmountGap))
             Icon(
                 if (expanded) KitIcons.CaretUp else ChittaIcons.CaretDown,
@@ -143,6 +141,7 @@ fun ExpandGroup(
     title: String,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
+    summary: String? = null,
     initiallyExpanded: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -153,7 +152,7 @@ fun ExpandGroup(
         GroupHeader(title, expanded, onClick = {
             haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
             expanded = !expanded
-        }, icon = icon)
+        }, icon = icon, summary = summary)
         if (motion) {
             AnimatedVisibility(
                 visible = expanded,

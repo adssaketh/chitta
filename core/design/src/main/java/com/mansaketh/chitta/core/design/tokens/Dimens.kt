@@ -100,8 +100,8 @@ object Dimens {
     val GlyphCircle = 40.dp
     val GlyphIcon = 20.dp
 
-    /** The pre-v8 glyph circle (32 dp). Screens that still draw the old rows keep it until 11b moves them to EntryRow. */
-    val GlyphCircleLegacy = 32.dp
+    /** Line weight of a drawn status mark (calendar marks). */
+    val MarkStroke = 1.5.dp
 
     /** The coloured dot before a chip label. */
     val Dot = 8.dp
@@ -232,5 +232,5 @@ object Shapes {
     val SegmentPart = RoundedCornerShape(Dimens.SegmentRadius)
 
     /** Stamps are outlined labels, not pills. */
-    val Stamp = RoundedCornerShape(2.dp)
+    val Stamp = RoundedCornerShape(4.dp)
 }

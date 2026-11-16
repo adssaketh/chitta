@@ -1,6 +1,9 @@
 package com.mansaketh.chitta.ui.household
 
+import com.mansaketh.chitta.core.design.kit.SheetHeader
 import com.mansaketh.chitta.core.design.components.pressClickable
+import com.mansaketh.chitta.core.design.kit.SwitchRow
+import com.mansaketh.chitta.core.design.kit.ValueRow
 import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -46,9 +49,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.mansaketh.chitta.cloud.HouseholdSnapshot
-import com.mansaketh.chitta.core.design.components.ButtonStyle
-import com.mansaketh.chitta.core.design.components.ChittaButton
-import com.mansaketh.chitta.core.design.components.ChittaTopBar
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
+import com.mansaketh.chitta.core.design.kit.TopBarDetail
 import com.mansaketh.chitta.core.design.components.HairlineRule
 import com.mansaketh.chitta.core.design.components.Stamp
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
@@ -64,7 +67,6 @@ import com.mansaketh.chitta.ui.Choice
 import com.mansaketh.chitta.ui.ChoiceSheet
 import com.mansaketh.chitta.ui.ConfirmSheet
 import com.mansaketh.chitta.ui.TextSheet
-import com.mansaketh.chitta.ui.ValueRow
 
 /**
  * Household (Phase 9b, steps 2 and 3). The page follows the design PDF p.31 (Household), p.32 (Invite sheet) and p.33 (Choose what to share).
@@ -85,12 +87,12 @@ fun HouseholdScreen(vm: HouseholdViewModel, onBack: () -> Unit, onOpen: (String)
     LaunchedEffect(ui.askToShare) { if (ui.askToShare) { sheet = "share-choice"; vm.askHandled() } }
 
     Column(Modifier.fillMaxSize()) {
-        ChittaTopBar("Household", onBack = onBack)
+        TopBarDetail("Household", onBack = onBack)
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
             if (ui.email != null && ui.connected) Text("Signed in with Google", style = ChittaTheme.type.label, color = c.inkMuted)
             if (ui.notice != null) {
                 Text(ui.notice!!, style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(vertical = Dimens.Gap2))
-                ChittaButton("Dismiss", { vm.dismissNotice() }, style = ButtonStyle.Quiet)
+                ChittaButton("Dismiss", { vm.dismissNotice() }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(Dimens.Gap4))
             }
             if (ui.busy) Text("Working. Keep this screen open.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2))
@@ -165,7 +167,7 @@ private fun SignInPart(signedInWithGoogle: Boolean, enabled: Boolean, onSignIn: 
         "Each person signs in with their own Google account and keeps their own private book. A household lets up to ${Households.MAX_MEMBERS} people share chosen entries.",
         style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(vertical = Dimens.Gap4),
     )
-    ChittaButton(if (signedInWithGoogle) "Continue with Google" else "Sign in with Google", onSignIn, enabled = enabled)
+    ChittaButton(if (signedInWithGoogle) "Continue with Google" else "Sign in with Google", onSignIn, enabled = enabled, modifier = Modifier.fillMaxWidth())
     Text(
         "Nothing is shared until you create or join a household. Your entries stay on this phone.",
         style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap4),
@@ -179,9 +181,9 @@ private fun NoHouseholdPart(busy: Boolean, onCreate: () -> Unit, onJoin: () -> U
         "You are not in a household. Create one and invite people with a code, or join one with a code someone gave you.",
         style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(vertical = Dimens.Gap4),
     )
-    ChittaButton("Create a household", onCreate, enabled = !busy)
+    ChittaButton("Create a household", onCreate, enabled = !busy, modifier = Modifier.fillMaxWidth())
     Spacer(Modifier.height(Dimens.Gap2))
-    ChittaButton("Join with a code", onJoin, style = ButtonStyle.Quiet, enabled = !busy)
+    ChittaButton("Join with a code", onJoin, kind = ButtonKind.Secondary, enabled = !busy, modifier = Modifier.fillMaxWidth())
     Text(
         "Joining or leaving never deletes entries that are already on your phone.",
         style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap4),
@@ -219,13 +221,14 @@ private fun HouseholdPart(
     Spacer(Modifier.height(Dimens.Gap6))
 
     if (iAmOwner) {
-        ChittaButton("Invite someone", onInvite, style = ButtonStyle.Quiet, enabled = !ui.busy)
+        ChittaButton("Invite someone", onInvite, kind = ButtonKind.Secondary, enabled = !ui.busy, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Dimens.Gap6))
     }
 
     // The design draws a switch; the app has no switch yet, so this is a row that says On or Off, like the other Settings rows.
     Column {
-        ValueRow("Show account balances to members", if (snap.showBalances) "On" else "Off", onClick = if (iAmOwner) onToggleBalances else null)
+        if (iAmOwner) SwitchRow("Show account balances to members", snap.showBalances, { onToggleBalances() })
+        else ValueRow("Show account balances to members", if (snap.showBalances) "On" else "Off")
         Text(
             "Members always see their own. Accounts stay private to their owner." + if (iAmOwner) "" else " Only the owner can change this.",
             style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2),
@@ -317,15 +320,15 @@ private fun InviteSheet(code: String?, placesLeft: Int, vm: HouseholdViewModel, 
     val c = ChittaTheme.colors
     val context = LocalContext.current
     var copied by rememberSaveable { mutableStateOf(false) }
-    BottomOverlay(onClose) {
-        Text("Invite someone", style = ChittaTheme.type.headline, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader("Invite someone")
         Spacer(Modifier.height(Dimens.Gap2))
         Text("Send them this code. They sign in with their own Google account and enter it.", style = ChittaTheme.type.label, color = c.inkMuted)
         Spacer(Modifier.height(Dimens.Gap4))
         if (code == null) {
             Text("There is no active code. Make one to let someone join.", style = ChittaTheme.type.body, color = c.ink)
             Spacer(Modifier.height(Dimens.Gap4))
-            ChittaButton("Make a code", { vm.newCode() }, confirmHaptic = true)
+            ChittaButton("Make a code", { vm.newCode() }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
         } else {
             val shown = Households.formatCode(code)
             Box(
@@ -358,9 +361,9 @@ private fun InviteSheet(code: String?, placesLeft: Int, vm: HouseholdViewModel, 
                     putExtra(Intent.EXTRA_TEXT, "Join my household in Paddhu Pusthakam. Sign in with Google, open More > Settings > Household > Join with a code, and enter: $shown")
                 }
                 context.startActivity(Intent.createChooser(send, "Share code").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            })
+            }, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(Dimens.Gap2))
-            ChittaButton("Make a new code", { copied = false; vm.newCode() }, style = ButtonStyle.Quiet)
+            ChittaButton("Make a new code", { copied = false; vm.newCode() }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(Dimens.Gap3))
             Text(
                 "A new code cancels the old one. " + when (placesLeft) { 0 -> "The household is full."; 1 -> "1 place is left in the household."; else -> "$placesLeft places are left in the household." },
@@ -379,8 +382,8 @@ private fun InviteSheet(code: String?, placesLeft: Int, vm: HouseholdViewModel, 
 private fun ShareChoiceSheet(householdName: String, onContinue: (HouseholdSharing.ShareChoice) -> Unit, onNotNow: () -> Unit) {
     val c = ChittaTheme.colors
     var choice by rememberSaveable { mutableStateOf(HouseholdSharing.ShareChoice.SHARE_EXISTING) }
-    BottomOverlay(onNotNow) {
-        Text("Share your existing entries?", style = ChittaTheme.type.headline, color = c.ink)
+    BottomOverlay(onNotNow, handle = false) {
+        SheetHeader("Share your existing entries?")
         Spacer(Modifier.height(Dimens.Gap2))
         Text(
             "You've joined ${householdName.ifBlank { "the household" }}. Choose what happens to the entries already on this phone.",
@@ -404,7 +407,7 @@ private fun ShareChoiceSheet(householdName: String, onContinue: (HouseholdSharin
         )
         Spacer(Modifier.height(Dimens.Gap4))
         Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
-            ChittaButton("Not now", onNotNow, style = ButtonStyle.Quiet, modifier = Modifier.weight(1f))
+            ChittaButton("Not now", onNotNow, kind = ButtonKind.Secondary, modifier = Modifier.weight(1f))
             ChittaButton("Continue", { onContinue(choice) }, modifier = Modifier.weight(1f), confirmHaptic = true)
         }
     }
@@ -434,8 +437,8 @@ private fun ShareOption(title: String, detail: String, selected: Boolean, onClic
 private fun SharingSheet(ui: HouseholdUi, vm: HouseholdViewModel, onClose: () -> Unit) {
     val c = ChittaTheme.colors
     val counts = ui.counts
-    BottomOverlay(onClose) {
-        Text("Your sharing", style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader("Your sharing")
         Spacer(Modifier.height(Dimens.Gap3))
         if (counts != null) {
             Text("${counts.shared} of your entries are shared. ${counts.waiting} waiting to go up.", style = ChittaTheme.type.body, color = c.ink)
@@ -448,9 +451,9 @@ private fun SharingSheet(ui: HouseholdUi, vm: HouseholdViewModel, onClose: () ->
         )
         if (ui.sharing.problem.isNotBlank()) Text(ui.sharing.problem, style = ChittaTheme.type.label, color = c.ink, modifier = Modifier.padding(top = Dimens.Gap2))
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton("Send now", { vm.sendNow(); onClose() }, enabled = !ui.busy)
+        ChittaButton("Send now", { vm.sendNow(); onClose() }, enabled = !ui.busy, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Dimens.Gap2))
-        ChittaButton("Share my earlier entries", { vm.shareEarlier(); onClose() }, style = ButtonStyle.Quiet, enabled = !ui.busy)
+        ChittaButton("Share my earlier entries", { vm.shareEarlier(); onClose() }, kind = ButtonKind.Secondary, enabled = !ui.busy, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Dimens.Gap3))
         Text(
             "Entries marked Mine only are never shared. Sharing earlier entries cannot be undone from here; leaving the household keeps your entries on this phone.",
@@ -464,8 +467,8 @@ private fun SharingSheet(ui: HouseholdUi, vm: HouseholdViewModel, onClose: () ->
 private fun DiagnosticsSheet(vm: HouseholdViewModel, onClose: () -> Unit) {
     val c = ChittaTheme.colors
     val d by vm.diagnostics.collectAsState()
-    BottomOverlay(onClose) {
-        Text("Diagnostics", style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader("Diagnostics")
         Spacer(Modifier.height(Dimens.Gap2))
         Text("What this phone holds against what the server holds.", style = ChittaTheme.type.label, color = c.inkMuted)
         Spacer(Modifier.height(Dimens.Gap3))
@@ -493,6 +496,6 @@ private fun DiagnosticsSheet(vm: HouseholdViewModel, onClose: () -> Unit) {
         }
         HouseholdDiagnostics.waitingNote(d.waiting)?.let { Text(it, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2)) }
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton("Check again", { vm.loadDiagnostics() }, style = ButtonStyle.Quiet, enabled = !d.loading)
+        ChittaButton("Check again", { vm.loadDiagnostics() }, kind = ButtonKind.Secondary, enabled = !d.loading, modifier = Modifier.fillMaxWidth())
     }
 }

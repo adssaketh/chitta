@@ -1,6 +1,8 @@
 package com.mansaketh.chitta.ui.imports
 
 import com.mansaketh.chitta.core.design.components.pressClickable
+import com.mansaketh.chitta.core.design.kit.Section
+import com.mansaketh.chitta.core.design.kit.ValueRow
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -38,12 +40,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import com.mansaketh.chitta.core.design.components.ButtonStyle
-import com.mansaketh.chitta.core.design.components.ChittaButton
-import com.mansaketh.chitta.core.design.components.ChittaTopBar
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
+import com.mansaketh.chitta.core.design.kit.TopBarDetail
 import com.mansaketh.chitta.core.design.components.HairlineRule
 import com.mansaketh.chitta.core.design.components.LoadingPlaceholder
-import com.mansaketh.chitta.core.design.components.SectionHeader
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.tokens.Dimens
@@ -55,7 +56,6 @@ import com.mansaketh.chitta.core.money.Paise
 import com.mansaketh.chitta.ui.Choice
 import com.mansaketh.chitta.ui.ChoiceSheet
 import com.mansaketh.chitta.ui.TextSheet
-import com.mansaketh.chitta.ui.ValueRow
 import java.time.Instant
 import java.time.ZoneId
 
@@ -71,21 +71,21 @@ fun CsvImportScreen(vm: CsvImportViewModel, onBack: () -> Unit) {
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) vm.pick(uri, displayName(context, uri)) }
 
     Column(Modifier.fillMaxSize()) {
-        ChittaTopBar("Import from CSV", onBack = { vm.reset(); onBack() })
+        TopBarDetail("Import from CSV", onBack = { vm.reset(); onBack() })
         when (val s = stage) {
             CsvStage.Idle -> Column(Modifier.padding(horizontal = Dimens.Margin), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Dimens.Gap3)) {
                 Text("Pick a CSV file from a bank or another app, or a Zerodha Console ledger (Excel or CSV). You confirm which column is which, then review every row before anything is saved.", style = ChittaTheme.type.body, color = c.ink)
                 Text("Transfers between your own accounts are not imported from CSV. Add those with Transfer.", style = ChittaTheme.type.label, color = c.inkMuted)
-                ChittaButton("Choose a CSV or Excel file", { picker.launch(arrayOf("text/*", "application/csv", "application/vnd.ms-excel", "*/*")) })
+                ChittaButton("Choose a CSV or Excel file", { picker.launch(arrayOf("text/*", "application/csv", "application/vnd.ms-excel", "*/*")) }, modifier = Modifier.fillMaxWidth())
             }
             CsvStage.Reading, CsvStage.Saving -> Column(Modifier.padding(horizontal = Dimens.Margin)) { LoadingPlaceholder() }
             is CsvStage.Failed -> Column(Modifier.padding(horizontal = Dimens.Margin), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Dimens.Gap3)) {
                 Text(s.message, style = ChittaTheme.type.body, color = c.ink)
-                ChittaButton("Try again", { vm.reset() }, style = ButtonStyle.Quiet)
+                ChittaButton("Try again", { vm.reset() }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
             }
             is CsvStage.Saved -> Column(Modifier.padding(horizontal = Dimens.Margin), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Dimens.Gap3)) {
                 Text("Saved ${s.count} ${if (s.count == 1) "entry" else "entries"}. Undo is on the bar for 10 seconds.", style = ChittaTheme.type.body, color = c.ink)
-                ChittaButton("Done", { vm.reset(); onBack() })
+                ChittaButton("Done", { vm.reset(); onBack() }, modifier = Modifier.fillMaxWidth())
             }
             is CsvStage.Mapping -> MappingStep(vm, s)
             is CsvStage.Review -> ReviewStep(vm, s)
@@ -113,7 +113,7 @@ private fun MappingStep(vm: CsvImportViewModel, s: CsvStage.Mapping) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
         Text("${s.fileName} · ${s.rows.size - (if (m.hasHeader) 1 else 0)} rows", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2))
         if (s.notice != null) Text(s.notice, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2))
-        SectionHeader("Which column is which")
+        Section("Which column is which")
         HairlineRule()
         fields.forEach { (key, label, value) -> ValueRow(label, columnLabel(value), onClick = { sheet = "col:$key" }) }
         ValueRow("Date looks like", m.datePattern.label, onClick = { sheet = "datefmt" })
@@ -127,10 +127,10 @@ private fun MappingStep(vm: CsvImportViewModel, s: CsvStage.Mapping) {
         }
         Spacer(Modifier.height(Dimens.Gap4))
         problems.forEach { Text(it, style = ChittaTheme.type.label, color = c.warningText, modifier = Modifier.padding(bottom = Dimens.Gap1)) }
-        ChittaButton("Review rows", { vm.toReview() }, enabled = problems.isEmpty())
+        ChittaButton("Review rows", { vm.toReview() }, enabled = problems.isEmpty(), modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Dimens.Gap2))
-        if (s.templates.isNotEmpty()) ChittaButton("Use a saved setup", { sheet = "template" }, style = ButtonStyle.Quiet)
-        ChittaButton("Save this setup", { sheet = "save-template" }, style = ButtonStyle.Quiet)
+        if (s.templates.isNotEmpty()) ChittaButton("Use a saved setup", { sheet = "template" }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
+        ChittaButton("Save this setup", { sheet = "save-template" }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
     }
 
     val sheetKey = sheet
@@ -179,7 +179,7 @@ private fun ReviewStep(vm: CsvImportViewModel, s: CsvStage.Review) {
         Column(Modifier.padding(horizontal = Dimens.Margin)) {
             Text("$ticked ticked to save · $needsLook left unticked · ${s.parse.skipped.size} left out", style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(vertical = Dimens.Gap2))
             Text("Rows that look like something you already have, or need a category or account, start unticked. Tap a row to change it.", style = ChittaTheme.type.label, color = c.inkMuted)
-            if (missingCategory > 0) ChittaButton("Set a category for $missingCategory ${if (missingCategory == 1) "row" else "rows"} without one", { bulk = true }, style = ButtonStyle.Quiet)
+            if (missingCategory > 0) ChittaButton("Set a category for $missingCategory ${if (missingCategory == 1) "row" else "rows"} without one", { bulk = true }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
         }
         LazyColumn(Modifier.weight(1f).padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.InlineGap)) {
             itemsIndexed(s.choices) { i, ch ->
@@ -211,7 +211,7 @@ private fun ReviewStep(vm: CsvImportViewModel, s: CsvStage.Review) {
             }
         }
         Column(Modifier.padding(horizontal = Dimens.Margin).padding(top = Dimens.Gap2, bottom = Dimens.Gap4)) {
-            ChittaButton("Save $ticked ${if (ticked == 1) "entry" else "entries"}", { vm.save() }, enabled = ticked > 0, confirmHaptic = true)
+            ChittaButton("Save $ticked ${if (ticked == 1) "entry" else "entries"}", { vm.save() }, enabled = ticked > 0, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
         }
     }
 

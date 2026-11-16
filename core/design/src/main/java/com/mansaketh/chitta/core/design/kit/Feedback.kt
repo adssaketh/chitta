@@ -160,8 +160,8 @@ fun BoxScope.MessageBarSlot(modifier: Modifier = Modifier, content: @Composable 
  */
 @Composable
 fun EmptyState(
-    icon: ImageVector,
-    title: String,
+    icon: ImageVector?,
+    title: String?,
     body: String,
     actionLabel: String,
     onAction: () -> Unit,
@@ -172,10 +172,15 @@ fun EmptyState(
         modifier.fillMaxWidth().padding(vertical = Dimens.SectionGap),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(icon, contentDescription = null, tint = c.inkMuted, modifier = Modifier.size(Dimens.IconEmpty))
-        Spacer(Modifier.height(Dimens.Space4))
-        Text(title.rupeeAware(), style = ChittaTheme.type.sheetTitle, color = c.ink, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(Dimens.Space2))
+        if (icon != null) {
+            Icon(icon, contentDescription = null, tint = c.inkMuted, modifier = Modifier.size(Dimens.IconEmpty))
+            Spacer(Modifier.height(Dimens.Space4))
+        }
+        // A screen whose empty state is one sentence (the app's own words) passes no title; the sentence is the body.
+        if (title != null) {
+            Text(title.rupeeAware(), style = ChittaTheme.type.sheetTitle, color = c.ink, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(Dimens.Space2))
+        }
         Text(body.rupeeAware(), style = ChittaTheme.type.emptyBody, color = c.inkMuted, textAlign = TextAlign.Center)
         Spacer(Modifier.height(Dimens.Space6))
         ChittaButton(actionLabel, onAction, kind = ButtonKind.Secondary)

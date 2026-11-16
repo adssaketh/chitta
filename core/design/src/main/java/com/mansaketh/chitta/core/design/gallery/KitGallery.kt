@@ -19,7 +19,6 @@ import androidx.compose.ui.Modifier
 import com.mansaketh.chitta.core.design.components.AmountTone
 import com.mansaketh.chitta.core.design.components.HairlineRule
 import com.mansaketh.chitta.core.design.components.IconAction
-import com.mansaketh.chitta.core.design.components.SectionHeader
 import com.mansaketh.chitta.core.design.components.SheetSurface
 import com.mansaketh.chitta.core.design.components.Stamp
 import com.mansaketh.chitta.core.design.components.StampTone
@@ -69,7 +68,7 @@ import java.time.LocalDate
 @Composable
 private fun KitSection(title: String, bleed: Boolean = false, content: @Composable () -> Unit) {
     Column(Modifier.fillMaxWidth().padding(top = Dimens.SectionGap)) {
-        Box(Modifier.padding(horizontal = Dimens.Margin)) { SectionHeader(title) }
+        Box(Modifier.padding(horizontal = Dimens.Margin)) { Section(title) }
         Box(Modifier.padding(horizontal = Dimens.Margin)) { HairlineRule() }
         Box(Modifier.height(Dimens.Space4))
         Box(if (bleed) Modifier else Modifier.padding(horizontal = Dimens.Margin)) { content() }

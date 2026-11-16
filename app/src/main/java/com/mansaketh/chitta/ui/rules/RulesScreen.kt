@@ -1,6 +1,9 @@
 package com.mansaketh.chitta.ui.rules
 
+import com.mansaketh.chitta.core.design.kit.SheetHeader
 import androidx.compose.foundation.clickable
+import com.mansaketh.chitta.core.design.kit.EmptyState
+import com.mansaketh.chitta.core.design.kit.ValueRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,12 +24,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.mansaketh.chitta.core.design.kit.ChittaSwitch
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.unit.dp
-import com.mansaketh.chitta.core.design.components.ButtonStyle
-import com.mansaketh.chitta.core.design.components.ChittaButton
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
 import com.mansaketh.chitta.core.design.components.ChittaField
-import com.mansaketh.chitta.core.design.components.ChittaTopBar
-import com.mansaketh.chitta.core.design.components.EmptyState
+import com.mansaketh.chitta.core.design.kit.TopBarDetail
 import com.mansaketh.chitta.core.design.components.HairlineRule
 import com.mansaketh.chitta.core.design.components.LoadingPlaceholder
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
@@ -38,7 +45,6 @@ import com.mansaketh.chitta.ui.BottomOverlay
 import com.mansaketh.chitta.ui.Choice
 import com.mansaketh.chitta.ui.ChoiceSheet
 import com.mansaketh.chitta.ui.ConfirmSheet
-import com.mansaketh.chitta.ui.ValueRow
 import com.mansaketh.chitta.ui.accountName
 import com.mansaketh.chitta.ui.categoryName
 
@@ -60,22 +66,29 @@ fun RulesScreen(vm: RulesViewModel, onBack: () -> Unit) {
     var sheet by remember { mutableStateOf<RuleSheet>(RuleSheet.None) }
 
     Column(Modifier.fillMaxSize()) {
-        ChittaTopBar("Rules", onBack = onBack)
+        TopBarDetail("Rules", onBack = onBack)
         LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
             item {
                 Text("If a new entry matches, a rule fills in the category or account. The first rule that sets something wins. Transfers are never changed.", style = ChittaTheme.type.label, color = c.inkMuted)
                 Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2), modifier = Modifier.padding(vertical = Dimens.Gap3)) {
-                    ChittaButton("New rule", { sheet = RuleSheet.Edit(RuleDraft()) })
-                    ChittaButton("Apply to my history", { vm.buildPreview() }, style = ButtonStyle.Quiet, enabled = ui.rules.any { it.enabled })
+                    ChittaButton("New rule", { sheet = RuleSheet.Edit(RuleDraft()) }, modifier = Modifier.fillMaxWidth())
+                    ChittaButton("Apply to my history", { vm.buildPreview() }, kind = ButtonKind.Secondary, enabled = ui.rules.any { it.enabled }, modifier = Modifier.fillMaxWidth())
                 }
                 HairlineRule()
             }
             if (ui.loading) item { LoadingPlaceholder() }
-            if (!ui.loading && ui.rules.isEmpty()) item { EmptyState("No rules yet. Add one.", "New rule", { sheet = RuleSheet.Edit(RuleDraft()) }) }
+            if (!ui.loading && ui.rules.isEmpty()) item { EmptyState(null, null, "No rules yet. Add one.", "New rule", { sheet = RuleSheet.Edit(RuleDraft()) }) }
             items(ui.rules, key = { it.id }) { r ->
-                Column(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable { sheet = RuleSheet.Actions(r) }.padding(vertical = Dimens.Gap2)) {
-                    Text(r.name + if (r.enabled) "" else " (off)", style = ChittaTheme.type.title, color = if (r.enabled) c.ink else c.inkMuted)
-                    Text(sentence(r, ui), style = ChittaTheme.type.label, color = c.inkMuted)
+                Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f).clickable { sheet = RuleSheet.Actions(r) }.padding(vertical = Dimens.Gap2)) {
+                        Text(r.name, style = ChittaTheme.type.title, color = if (r.enabled) c.ink else c.inkMuted)
+                        Text(sentence(r, ui), style = ChittaTheme.type.label, color = c.inkMuted)
+                    }
+                    Box(
+                        Modifier.heightIn(min = Dimens.TouchTarget).padding(start = Dimens.Gap3)
+                            .toggleable(value = r.enabled, role = Role.Switch, onValueChange = { vm.setEnabled(r, it) }),
+                        contentAlignment = Alignment.Center,
+                    ) { ChittaSwitch(r.enabled) }
                 }
                 HairlineRule()
             }
@@ -155,8 +168,8 @@ private fun RuleForm(initial: RuleDraft, ui: RulesUi, vm: RulesViewModel, onClos
     var problem by remember { mutableStateOf<String?>(null) }
     var pick by remember { mutableStateOf(Pick.None) }
     val liveAccounts = ui.accounts.filter { !it.archived }
-    BottomOverlay(onClose) {
-        Text(if (d.id == null) "New rule" else "Edit rule", style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader(if (d.id == null) "New rule" else "Edit rule")
         Spacer(Modifier.height(Dimens.Gap2))
         ChittaField(value = d.titleContains, onValueChange = { d = d.copy(titleContains = it) }, label = "Title contains", singleLine = true, placeholder = "swiggy")
         ChittaField(value = d.amountAtLeast, onValueChange = { d = d.copy(amountAtLeast = it) }, label = "Amount at least (optional)", singleLine = true,
@@ -167,7 +180,7 @@ private fun RuleForm(initial: RuleDraft, ui: RulesUi, vm: RulesViewModel, onClos
         ChittaField(value = d.name, onValueChange = { d = d.copy(name = it) }, label = "Name (optional)", singleLine = true)
         problem?.let { Text(it, style = ChittaTheme.type.label, color = c.warningText) }
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton("Save", { vm.save(d, { problem = it }, onClose) }, confirmHaptic = true)
+        ChittaButton("Save", { vm.save(d, { problem = it }, onClose) }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
     }
     when (pick) {
         Pick.Category -> ChoiceSheet("Set category", listOf(Choice("No change", "")) + ui.categories.filter { !it.archived && it.mainCategoryId == null }.map { Choice(it.name, it.id, selected = it.id == d.setCategoryId) },

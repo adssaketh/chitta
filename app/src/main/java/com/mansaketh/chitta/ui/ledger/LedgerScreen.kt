@@ -1,6 +1,12 @@
 package com.mansaketh.chitta.ui.ledger
 
 import android.content.ClipData
+import com.mansaketh.chitta.ui.FeatureIcons
+import com.mansaketh.chitta.core.domain.TabKey
+import com.mansaketh.chitta.core.design.kit.EmptyState
+import com.mansaketh.chitta.core.design.kit.TopBarMain
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
@@ -67,11 +73,10 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
                     IconAction(ChittaIcons.Trash, "Delete selected entries", vm::requestDelete)
                 }
             } else {
-                Row(Modifier.fillMaxWidth().padding(start = Dimens.Margin, end = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
-                    com.mansaketh.chitta.core.design.components.ScreenTitle("Ledger", ChittaIcons.Ledger, Modifier.weight(1f))
+                TopBarMain("Ledger", ChittaIcons.Ledger, actions = {
                     IconAction(ChittaIcons.Filter, "Filter by account or category", onClick = { picker = "menu"  })
                     IconAction(ChittaIcons.Search, if (searching) "Close search" else "Search", onClick = { searching = !searching; if (!searching) vm.setText("")  })
-                }
+                })
             }
             if (searching && !selecting) {
                 ChittaField(
@@ -109,7 +114,7 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
             if (filtered) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = Dimens.Margin), verticalAlignment = Alignment.CenterVertically) {
                     Text("Filtered: ${ui.matching} of ${ui.totalEntries} entries", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.weight(1f))
-                    SectionHeader("", action = "Clear", onAction = vm::clearFilters)
+                    ChittaButton("Clear", vm::clearFilters, kind = ButtonKind.Link)
                 }
             }
             notice?.let { Text(it, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(horizontal = Dimens.Margin, vertical = Dimens.Gap2)) }
@@ -125,7 +130,7 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
 
             when {
                 ui.loading -> LoadingPlaceholder(Modifier.padding(Dimens.Margin))
-                ui.totalEntries == 0 -> EmptyState("No transactions yet. Add one.", "Add a transaction", onAdd, Modifier.padding(horizontal = Dimens.Margin))
+                ui.totalEntries == 0 -> EmptyState(FeatureIcons.tab(TabKey.Ledger), null, "No transactions yet. Add one.", "Add a transaction", onAdd, Modifier.padding(horizontal = Dimens.Margin))
                 ui.matching == 0 -> Text("Nothing matches. Clear the search or filters.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(Dimens.Margin))
                 else -> LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), state = listState, contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
                     ui.months.forEach { month ->

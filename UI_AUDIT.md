@@ -234,3 +234,12 @@ Known gaps, so 11b to 11e do not assume otherwise
 - `DateSheet` takes the first day of the week as a parameter; it is read from the Customise setting at the call site in 11b.
 - Screenshots of the new sections are recorded by CI (`[record snapshots]` in the commit message) and need a look on the first run before merging.
 
+
+## Phase 11b: call sites (16 Nov 2026, branch `phase-11b-callsites`)
+Checked after the swap
+- Old components left in `core.design.components`: none of SectionHeader, Section, ScreenTitle, ChittaTopBar, EmptyState, ErrorState, ButtonStyle, ChittaButton, ExpandGroup, UndoBar, GlyphCircleLegacy.
+- Text glyphs ▾ ● ▲ ✓ – ○ in screens: none left.
+Left on purpose (not in the 11b list)
+- Literal dp in chart drawing (`InsightsCharts`, `BudgetRing`), tab-swipe distances and the Household radio ring (`HouseholdScreen`): same as D267.
+- Quick Add keeps its own top (tabs, no title) with the old handle: the v8 sheet header needs a title and the prompt gives it none.
+- Ledger rows (`LedgerRow` inside `DayGroup`, with its own selection circle) and Home's Coming up rows: not yet on `EntryRow` / `CheckRow`. The prompt lists the swap under the shared components but gives no 11b step for it, and `LedgerRow` carries long-press, tags, stamps and the 200% layout, so it needs your go-ahead. Open question in the 11b report.

@@ -1,6 +1,13 @@
 package com.mansaketh.chitta.ui
 
+import com.mansaketh.chitta.core.design.kit.MessageBarSlot
+import com.mansaketh.chitta.core.design.kit.MessageBar
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.activity.compose.BackHandler
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
+import com.mansaketh.chitta.core.design.kit.NavRow
+import com.mansaketh.chitta.core.design.kit.TopBarMain
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -77,6 +84,8 @@ class AppViewModels(
 fun AppRoot(vms: AppViewModels, hidden: Boolean = false, onToggleHide: () -> Unit = {}, extra: (@Composable (onBack: () -> Unit) -> Unit)? = null) {
     val first by vms.root.needsFirstRun.collectAsState()
     val c = ChittaTheme.colors
+    val firstDay by vms.home.prefs.firstDay.collectAsState()
+    CompositionLocalProvider(LocalFirstDay provides firstDay) {
     Box(Modifier.fillMaxSize().background(c.background).statusBarsPadding()) {
         when (first) {
             null -> Unit
@@ -85,10 +94,12 @@ fun AppRoot(vms: AppViewModels, hidden: Boolean = false, onToggleHide: () -> Uni
         }
         val undo by vms.root.undo.current.collectAsState()
         undo?.let { item ->
-            Box(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal = Dimens.Margin).padding(bottom = if (first == false) Dimens.NavBarMin + Dimens.InlineGap else Dimens.Gap4)) {
-                UndoBar(item.message, onUndo = { vms.root.undo.undo() })
+            MessageBarSlot {
+                MessageBar(item.message, actionLabel = "Undo", onAction = { vms.root.undo.undo() })
             }
         }
+        DatePickHost()
+    }
     }
 }
 
@@ -106,9 +117,9 @@ private fun FirstRun(vms: AppViewModels) {
         Spacer(Modifier.height(Dimens.Gap3))
         Text("Start with an empty book, or bring over your book from Paddhu Pusthakam.", style = ChittaTheme.type.body, color = c.ink)
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton("Bring over my book", { importing = true })
+        ChittaButton("Bring over my book", { importing = true }, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Dimens.Gap2))
-        ChittaButton("Start fresh", { vms.imports.startFresh {} }, style = ButtonStyle.Quiet)
+        ChittaButton("Start fresh", { vms.imports.startFresh {} }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
         Text("Start fresh makes a Cash account and a few categories you can rename.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
     }
 }
@@ -258,7 +269,7 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                 }
             }
             ChittaBottomNav(
-                items = tabLayout.slots.map { NavItem(it.key, it.label, tabIcon(it)) } + NavItem(MORE, "More", ChittaIcons.More),
+                items = tabLayout.slots.map { NavItem(it.key, it.label, FeatureIcons.tab(it)) } + NavItem(MORE, "More", ChittaIcons.More),
                 selectedKey = tab, onSelect = { tabChoice = it; stack = emptyList() }, modifier = Modifier.navigationBarsPadding(),
                 onLongPress = { push("customise") },
             )
@@ -298,34 +309,13 @@ private fun NotBuilt(name: String) {
 
 private const val MORE = "more"
 
-private fun tabIcon(k: TabKey) = when (k) {
-    TabKey.Home -> ChittaIcons.Home
-    TabKey.Ledger -> ChittaIcons.Ledger
-    TabKey.Plan -> ChittaIcons.Plan
-    TabKey.Insights -> ChittaIcons.Insights
-    TabKey.Accounts -> ChittaIcons.Bank
-    TabKey.Budgets -> ChittaIcons.Wallet
-    TabKey.Goals -> ChittaIcons.Check
-    TabKey.Loans -> ChittaIcons.Users
-    TabKey.Bills -> ChittaIcons.Receipt
-}
-
-/** One navigation row in More: ink label, optional grey line under it, a caret on the right. */
-@Composable
-private fun MoreRow(label: String, meta: String?, onClick: () -> Unit) {
-    com.mansaketh.chitta.core.design.components.ListRow(
-        title = label, meta = meta, onClick = onClick, minHeight = Dimens.RowMin,
-        trailing = { androidx.compose.material3.Icon(ChittaIcons.CaretRight, contentDescription = null, tint = ChittaTheme.colors.inkMuted, modifier = Modifier.size(Dimens.IconSmall)) },
-    )
-}
-
 @Composable
 private fun MoreScreen(order: List<MoreItem>, open: (MoreItem) -> Unit, onGallery: (() -> Unit)?) {
     Column(Modifier.fillMaxSize()) {
+        TopBarMain("More", ChittaIcons.More)
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
-            com.mansaketh.chitta.core.design.components.ScreenTitle("More", ChittaIcons.More)
-            order.forEach { MoreRow(it.label, null) { open(it) } }
-            if (onGallery != null) MoreRow("Design gallery", "Debug builds only", onGallery)
+            order.forEach { NavRow(it.label, { open(it) }) }
+            if (onGallery != null) NavRow("Design gallery", onGallery, sub = "Debug builds only")
         }
         AppMark(Modifier.align(Alignment.CenterHorizontally).padding(bottom = Dimens.Gap6))
     }

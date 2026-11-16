@@ -1,6 +1,12 @@
 package com.mansaketh.chitta.ui.plan
 
+import com.mansaketh.chitta.core.design.kit.SheetHeader
 import android.app.TimePickerDialog
+import com.mansaketh.chitta.core.design.kit.CategoryChip
+import com.mansaketh.chitta.core.design.kit.SwitchRow
+import com.mansaketh.chitta.core.design.kit.ValueRow
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
 import android.content.Intent
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -62,9 +68,9 @@ fun BudgetSheet(existing: Budget?, ui: PlanUi, onSave: (BudgetForm) -> Unit, onD
     when (step) {
         BStep.Accounts -> MultiPickSheet("Accounts", ui.accounts.filter { !it.archived }.map { it.id to it.name }, accounts, "All accounts", { accounts = it; step = BStep.Form }, { step = BStep.Form })
         BStep.Categories -> MultiPickSheet("Categories it leaves out", ui.categories.filter { it.mainCategoryId == null && !it.archived && it.income == savings }.map { it.id to it.name }, excluded, "None left out", { excluded = it; step = BStep.Form }, { step = BStep.Form })
-        BStep.Form -> BottomOverlay(onDismiss) {
+        BStep.Form -> BottomOverlay(onDismiss, handle = false) {
             Column(Modifier.heightIn(max = sheetMax(0.7f)).verticalScroll(rememberScrollState())) {
-                Text(if (existing == null) "New budget" else "Edit budget", style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
+                SheetHeader(if (existing == null) "New budget" else "Edit budget")
                 Spacer(Modifier.height(Dimens.Gap4))
                 ChittaField(name, { name = it; problem = null }, "Name")
                 Spacer(Modifier.height(Dimens.Gap3))
@@ -74,26 +80,26 @@ fun BudgetSheet(existing: Budget?, ui: PlanUi, onSave: (BudgetForm) -> Unit, onD
                 Spacer(Modifier.height(Dimens.Gap2))
                 Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
                     listOf(Repeat.MONTHLY to "Monthly", Repeat.WEEKLY to "Weekly", Repeat.YEARLY to "Yearly").forEach { (r, l) ->
-                        ChoiceChip(l, repeat == r, { repeat = r; startMs = startFor(r) })
+                        CategoryChip(l, repeat == r, { repeat = r; startMs = startFor(r) })
                     }
-                    ChoiceChip("One time", repeat == null, { repeat = null })
+                    CategoryChip("One time", repeat == null, { repeat = null })
                 }
                 if (repeat == null) {
-                    ValueRow("Starts", dateText(startMs, zone), onClick = { pickDate(context, startMs, zone, { startMs = Periods.startOfDay(Periods.date(it, zone), zone) }) })
-                    ValueRow("Ends", dateText(endMs - 1, zone), onClick = { pickDate(context, endMs - 1, zone, { endMs = Periods.startOfDay(Periods.date(it, zone).plusDays(1), zone) }) })
+                    ValueRow("Starts", dateText(startMs, zone), onClick = { pickDate(startMs, zone, { startMs = Periods.startOfDay(Periods.date(it, zone), zone) }) })
+                    ValueRow("Ends", dateText(endMs - 1, zone), onClick = { pickDate(endMs - 1, zone, { endMs = Periods.startOfDay(Periods.date(it, zone).plusDays(1), zone) }) })
                 }
                 Spacer(Modifier.height(Dimens.Gap3))
                 Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
-                    ChoiceChip("Spending", !savings, { savings = false; excluded = emptySet() })
-                    ChoiceChip("Savings", savings, { savings = true; excluded = emptySet() })
+                    CategoryChip("Spending", !savings, { savings = false; excluded = emptySet() })
+                    CategoryChip("Savings", savings, { savings = true; excluded = emptySet() })
                 }
                 Text("More options", style = ChittaTheme.type.labelMedium, color = ChittaTheme.colors.inkMuted, modifier = Modifier.padding(top = Dimens.Gap4))
                 ValueRow("Accounts", if (accounts.isEmpty()) "All" else "${accounts.size} chosen", onClick = { step = BStep.Accounts })
                 ValueRow("Leaves out", if (excluded.isEmpty()) "Nothing" else "${excluded.size} categories", onClick = { step = BStep.Categories })
-                ValueRow("Count lent and borrowed", if (debt) "On" else "Off", onClick = { debt = !debt })
+                SwitchRow("Count lent and borrowed", debt, { debt = it })
                 ValueRow("Category goals are", if (absolute) "Amounts" else "Percentages", onClick = { absolute = !absolute })
                 if (!savings && repeat != null) {
-                    ValueRow("Carry over what is left", if (rollover) "On" else "Off", onClick = { rollover = !rollover })
+                    SwitchRow("Carry over what is left", rollover, { rollover = it })
                     Text("On: money left unspent is added to the next period, and an overspend is taken off it. Starts from this budget's first period.", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted, modifier = Modifier.padding(top = Dimens.Gap1))
                 }
                 if (existing?.addedTransactionsOnly == true) Text("This was an \"added only\" budget in the old Paddhu Pusthakam app. This app cannot tell which entries were added to it, so it counts every matching entry.", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
@@ -106,7 +112,7 @@ fun BudgetSheet(existing: Budget?, ui: PlanUi, onSave: (BudgetForm) -> Unit, onD
                         repeat == null && endMs <= startMs -> problem = "The end must be after the start"
                         else -> onSave(BudgetForm(name, p, repeat, startMs, endMs, savings, debt, accounts.toList().ifEmpty { null }, excluded.toList().ifEmpty { null }, absolute, rollover && !savings && repeat != null))
                     }
-                }, confirmHaptic = true)
+                }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
             }
         }
     }
@@ -121,8 +127,8 @@ fun GoalSheet(existing: Objective?, zone: ZoneId, nowMs: Long, onSave: (name: St
     var saving by remember { mutableStateOf(existing?.income ?: true) }
     var endMs by remember { mutableStateOf(existing?.endDateMs) }
     var problem by remember { mutableStateOf<String?>(null) }
-    BottomOverlay(onDismiss) {
-        Text(if (existing == null) "New goal" else "Edit goal", style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
+    BottomOverlay(onDismiss, handle = false) {
+        SheetHeader(if (existing == null) "New goal" else "Edit goal")
         Spacer(Modifier.height(Dimens.Gap4))
         ChittaField(name, { name = it; problem = null }, "Name")
         Spacer(Modifier.height(Dimens.Gap3))
@@ -130,11 +136,11 @@ fun GoalSheet(existing: Objective?, zone: ZoneId, nowMs: Long, onSave: (name: St
         if (existing == null) {
             Spacer(Modifier.height(Dimens.Gap3))
             Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
-                ChoiceChip("Saving up", saving, { saving = true }); ChoiceChip("Spending on", !saving, { saving = false })
+                CategoryChip("Saving up", saving, { saving = true }); CategoryChip("Spending on", !saving, { saving = false })
             }
         }
-        ValueRow("Finish by", endMs?.let { dateText(it, zone) } ?: "No date", onClick = { pickDate(context, endMs ?: nowMs, zone, { endMs = it }) })
-        if (endMs != null) ChittaButton("Remove the date", { endMs = null }, style = ButtonStyle.Quiet)
+        ValueRow("Finish by", endMs?.let { dateText(it, zone) } ?: "No date", onClick = { pickDate(endMs ?: nowMs, zone, { endMs = it }) })
+        if (endMs != null) ChittaButton("Remove the date", { endMs = null }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Dimens.Gap4))
         ChittaButton("Save", {
             val p = AmountExpression.evaluate(target)
@@ -143,7 +149,7 @@ fun GoalSheet(existing: Objective?, zone: ZoneId, nowMs: Long, onSave: (name: St
                 p == null || p.isZero -> problem = "Enter a target above zero"
                 else -> onSave(name, p, saving, endMs)
             }
-        }, confirmHaptic = true)
+        }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -166,19 +172,19 @@ fun LoanSheet(existing: Objective?, ui: PlanUi, onAdd: (name: String, lent: Bool
     var gst by remember { mutableStateOf("18") }
     var firstMs by remember { mutableStateOf(ui.nowMs) }
     var problem by remember { mutableStateOf<String?>(null) }
-    BottomOverlay(onDismiss) {
+    BottomOverlay(onDismiss, handle = false) {
         Column(Modifier.heightIn(max = sheetMax(0.7f)).verticalScroll(rememberScrollState())) {
-            Text(if (existing == null) "New loan" else "Edit loan", style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
+            SheetHeader(if (existing == null) "New loan" else "Edit loan")
             Spacer(Modifier.height(Dimens.Gap4))
             ChittaField(name, { name = it; problem = null }, problem ?: "Name")
             if (existing == null) {
                 Spacer(Modifier.height(Dimens.Gap3))
                 Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
-                    ChoiceChip("I borrowed", !lent, { lent = false }); ChoiceChip("I lent", lent, { lent = true })
+                    CategoryChip("I borrowed", !lent, { lent = false }); CategoryChip("I lent", lent, { lent = true })
                 }
                 Spacer(Modifier.height(Dimens.Gap2))
                 Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
-                    ChoiceChip("Pay back any time", !instalments, { instalments = false }); ChoiceChip("Fixed instalments", instalments, { instalments = true })
+                    CategoryChip("Pay back any time", !instalments, { instalments = false }); CategoryChip("Fixed instalments", instalments, { instalments = true })
                 }
                 Spacer(Modifier.height(Dimens.Gap3))
                 ChittaField(amount, { amount = it; problem = null }, if (instalments) "Amount borrowed (principal)" else "Amount ${if (lent) "lent" else "borrowed"}", keyboardOptions = Num)
@@ -197,7 +203,7 @@ fun LoanSheet(existing: Objective?, ui: PlanUi, onAdd: (name: String, lent: Bool
                 }
                 Spacer(Modifier.height(Dimens.Gap3))
                 ChittaField(emi, { emi = it }, if (suggestion != null) "Instalment (the formula gives ${IndianFormat.rupees(suggestion)})" else "Instalment each month", keyboardOptions = Num)
-                ValueRow("First instalment", dateText(firstMs, zone), onClick = { pickDate(context, firstMs, zone, { firstMs = it }) })
+                ValueRow("First instalment", dateText(firstMs, zone), onClick = { pickDate(firstMs, zone, { firstMs = it }) })
                 Spacer(Modifier.height(Dimens.Gap2))
                 ChittaField(fee, { fee = it }, "Processing fee (optional)", keyboardOptions = Num)
                 Spacer(Modifier.height(Dimens.Gap3))
@@ -207,7 +213,7 @@ fun LoanSheet(existing: Objective?, ui: PlanUi, onAdd: (name: String, lent: Bool
                 Spacer(Modifier.height(Dimens.Gap3))
                 Text("Account", style = ChittaTheme.type.labelMedium, color = ChittaTheme.colors.inkMuted)
                 Spacer(Modifier.height(Dimens.Gap2))
-                Column { accounts.forEach { a -> ChoiceChip(a.name, a.id == account, { account = a.id }, modifier = Modifier.padding(bottom = Dimens.Gap1)) } }
+                Column { accounts.forEach { a -> CategoryChip(a.name, a.id == account, { account = a.id }, modifier = Modifier.padding(bottom = Dimens.Gap1)) } }
             }
             Spacer(Modifier.height(Dimens.Gap4))
             ChittaButton("Save", {
@@ -231,7 +237,7 @@ fun LoanSheet(existing: Objective?, ui: PlanUi, onAdd: (name: String, lent: Bool
                         if (initial == null || off == null) problem = "Enter the amounts as numbers" else onAdd(name, lent, initial, off, account) { problem = it }
                     }
                 }
-            }, confirmHaptic = true)
+            }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -261,24 +267,24 @@ fun BillSheet(existing: Transaction?, ui: PlanUi, onSave: (title: String, amount
     when (step) {
         PStep.Category -> ChoiceSheet("Category", categories.map { Choice(it.name, it.id, selected = it.id == categoryId) }, { categoryId = it; step = PStep.Form }, { step = PStep.Form })
         PStep.Account -> ChoiceSheet("Account", ui.accounts.filter { !it.archived }.map { Choice(it.name, it.id, selected = it.id == accountId) }, { accountId = it; step = PStep.Form }, { step = PStep.Form })
-        PStep.Form -> BottomOverlay(onDismiss) {
+        PStep.Form -> BottomOverlay(onDismiss, handle = false) {
             Column(Modifier.heightIn(max = sheetMax(0.7f)).verticalScroll(rememberScrollState())) {
-                Text(if (existing == null) "New bill" else "Edit bill", style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
+                SheetHeader(if (existing == null) "New bill" else "Edit bill")
                 Spacer(Modifier.height(Dimens.Gap4))
                 ChittaField(title, { title = it; problem = null }, problem ?: "What is it")
                 Spacer(Modifier.height(Dimens.Gap3))
                 ChittaField(amount, { amount = it }, "Amount (leave empty if it changes each time)", keyboardOptions = Num)
                 Spacer(Modifier.height(Dimens.Gap3))
                 if (existing == null) Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
-                    ChoiceChip("To pay", !income, { income = false; categoryId = "" }); ChoiceChip("To receive", income, { income = true; categoryId = "" })
+                    CategoryChip("To pay", !income, { income = false; categoryId = "" }); CategoryChip("To receive", income, { income = true; categoryId = "" })
                 }
                 ValueRow("Category", categoryName(categoryId, ui.categories).takeIf { categoryId.isNotEmpty() } ?: "Choose", onClick = { step = PStep.Category })
                 ValueRow("Account", accountName(accountId, ui.accounts), onClick = { step = PStep.Account })
-                ValueRow("Due", dateText(dueMs, zone), onClick = { pickDate(context, dueMs, zone, { dueMs = it }) })
+                ValueRow("Due", dateText(dueMs, zone), onClick = { pickDate(dueMs, zone, { dueMs = it }) })
                 Spacer(Modifier.height(Dimens.Gap3))
-                RepeatFields(repeat, { repeat = it }, length, { length = it }, endMs, { pickDate(context, endMs ?: dueMs, zone, { endMs = it }) }, { endMs = null }, zone)
+                RepeatFields(repeat, { repeat = it }, length, { length = it }, endMs, { pickDate(endMs ?: dueMs, zone, { endMs = it }) }, { endMs = null }, zone)
                 if (repeat != null) ValueRow("Is a subscription", if (subscription) "Yes" else "No", onClick = { subscription = !subscription })
-                ValueRow("Remind me", if (notify) "On" else "Off", onClick = { notify = !notify })
+                SwitchRow("Remind me", notify, { notify = it })
                 Spacer(Modifier.height(Dimens.Gap4))
                 ChittaButton("Save", {
                     val p = if (amount.isBlank()) Paise.ZERO else AmountExpression.evaluate(amount)
@@ -289,7 +295,7 @@ fun BillSheet(existing: Transaction?, ui: PlanUi, onSave: (title: String, amount
                         accountId.isEmpty() -> problem = "Add an account first"
                         else -> onSave(title, p, income, accountId, categoryId, dueMs, repeat, length.toIntOrNull() ?: 1, endMs, notify, subscription)
                     }
-                }, confirmHaptic = true)
+                }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
             }
         }
     }
@@ -302,13 +308,13 @@ fun RepeatSheet(entry: Transaction, zone: ZoneId, onSave: (Repeat?, Int, Long?) 
     var repeat by remember { mutableStateOf(entry.repeat?.takeIf { it != Repeat.CUSTOM }) }
     var length by remember { mutableStateOf((entry.periodLength ?: 1).toString()) }
     var endMs by remember { mutableStateOf(entry.endDateMs) }
-    BottomOverlay(onDismiss) {
-        Text("Repeat", style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
+    BottomOverlay(onDismiss, handle = false) {
+        SheetHeader("Repeat")
         Text("The next one is made when this one is paid, or when you skip it.", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted)
         Spacer(Modifier.height(Dimens.Gap4))
-        RepeatFields(repeat, { repeat = it }, length, { length = it }, endMs, { pickDate(context, endMs ?: entry.dateMs, zone, { endMs = it }) }, { endMs = null }, zone)
+        RepeatFields(repeat, { repeat = it }, length, { length = it }, endMs, { pickDate(endMs ?: entry.dateMs, zone, { endMs = it }) }, { endMs = null }, zone)
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton("Save", { onSave(repeat, length.toIntOrNull() ?: 1, endMs) }, confirmHaptic = true)
+        ChittaButton("Save", { onSave(repeat, length.toIntOrNull() ?: 1, endMs) }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -321,23 +327,23 @@ fun ReminderSheet(s: ReminderSettings, autoPay: Boolean, paidOnDue: Boolean, ask
     fun time(h: Int, m: Int, set: (Int, Int) -> Unit) { TimePickerDialog(context, { _, hh, mm -> set(hh, mm) }, h, m, false).show() }
     fun clock(h: Int, m: Int) = (if (h % 12 == 0) 12 else h % 12).toString() + ":" + m.toString().padStart(2, '0') + if (h < 12) " am" else " pm"
     fun wantsOn() { if (!allowed && android.os.Build.VERSION.SDK_INT >= 33 && !askedBefore) ask.launch(android.Manifest.permission.POST_NOTIFICATIONS) }
-    BottomOverlay(onDismiss) {
+    BottomOverlay(onDismiss, handle = false) {
         Column(Modifier.heightIn(max = sheetMax(0.7f)).verticalScroll(rememberScrollState())) {
-            Text("Bills and reminders", style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
+            SheetHeader("Bills and reminders")
             Spacer(Modifier.height(Dimens.Gap3))
             if (!allowed && (s.dueBills || s.logReminder)) {
                 Text("Paddhu Pusthakam is not allowed to show notifications, so these reminders will stay silent. You can allow them in Android settings.", style = ChittaTheme.type.body, color = ChittaTheme.colors.warningText)
                 Spacer(Modifier.height(Dimens.Gap2))
-                ChittaButton("Open notification settings", { context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)) }, style = ButtonStyle.Quiet)
+                ChittaButton("Open notification settings", { context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)) }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(Dimens.Gap2))
             }
-            ValueRow("Remind me about due bills", if (s.dueBills) "On" else "Off", onClick = { onReminders(s.copy(dueBills = !s.dueBills)); if (!s.dueBills) wantsOn() })
+            SwitchRow("Remind me about due bills", s.dueBills, { onReminders(s.copy(dueBills = it)); if (it) wantsOn() })
             if (s.dueBills) ValueRow("At", clock(s.billHour, s.billMinute), onClick = { time(s.billHour, s.billMinute) { h, m -> onReminders(s.copy(billHour = h, billMinute = m)) } })
             Text("You hear about a bill the day before and on the day it is due.", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap3))
-            ValueRow("Remind me to log", if (s.logReminder) "On" else "Off", onClick = { onReminders(s.copy(logReminder = !s.logReminder)); if (!s.logReminder) wantsOn() })
+            SwitchRow("Remind me to log", s.logReminder, { onReminders(s.copy(logReminder = it)); if (it) wantsOn() })
             if (s.logReminder) ValueRow("At", clock(s.logHour, s.logMinute), onClick = { time(s.logHour, s.logMinute) { h, m -> onReminders(s.copy(logHour = h, logMinute = m)) } })
             Spacer(Modifier.height(Dimens.Gap4))
-            ValueRow("Pay overdue repeating bills by themselves", if (autoPay) "On" else "Off", onClick = { onAutoPay(!autoPay) })
+            SwitchRow("Pay overdue repeating bills by themselves", autoPay, { onAutoPay(it) })
             ValueRow("A paid bill is dated", if (paidOnDue) "Its due date" else "The day you pay", onClick = { onPaidOnDue(!paidOnDue) })
             Text("Digest notifications are off. Card due reminders come with the card screen in a later phase.", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
         }

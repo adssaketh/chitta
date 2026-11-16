@@ -1,6 +1,12 @@
 package com.mansaketh.chitta.ui.household
 
+import com.mansaketh.chitta.core.design.kit.SheetHeader
 import androidx.compose.foundation.layout.Spacer
+import com.mansaketh.chitta.core.design.kit.SwitchRow
+import com.mansaketh.chitta.core.design.kit.GaugeBar
+import com.mansaketh.chitta.core.design.kit.Section
+import com.mansaketh.chitta.core.design.kit.ValueRow
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
@@ -14,12 +20,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.mansaketh.chitta.cloud.HouseholdSharedItems
-import com.mansaketh.chitta.core.design.components.ButtonStyle
-import com.mansaketh.chitta.core.design.components.ChittaButton
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
 import com.mansaketh.chitta.core.design.components.ChittaField
-import com.mansaketh.chitta.core.design.components.GaugeBar
+import com.mansaketh.chitta.core.design.kit.GaugeBar
 import com.mansaketh.chitta.core.design.components.HairlineRule
-import com.mansaketh.chitta.core.design.components.SectionHeader
 import com.mansaketh.chitta.core.design.components.Stamp
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.tokens.Dimens
@@ -30,7 +35,6 @@ import com.mansaketh.chitta.core.model.FixedDeposit
 import com.mansaketh.chitta.core.money.Segments
 import com.mansaketh.chitta.core.money.Paise
 import com.mansaketh.chitta.ui.BottomOverlay
-import com.mansaketh.chitta.ui.ValueRow
 import com.mansaketh.chitta.ui.manage.DepositEditSheet
 import com.mansaketh.chitta.ui.manage.depositLine
 import com.mansaketh.chitta.ui.manage.maskedRupees
@@ -124,15 +128,15 @@ fun ShareSheet(shared: HouseholdSharedItems, kind: String, localId: String, item
     var problem by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val others = st.members.filterKeys { it != uid }.entries.sortedBy { it.value.lowercase() }
-    BottomOverlay(onClose) {
-        Text("Who sees $itemName", style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader("Who sees $itemName")
         Text("Nobody else sees it unless you pick them. You can pick up to 7 people.", style = ChittaTheme.type.label, color = c.inkMuted)
         Spacer(Modifier.height(Dimens.Gap2))
         HairlineRule()
         if (others.isEmpty()) Text("Nobody else is in the household yet.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap3))
         others.forEach { (id, name) -> ValueRow(name, if (id in picked) "Sees it" else "Not shared", onClick = { picked = if (id in picked) picked - id else picked + id }) }
         if (others.isNotEmpty()) {
-            ValueRow("Let them edit the details", if (canEdit) "On" else "Off", onClick = { canEdit = !canEdit })
+            SwitchRow("Let them edit the details", canEdit, { canEdit = it })
             Text(
                 "People you pick can change the details of this item when this is On. Only you can delete it or change who sees it. It never counts in their Net worth.",
                 style = ChittaTheme.type.label, color = c.inkMuted,
@@ -140,10 +144,10 @@ fun ShareSheet(shared: HouseholdSharedItems, kind: String, localId: String, item
         }
         problem?.let { Text(it, style = ChittaTheme.type.label, color = c.warningText, modifier = Modifier.padding(top = Dimens.Gap2)) }
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton("Save", { scope.launch { val r = shared.setSharing(kind, localId, picked.toList(), canEdit); if (r == null) onClose() else problem = r } })
+        ChittaButton("Save", { scope.launch { val r = shared.setSharing(kind, localId, picked.toList(), canEdit); if (r == null) onClose() else problem = r } }, modifier = Modifier.fillMaxWidth())
         if (current != null) {
             Spacer(Modifier.height(Dimens.Gap2))
-            ChittaButton("Make private again", { scope.launch { val r = shared.setSharing(kind, localId, emptyList(), false); if (r == null) onClose() else problem = r } }, style = ButtonStyle.Quiet)
+            ChittaButton("Make private again", { scope.launch { val r = shared.setSharing(kind, localId, emptyList(), false); if (r == null) onClose() else problem = r } }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -152,7 +156,7 @@ fun ShareSheet(shared: HouseholdSharedItems, kind: String, localId: String, item
 
 fun LazyListScope.sharedDepositSection(rows: List<SharedDepositView>, nowMs: Long, zone: ZoneId, onOpen: (SharedDepositView) -> Unit) {
     if (rows.isEmpty()) return
-    item { Spacer(Modifier.height(Dimens.SectionGap)); SectionHeader("Shared with you") }
+    item { Section("Shared with you") }
     rows.forEach { v ->
         item(key = "sfd-" + v.docId) {
             ValueRow(
@@ -175,8 +179,8 @@ fun SharedDepositSheet(v: SharedDepositView, shared: HouseholdSharedItems, nowMs
     var problem by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val close = { shared.acknowledgeReplaced(v.docId); onClose() }
-    BottomOverlay(close) {
-        Text(d.bank.ifBlank { "Fixed deposit" } + (if (d.fdNumber.isNotEmpty()) " · ${d.fdNumber}" else ""), style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(close, handle = false) {
+        SheetHeader(d.bank.ifBlank { "Fixed deposit" } + (if (d.fdNumber.isNotEmpty()) " · ${d.fdNumber}" else ""))
         Text(if (v.canEdit) "Shared by ${v.owner}. You can edit the details." else "Shared by ${v.owner}. View only.", style = ChittaTheme.type.label, color = c.inkMuted)
         v.editedBy?.let { Text("Last edited by $it.", style = ChittaTheme.type.label, color = c.inkMuted) }
         if (v.replaced) Text("Somebody else changed this after your edit.", style = ChittaTheme.type.label, color = c.warningText)
@@ -196,10 +200,10 @@ fun SharedDepositSheet(v: SharedDepositView, shared: HouseholdSharedItems, nowMs
         problem?.let { Text(it, style = ChittaTheme.type.label, color = c.warningText, modifier = Modifier.padding(top = Dimens.Gap2)) }
         Spacer(Modifier.height(Dimens.Gap4))
         if (v.canEdit) {
-            ChittaButton("Edit details", { problem = null; editing = true })
+            ChittaButton("Edit details", { problem = null; editing = true }, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(Dimens.Gap2))
         }
-        ChittaButton("Close", close, style = ButtonStyle.Quiet)
+        ChittaButton("Close", close, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
     }
     if (editing) DepositEditSheet(
         d, nowMs, zone,
@@ -222,8 +226,8 @@ fun SharedLoanSheet(v: SharedLoanView, shared: HouseholdSharedItems, zone: ZoneI
     var problem by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val close = { shared.acknowledgeReplaced(v.docId); onClose() }
-    BottomOverlay(close) {
-        Text(v.loan.name, style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(close, handle = false) {
+        SheetHeader(v.loan.name)
         Text(if (v.canEdit) "Shared by ${v.owner}. You can edit the name and note." else "Shared by ${v.owner}. View only.", style = ChittaTheme.type.label, color = c.inkMuted)
         v.editedBy?.let { Text("Last edited by $it.", style = ChittaTheme.type.label, color = c.inkMuted) }
         if (v.replaced) Text("Somebody else changed this after your edit.", style = ChittaTheme.type.label, color = c.warningText)
@@ -251,10 +255,10 @@ fun SharedLoanSheet(v: SharedLoanView, shared: HouseholdSharedItems, zone: ZoneI
         problem?.let { Text(it, style = ChittaTheme.type.label, color = c.warningText, modifier = Modifier.padding(top = Dimens.Gap2)) }
         Spacer(Modifier.height(Dimens.Gap4))
         if (v.canEdit && t != null) {
-            ChittaButton("Edit details", { problem = null; editing = true })
+            ChittaButton("Edit details", { problem = null; editing = true }, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(Dimens.Gap2))
         }
-        ChittaButton("Close", close, style = ButtonStyle.Quiet)
+        ChittaButton("Close", close, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
     }
     if (editing) SharedLoanEditSheet(
         v.loan.name, v.loan.terms?.note.orEmpty(),
@@ -272,16 +276,16 @@ private fun SharedLoanEditSheet(name0: String, note0: String, onSave: (String, S
     var name by remember { mutableStateOf(name0) }
     var note by remember { mutableStateOf(note0) }
     var problem by remember { mutableStateOf<String?>(null) }
-    BottomOverlay(onClose) {
-        Text("Edit loan details", style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader("Edit loan details")
         Spacer(Modifier.height(Dimens.Gap3))
         ChittaField(name, { name = it; problem = null }, problem ?: "Name")
         Spacer(Modifier.height(Dimens.Gap3))
         ChittaField(note, { note = it }, "Note (optional)", singleLine = false)
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton("Save", { if (name.isBlank()) problem = "Give the loan a name" else onSave(name, note) }, confirmHaptic = true)
+        ChittaButton("Save", { if (name.isBlank()) problem = "Give the loan a name" else onSave(name, note) }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Dimens.Gap2))
-        ChittaButton("Close", onClose, style = ButtonStyle.Quiet)
+        ChittaButton("Close", onClose, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
     }
 }
 

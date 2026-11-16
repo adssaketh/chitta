@@ -1,5 +1,6 @@
 package com.mansaketh.chitta.ui.detail
 
+import com.mansaketh.chitta.core.design.kit.SheetHeader
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -20,8 +21,8 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import com.mansaketh.chitta.core.design.components.ButtonStyle
-import com.mansaketh.chitta.core.design.components.ChittaButton
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
 import com.mansaketh.chitta.core.design.components.HairlineRule
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.theme.rupeeAware
@@ -44,24 +45,24 @@ fun ReceiptSheet(
     has: Boolean, onCamera: () -> Unit, onGallery: () -> Unit, onView: () -> Unit, onReadAgain: () -> Unit, onRemove: () -> Unit, onClose: () -> Unit,
 ) {
     val c = ChittaTheme.colors
-    BottomOverlay(onClose) {
-        Text("Receipt", style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader("Receipt")
         Spacer(Modifier.height(Dimens.Gap2))
         Text(
             "The photo stays on this phone and is not in backups. Its text is read on the phone, and nothing changes on the entry until you tap a suggestion.",
             style = ChittaTheme.type.body, color = c.inkMuted,
         )
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton(if (has) "Take a new photo" else "Take a photo", onCamera)
+        ChittaButton(if (has) "Take a new photo" else "Take a photo", onCamera, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Dimens.Gap2))
-        ChittaButton(if (has) "Choose another photo" else "Choose from gallery", onGallery, style = ButtonStyle.Quiet)
+        ChittaButton(if (has) "Choose another photo" else "Choose from gallery", onGallery, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
         if (has) {
             Spacer(Modifier.height(Dimens.Gap2))
-            ChittaButton("View photo", onView, style = ButtonStyle.Quiet)
+            ChittaButton("View photo", onView, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(Dimens.Gap2))
-            ChittaButton("Read the text again", onReadAgain, style = ButtonStyle.Quiet)
+            ChittaButton("Read the text again", onReadAgain, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(Dimens.Gap2))
-            ChittaButton("Remove photo", onRemove, style = ButtonStyle.Quiet)
+            ChittaButton("Remove photo", onRemove, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -69,12 +70,12 @@ fun ReceiptSheet(
 /** A message about the photo (it could not be read, or nothing could be read from it). */
 @Composable
 fun ReceiptNoticeSheet(text: String, onClose: () -> Unit) {
-    BottomOverlay(onClose) {
-        Text("Receipt", style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader("Receipt")
         Spacer(Modifier.height(Dimens.Gap3))
         Text(text, style = ChittaTheme.type.body, color = ChittaTheme.colors.inkMuted)
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton("Close", onClose)
+        ChittaButton("Close", onClose, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -95,8 +96,8 @@ fun ReceiptReadingSheet(
     onUseAmount: (Long) -> Unit, onUseDate: (LocalDate) -> Unit, onUseTitle: (String) -> Unit, onClose: () -> Unit,
 ) {
     val c = ChittaTheme.colors
-    BottomOverlay(onClose) {
-        Text("Read from the receipt", style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader("Read from the receipt")
         Spacer(Modifier.height(Dimens.Gap2))
         Text("Check these against the photo. Printed text can be misread.", style = ChittaTheme.type.body, color = c.inkMuted)
         Spacer(Modifier.height(Dimens.Gap2))
@@ -116,7 +117,7 @@ fun ReceiptReadingSheet(
             SuggestionRow("Shop name as the title", AnnotatedString(m), AnnotatedString(entry.name.ifBlank { "No title" }), matches = m.equals(entry.name.trim(), ignoreCase = true), canUse = canEdit, note = null) { onUseTitle(m) }
         }
         Spacer(Modifier.height(Dimens.Gap3))
-        ChittaButton("Done", onClose)
+        ChittaButton("Done", onClose, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -131,7 +132,7 @@ private fun SuggestionRow(label: String, suggested: AnnotatedString, now: Annota
         } else {
             Text(buildAnnotatedString { append("Now: "); append(now) }, style = ChittaTheme.type.label, color = c.inkMuted)
             if (note != null) Text(note, style = ChittaTheme.type.label, color = c.warningText)
-            if (canUse) ChittaButton("Use this", onUse, style = ButtonStyle.Quiet)
+            if (canUse) ChittaButton("Use this", onUse, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
         }
     }
     HairlineRule()
@@ -167,6 +168,6 @@ fun ReceiptViewer(load: suspend () -> ImageBitmap?, onClose: () -> Unit) {
             )
         }
         if (failed) Text("The photo could not be opened.", style = ChittaTheme.type.body, color = Color.White, modifier = Modifier.align(Alignment.Center))
-        ChittaButton("Close", onClose, modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(Dimens.Margin).width(Dimens.CloseWidth), style = ButtonStyle.Quiet)
+        ChittaButton("Close", onClose, modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(Dimens.Margin).width(Dimens.CloseWidth), kind = ButtonKind.Secondary)
     }
 }

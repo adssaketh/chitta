@@ -1,6 +1,14 @@
 package com.mansaketh.chitta.ui.manage
 
+import com.mansaketh.chitta.core.design.kit.SheetHeader
 import android.net.Uri
+import com.mansaketh.chitta.core.design.kit.SwitchRow
+import com.mansaketh.chitta.core.design.kit.EmptyState
+import com.mansaketh.chitta.core.design.kit.Section
+import com.mansaketh.chitta.core.design.kit.ValueRow
+import com.mansaketh.chitta.core.design.kit.TopBarDetail
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -146,7 +154,7 @@ fun MutualFundsScreen(vm: ManageViewModel, onBack: () -> Unit) {
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            ChittaTopBar(
+            TopBarDetail(
                 "Mutual funds", onBack = onBack,
                 actions = {
                     IconAction(
@@ -200,16 +208,16 @@ fun MutualFundsScreen(vm: ManageViewModel, onBack: () -> Unit) {
 
         when (val c = cas) {
             CasUi.None -> Unit
-            CasUi.Reading -> BottomOverlay({}) { Text("Reading the statement…", style = ChittaTheme.type.title, color = ChittaTheme.colors.ink) }
+            CasUi.Reading -> BottomOverlay({}, handle = false) { SheetHeader("Reading the statement…") }
             is CasUi.NeedPassword -> TextSheet(
                 "Statement password", if (c.wrong) "That password did not work. Try again" else "This PDF has a password. It is used once and never saved",
                 "", { readStatement(c.uri, it) }, { cas = CasUi.None }, saveLabel = "Open",
             )
-            is CasUi.Error -> BottomOverlay({ cas = CasUi.None }) {
-                Text("Could not import", style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
+            is CasUi.Error -> BottomOverlay({ cas = CasUi.None }, handle = false) {
+                SheetHeader("Could not import")
                 Text(c.message, style = ChittaTheme.type.body, color = ChittaTheme.colors.inkMuted)
                 Spacer(Modifier.height(Dimens.Gap4))
-                ChittaButton("Close", { cas = CasUi.None }, style = ButtonStyle.Quiet)
+                ChittaButton("Close", { cas = CasUi.None }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
             }
             is CasUi.Preview -> CasPreviewSheet(c.plan, c.reading, onConfirm = { vm.applyCas(c.plan); cas = CasUi.None; tab = 0 }, onClose = { cas = CasUi.None })
             is CasUi.NpsPreview -> NpsPreviewSheet(c.plan, c.reading, onConfirm = { vm.applyNps(c.plan); cas = CasUi.None; tab = 1 }, onClose = { cas = CasUi.None })
@@ -227,7 +235,7 @@ private fun FundsTab(
     LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
         if (ui.loading) item { LoadingPlaceholder() }
         else if (ui.funds.isEmpty()) item {
-            EmptyState("No mutual funds yet. Add one by hand, or import your statement.", "Add holdings", onAdd)
+            EmptyState(null, null, "No mutual funds yet. Add one by hand, or import your statement.", "Add holdings", onAdd)
         } else {
             item {
                 Spacer(Modifier.height(Dimens.Gap3))
@@ -255,9 +263,9 @@ private fun FundsTab(
                     )
                 } else if (totals.priced > 0) Text("No gain to show: no fund with a price has an average price.", style = ChittaTheme.type.label, color = c.inkMuted)
                 Spacer(Modifier.height(Dimens.Gap3))
-                ChittaButton(if (ui.pricesRunning) "Fetching prices…" else "Refresh prices", onRefresh, style = ButtonStyle.Quiet, enabled = !ui.pricesRunning)
-                ValueRow("Update prices daily", if (ui.pricesAuto) "On" else "Off", onClick = { onToggleAuto(!ui.pricesAuto) })
-                ValueRow("Count in Net worth", if (ui.nwFunds) "On" else "Off", onClick = { onToggleNetWorth(!ui.nwFunds) })
+                ChittaButton(if (ui.pricesRunning) "Fetching prices…" else "Refresh prices", onRefresh, kind = ButtonKind.Secondary, enabled = !ui.pricesRunning, modifier = Modifier.fillMaxWidth())
+                SwitchRow("Update prices daily", ui.pricesAuto, { onToggleAuto(it) })
+                SwitchRow("Count in Net worth", ui.nwFunds, { onToggleNetWorth(it) })
                 Text("Prices come from AMFI's public file once a day. Nothing about you is sent.", style = ChittaTheme.type.label, color = c.inkMuted)
                 Spacer(Modifier.height(Dimens.Gap3))
                 HairlineRule()
@@ -273,13 +281,12 @@ private fun NpsTab(ui: ManageUi, onToggleNetWorth: (Boolean) -> Unit, onAddAccou
     LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
         if (ui.loading) item { LoadingPlaceholder() }
         else if (ui.nps.isEmpty()) item {
-            EmptyState("No NPS account yet. Add one from your NPS statement.", "Add NPS account", onAddAccount)
+            EmptyState(null, null, "No NPS account yet. Add one from your NPS statement.", "Add NPS account", onAddAccount)
         } else ui.nps.forEach { acc ->
             val schemes = ui.npsSchemes.filter { it.groupId == acc.id }.sortedBy { it.name }
             val t = Nps.totals(acc, schemes)
             item(key = "nps-" + acc.id) {
-                Spacer(Modifier.height(Dimens.SectionGap))
-                SectionHeader(acc.name, action = "Add scheme", onAction = { onAddScheme(acc) })
+                Section(acc.name, note = "Add scheme", onNote = { onAddScheme(acc) })
                 Column(Modifier.fillMaxWidth().clickable { onAccount(acc) }) {
                     Text("Value", style = ChittaTheme.type.label, color = c.inkMuted)
                     if (t.priced > 0) AmountText(t.value, style = ChittaTheme.type.amountHero, alwaysShowPaise = true)
@@ -305,7 +312,7 @@ private fun NpsTab(ui: ManageUi, onToggleNetWorth: (Boolean) -> Unit, onAddAccou
             item(key = "nps-gap-" + acc.id) {
                 Spacer(Modifier.height(Dimens.SectionGap))
                 if (acc.id == ui.nps.last().id) {
-                    ValueRow("Count in Net worth", if (ui.nwNps) "On" else "Off", onClick = { onToggleNetWorth(!ui.nwNps) })
+                    SwitchRow("Count in Net worth", ui.nwNps, { onToggleNetWorth(it) })
                     Text("NPS is its own line in Net worth, never added into mutual funds. Its price comes from your statement.", style = ChittaTheme.type.label, color = c.inkMuted)
                     Spacer(Modifier.height(Dimens.SectionGap))
                 }
@@ -335,8 +342,8 @@ private fun FundRow(f: MutualFund, nowMs: Long, zone: ZoneId, stamp: Boolean, on
 @Composable
 private fun ImportHoldingsSheet(nps: Boolean, onStatement: () -> Unit, onByHand: () -> Unit, onClose: () -> Unit) {
     val c = ChittaTheme.colors
-    BottomOverlay(onClose) {
-        Text(if (nps) "Add NPS" else "Import holdings", style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader(if (nps) "Add NPS" else "Import holdings")
         Text(
             "Importing one source never changes the others. A file and its password are never saved. You see what will change before anything is saved.",
             style = ChittaTheme.type.label, color = c.inkMuted,
@@ -361,8 +368,8 @@ private fun CasPreviewSheet(plan: CasPlan, reading: CasReading.Ready, onConfirm:
     val c = ChittaTheme.colors
     val incoming = plan.add + plan.update
     val total = incoming.fold(Paise.ZERO) { a, f -> a + (MutualFunds.value(f) ?: Paise.ZERO) }
-    BottomOverlay(onClose) {
-        Text("Import this statement?", style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader("Import this statement?")
         Text(
             (reading.asOf?.let { "As on ${it.format(priceDateFmt)}. " } ?: "") + "Nothing is saved until you tap Import. You can undo for 10 seconds.",
             style = ChittaTheme.type.label, color = c.inkMuted,
@@ -382,9 +389,9 @@ private fun CasPreviewSheet(plan: CasPlan, reading: CasReading.Ready, onConfirm:
         )
         if (reading.exitedRows > 0) Text("${reading.exitedRows} funds with no units left in the file are ignored.", style = ChittaTheme.type.label, color = c.inkMuted)
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton("Import", onConfirm, enabled = incoming.isNotEmpty() || plan.remove.isNotEmpty(), confirmHaptic = true)
+        ChittaButton("Import", onConfirm, enabled = incoming.isNotEmpty() || plan.remove.isNotEmpty(), confirmHaptic = true, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Dimens.Gap2))
-        ChittaButton("Cancel", onClose, style = ButtonStyle.Quiet)
+        ChittaButton("Cancel", onClose, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -395,8 +402,8 @@ private fun NpsPreviewSheet(plan: NpsPlan, reading: NpsReading.Ready, onConfirm:
     val value = Paise(reading.statedValuePaise)
     val net = Paise(reading.netContributionsPaise)
     val gain = value - net
-    BottomOverlay(onClose) {
-        Text(if (plan.accountIsNew) "Add ${plan.account.name}?" else "Update ${plan.account.name}?", style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader(if (plan.accountIsNew) "Add ${plan.account.name}?" else "Update ${plan.account.name}?")
         Text("Prices as of ${reading.priceDate.format(priceDateFmt)}. Nothing is saved until you tap Import. You can undo for 10 seconds.", style = ChittaTheme.type.label, color = c.inkMuted)
         Spacer(Modifier.height(Dimens.Gap2))
         HairlineRule()
@@ -413,9 +420,9 @@ private fun NpsPreviewSheet(plan: NpsPlan, reading: NpsReading.Ready, onConfirm:
             style = ChittaTheme.type.label, color = c.inkMuted,
         )
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton("Import", onConfirm, confirmHaptic = true)
+        ChittaButton("Import", onConfirm, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Dimens.Gap2))
-        ChittaButton("Cancel", onClose, style = ButtonStyle.Quiet)
+        ChittaButton("Cancel", onClose, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -425,8 +432,8 @@ private fun FundDetailSheet(f: MutualFund, nowMs: Long, zone: ZoneId, onEdit: ()
     var confirmDelete by remember { mutableStateOf(false) }
     val value = MutualFunds.value(f)
     val gain = MutualFunds.gain(f)
-    BottomOverlay(onClose) {
-        Text(f.name, style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader(f.name)
         if (MutualFunds.isStale(f, nowMs, zone)) Stamp("Stale")
         Spacer(Modifier.height(Dimens.Gap2))
         HairlineRule()
@@ -453,12 +460,12 @@ private fun FundDetailSheet(f: MutualFund, nowMs: Long, zone: ZoneId, onEdit: ()
         )
         Spacer(Modifier.height(Dimens.Gap4))
         if (!f.isNps && f.schemeCode.isBlank()) {
-            ChittaButton("Choose the matching scheme", onLink)
+            ChittaButton("Choose the matching scheme", onLink, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(Dimens.Gap2))
         }
-        ChittaButton("Edit", onEdit, style = if (!f.isNps && f.schemeCode.isBlank()) ButtonStyle.Quiet else ButtonStyle.Primary)
+        ChittaButton("Edit", onEdit, kind = if (!f.isNps && f.schemeCode.isBlank()) ButtonKind.Secondary else ButtonKind.Primary, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Dimens.Gap2))
-        ChittaButton("Delete", { confirmDelete = true }, style = ButtonStyle.Quiet)
+        ChittaButton("Delete", { confirmDelete = true }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
     }
     if (confirmDelete) ConfirmSheet(
         if (f.isNps) "Delete this scheme?" else "Delete this fund?", listOf("It leaves the list. No account balance changes. You can undo for 10 seconds."), "Delete",
@@ -496,15 +503,15 @@ private fun FundEditSheet(existing: MutualFund?, nowMs: Long, zone: ZoneId, onSa
     var editing by remember { mutableStateOf<FundField?>(null) }
     var problem by remember { mutableStateOf<String?>(null) }
 
-    BottomOverlay(onClose) {
-        Text(if (existing == null) "New mutual fund" else "Edit mutual fund", style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader(if (existing == null) "New mutual fund" else "Edit mutual fund")
         Spacer(Modifier.height(Dimens.Gap2))
         HairlineRule()
         ValueRow("Fund name", name.ifBlank { "not set" }, onClick = { editing = FundField.Name })
         ValueRow("ISIN", isin.ifBlank { "not set" }, onClick = { editing = FundField.Isin })
         ValueRow("Units", units.ifBlank { "not set" }, onClick = { editing = FundField.Units })
         ValueRow("Average price per unit", average.ifBlank { "none" }, onClick = { editing = FundField.Average })
-        ValueRow("Units as of", dateText(asOf, zone), onClick = { pickDate(context, asOf, zone, { asOf = Periods.startOfDay(Periods.date(it, zone), zone) }) })
+        ValueRow("Units as of", dateText(asOf, zone), onClick = { pickDate(asOf, zone, { asOf = Periods.startOfDay(Periods.date(it, zone), zone) }) })
         ValueRow("Monthly SIP amount", sipAmount.ifBlank { "none" }, onClick = { editing = FundField.SipAmount })
         ValueRow("SIP day of the month", sipDay.ifBlank { "none" }, onClick = { editing = FundField.SipDay })
         ValueRow("Note", note.ifBlank { "none" }, onClick = { editing = FundField.Note })
@@ -540,9 +547,9 @@ private fun FundEditSheet(existing: MutualFund?, nowMs: Long, zone: ZoneId, onSa
                     ),
                 )
             }
-        }, confirmHaptic = true)
+        }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Dimens.Gap2))
-        ChittaButton("Close", onClose, style = ButtonStyle.Quiet)
+        ChittaButton("Close", onClose, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
     }
 
     when (editing) {
@@ -566,8 +573,8 @@ private fun FundPickSheet(fund: MutualFund, load: suspend (MutualFund) -> List<A
     val c = ChittaTheme.colors
     var list by remember { mutableStateOf<List<AmfiScheme>?>(null) }
     LaunchedEffect(fund.id) { list = load(fund) }
-    BottomOverlay(onClose) {
-        Text("Which scheme is this?", style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader("Which scheme is this?")
         Text(fund.name, style = ChittaTheme.type.label, color = c.inkMuted)
         Spacer(Modifier.height(Dimens.Gap2))
         HairlineRule()
@@ -592,7 +599,7 @@ private fun FundPickSheet(fund: MutualFund, load: suspend (MutualFund) -> List<A
         }
         Text("Your choice is saved on the fund, so you are not asked again.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
         Spacer(Modifier.height(Dimens.Gap3))
-        ChittaButton("Close", onClose, style = ButtonStyle.Quiet)
+        ChittaButton("Close", onClose, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -609,14 +616,14 @@ private fun SchemeEditSheet(existing: MutualFund?, groupId: String, nowMs: Long,
     var editing by remember { mutableStateOf<FundField?>(null) }
     var problem by remember { mutableStateOf<String?>(null) }
 
-    BottomOverlay(onClose) {
-        Text(if (existing == null) "New NPS scheme" else "Edit NPS scheme", style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader(if (existing == null) "New NPS scheme" else "Edit NPS scheme")
         Spacer(Modifier.height(Dimens.Gap2))
         HairlineRule()
         ValueRow("Scheme name", name.ifBlank { "not set" }, onClick = { editing = FundField.Name })
         ValueRow("Units", units.ifBlank { "not set" }, onClick = { editing = FundField.Units })
         ValueRow("Price per unit", price.ifBlank { "not set" }, onClick = { editing = FundField.Price })
-        ValueRow("Price as of", dateText(priceDate, zone), onClick = { pickDate(context, priceDate, zone, { priceDate = Periods.startOfDay(Periods.date(it, zone), zone) }) })
+        ValueRow("Price as of", dateText(priceDate, zone), onClick = { pickDate(priceDate, zone, { priceDate = Periods.startOfDay(Periods.date(it, zone), zone) }) })
         Text("Units and price are on the statement's Investment Details table. The statement's date is the price date.", style = ChittaTheme.type.label, color = c.inkMuted)
         problem?.let { Text(it, style = ChittaTheme.type.label, color = c.warningText) }
         Spacer(Modifier.height(Dimens.Gap4))
@@ -635,9 +642,9 @@ private fun SchemeEditSheet(existing: MutualFund?, groupId: String, nowMs: Long,
                     plainDecimal(p!!), java.time.Instant.ofEpochMilli(priceDate).atZone(zone).toLocalDate().toString(), existing?.note ?: "", null, "", groupId,
                 ),
             )
-        }, confirmHaptic = true)
+        }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Dimens.Gap2))
-        ChittaButton("Close", onClose, style = ButtonStyle.Quiet)
+        ChittaButton("Close", onClose, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
     }
 
     when (editing) {
@@ -662,13 +669,13 @@ private fun NpsAccountEditSheet(existing: NpsAccount?, nowMs: Long, zone: ZoneId
     var editing by remember { mutableStateOf<NpsField?>(null) }
     var problem by remember { mutableStateOf<String?>(null) }
 
-    BottomOverlay(onClose) {
-        Text(if (existing == null) "New NPS account" else "Edit NPS account", style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader(if (existing == null) "New NPS account" else "Edit NPS account")
         Spacer(Modifier.height(Dimens.Gap2))
         HairlineRule()
         ValueRow("Name", name.ifBlank { "not set" }, onClick = { editing = NpsField.Name })
         ValueRow("Put in so far", net.ifBlank { "not set" }, onClick = { editing = NpsField.Net })
-        ValueRow("Statement as of", dateText(asOf, zone), onClick = { pickDate(context, asOf, zone, { asOf = Periods.startOfDay(Periods.date(it, zone), zone) }) })
+        ValueRow("Statement as of", dateText(asOf, zone), onClick = { pickDate(asOf, zone, { asOf = Periods.startOfDay(Periods.date(it, zone), zone) }) })
         Text("Put in so far is the statement's Total Contribution minus any withdrawal. Your PRAN is not needed and is never saved.", style = ChittaTheme.type.label, color = c.inkMuted)
         problem?.let { Text(it, style = ChittaTheme.type.label, color = c.warningText) }
         Spacer(Modifier.height(Dimens.Gap4))
@@ -680,9 +687,9 @@ private fun NpsAccountEditSheet(existing: NpsAccount?, nowMs: Long, zone: ZoneId
                 else -> null
             }
             if (problem == null) onSave(NpsAccount(existing?.id ?: "", name.trim(), v?.movePointRight(2)?.longValueExact(), asOf, existing?.note ?: "", null))
-        }, confirmHaptic = true)
+        }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Dimens.Gap2))
-        ChittaButton("Close", onClose, style = ButtonStyle.Quiet)
+        ChittaButton("Close", onClose, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
     }
 
     when (editing) {
@@ -696,17 +703,17 @@ private fun NpsAccountEditSheet(existing: NpsAccount?, nowMs: Long, zone: ZoneId
 private fun NpsAccountDetailSheet(a: NpsAccount, schemeCount: Int, zone: ZoneId, onEdit: () -> Unit, onDelete: () -> Unit, onClose: () -> Unit) {
     val c = ChittaTheme.colors
     var confirmDelete by remember { mutableStateOf(false) }
-    BottomOverlay(onClose) {
-        Text(a.name, style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader(a.name)
         Spacer(Modifier.height(Dimens.Gap2))
         HairlineRule()
         ValueRow("Put in so far", a.netContributionsPaise?.let { maskedRupees(Paise(it)) } ?: "not set")
         ValueRow("Schemes", schemeCount.toString())
         ValueRow("Statement as of", dateText(a.asOfMs, zone))
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton("Edit", onEdit)
+        ChittaButton("Edit", onEdit, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Dimens.Gap2))
-        ChittaButton("Delete", { confirmDelete = true }, style = ButtonStyle.Quiet)
+        ChittaButton("Delete", { confirmDelete = true }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
     }
     if (confirmDelete) ConfirmSheet(
         "Delete this NPS account?", listOf("Its $schemeCount ${if (schemeCount == 1) "scheme goes" else "schemes go"} with it. Mutual funds are not touched. You can undo for 10 seconds."), "Delete",

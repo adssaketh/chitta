@@ -1,6 +1,9 @@
 package com.mansaketh.chitta.ui.detail
 
+import com.mansaketh.chitta.core.design.kit.SheetHeader
 import androidx.compose.foundation.layout.Arrangement
+import com.mansaketh.chitta.core.design.kit.ValueRow
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -14,8 +17,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import com.mansaketh.chitta.core.design.components.ButtonStyle
-import com.mansaketh.chitta.core.design.components.ChittaButton
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
 import com.mansaketh.chitta.core.design.components.ChittaField
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.tokens.Dimens
@@ -29,7 +32,6 @@ import com.mansaketh.chitta.core.money.Paise
 import com.mansaketh.chitta.ui.BottomOverlay
 import com.mansaketh.chitta.ui.Choice
 import com.mansaketh.chitta.ui.ChoiceSheet
-import com.mansaketh.chitta.ui.ValueRow
 import com.mansaketh.chitta.ui.categoryName
 
 private class LineDraft(var categoryId: String? = null, var amountText: String = "")
@@ -56,8 +58,8 @@ fun SplitSheet(total: Paise, categories: List<Category>, firstCategoryId: String
     val remainderPaise = Splits.remainder(total, valid)
     val check: SplitCheck = if (!complete) SplitCheck.ZeroLine else Splits.check(total, valid)
 
-    BottomOverlay(onClose) {
-        Text("Split ${IndianFormat.rupees(total, alwaysShowPaise = true)}", style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader("Split ${IndianFormat.rupees(total, alwaysShowPaise = true)}")
         Spacer(Modifier.height(Dimens.Gap2))
         lines.forEachIndexed { i, l ->
             ValueRow("Line ${i + 1}", l.categoryId?.let { categoryName(it, categories) } ?: "Pick a category", onClick = { pickFor = i })
@@ -78,17 +80,17 @@ fun SplitSheet(total: Paise, categories: List<Category>, firstCategoryId: String
         )
         Spacer(Modifier.height(Dimens.Gap3))
         Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
-            ChittaButton("Add a line", { lines.add(LineDraft()) }, style = ButtonStyle.Quiet)
+            ChittaButton("Add a line", { lines.add(LineDraft()) }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
             ChittaButton("Equal parts", {
                 val withCat = lines.filter { it.categoryId != null }
                 if (withCat.size >= 2) {
                     Splits.equalLines(total, withCat.map { it.categoryId!! }).forEachIndexed { i, sl -> withCat[i].amountText = plain(sl.amount.value) }
                     tick++
                 }
-            }, style = ButtonStyle.Quiet, enabled = lines.count { it.categoryId != null } >= 2)
+            }, kind = ButtonKind.Secondary, enabled = lines.count { it.categoryId != null } >= 2, modifier = Modifier.fillMaxWidth())
         }
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton("Save split", { onSave(valid) }, enabled = check == SplitCheck.Balanced, confirmHaptic = true)
+        ChittaButton("Save split", { onSave(valid) }, enabled = check == SplitCheck.Balanced, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
     }
     pickFor?.let { i ->
         ChoiceSheet("Category for line ${i + 1}", categories.map { Choice(it.name, it.id, selected = it.id == lines[i].categoryId) },

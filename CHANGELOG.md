@@ -1,5 +1,14 @@
 # Changelog
 
+## Phase 11b: every screen on the kit (16 Nov 2026) - on branch `phase-11b-callsites`
+- Look only. Every screen now uses the v8 kit from 11a; no feature, setting or number changed.
+- Buttons: one `ChittaButton` with weights (red Primary, outlined Secondary, Link, Danger). Top bars: Home, Ledger, Plan, Insights and More use `TopBarMain`; every other screen `TopBarDetail`. One icon map for tabs, More and Home sections (`ui/FeatureIcons.kt`). Sections, rows, empty states, chips, month steppers and the gauge are the kit versions.
+- Four conversions, as the prompt lists: "(off)" on a rule is a switch; "Chosen" is a tick; "Earlier / Later" are arrow buttons; "Up / Down" in Customise are arrow buttons. On / Off rows (backup, cash check, sharing, Animations and others) are switches.
+- Sheets: every sheet starts with the v8 sheet header. Dates are picked in the new date sheet (Entry detail, Quick Add and every Plan, Assets, Funds, Deposits, Insights date row). Undo is the new message bar (10 seconds).
+- Calendar marks and instalment ticks are drawn marks, not text glyphs; Home's budget picker has a drawn caret.
+- Removed: the old section header, top bar, empty / error state, button, expand group, undo bar, and the 32 dp glyph circle. Stamps are 4 dp.
+- Tests: kit logic tests updated; snapshots re-recorded by GitHub Actions (`[record snapshots]`).
+
 ## Phase 11a: the v8 kit (16 Nov 2026) - on branch `phase-11a-kit`
 - Nothing on any screen changes. This phase adds the building blocks that 11b to 11e will swap in, plus the gallery and screenshot tests for them.
 - New package `core/design/kit` with the 22 shared components of the Phase 11 prompt (section 4): TopBarMain, TopBarDetail, CountBadge (and BadgedIconAction), Section, NavRow, ValueRow, SwitchRow (and ChittaSwitch), TickRow, CheckRow (and TickBox), EntryRow (and Glyph), ChittaButton with four kinds and ButtonPair, CategoryChip, FilterChip, Segmented, MonthStepper, GaugeBar, MessageBar (and MessageBarSlot), EmptyState and EmptyLine, SheetHeader, DateSheet, Note, GroupHeader and ExpandGroup.

@@ -1,6 +1,9 @@
 package com.mansaketh.chitta.ui.intake
 
 import com.mansaketh.chitta.core.design.components.pressClickable
+import com.mansaketh.chitta.core.design.kit.NavRow
+import com.mansaketh.chitta.core.design.kit.Section
+import com.mansaketh.chitta.core.design.kit.ValueRow
 import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -37,16 +40,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.mansaketh.chitta.core.design.kit.TickBox
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import com.mansaketh.chitta.core.design.components.ButtonStyle
-import com.mansaketh.chitta.core.design.components.ChittaButton
-import com.mansaketh.chitta.core.design.components.ChittaTopBar
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
+import com.mansaketh.chitta.core.design.kit.TopBarDetail
 import com.mansaketh.chitta.core.design.components.HairlineRule
 import com.mansaketh.chitta.core.design.components.LoadingPlaceholder
-import com.mansaketh.chitta.core.design.components.SectionHeader
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.tokens.Dimens
@@ -57,7 +62,6 @@ import com.mansaketh.chitta.core.money.Paise
 import com.mansaketh.chitta.intake.PingBridge
 import com.mansaketh.chitta.ui.Choice
 import com.mansaketh.chitta.ui.ChoiceSheet
-import com.mansaketh.chitta.ui.ValueRow
 import java.time.Instant
 import java.time.ZoneId
 
@@ -76,7 +80,7 @@ fun IntakeScreen(vm: IntakeViewModel, onBack: () -> Unit) {
         if (what.startsWith("upi:")) vm.readShared(what.removePrefix("upi:")) else vm.openWaiting()
     }
     Column(Modifier.fillMaxSize()) {
-        ChittaTopBar("Bank messages and UPI", onBack = { vm.reset(); onBack() })
+        TopBarDetail("Bank messages and UPI", onBack = { vm.reset(); onBack() })
         when (val s = stage) {
             is IntakeStage.Home -> HomeStep(vm, s)
             is IntakeStage.Working -> Column(Modifier.padding(horizontal = Dimens.Margin)) {
@@ -85,7 +89,7 @@ fun IntakeScreen(vm: IntakeViewModel, onBack: () -> Unit) {
             }
             is IntakeStage.Failed -> Column(Modifier.padding(horizontal = Dimens.Margin), verticalArrangement = Arrangement.spacedBy(Dimens.Gap3)) {
                 Text(s.message, style = ChittaTheme.type.body, color = ChittaTheme.colors.ink)
-                ChittaButton("Back", { vm.reset() }, style = ButtonStyle.Quiet)
+                ChittaButton("Back", { vm.reset() }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
             }
             is IntakeStage.Saved -> Column(Modifier.padding(horizontal = Dimens.Margin), verticalArrangement = Arrangement.spacedBy(Dimens.Gap3)) {
                 val text = buildString {
@@ -93,7 +97,7 @@ fun IntakeScreen(vm: IntakeViewModel, onBack: () -> Unit) {
                     if (s.matched > 0) append(" ${s.matched} ${if (s.matched == 1) "payment was" else "payments were"} matched to entries you already have; their details were added to the note.")
                 }
                 Text(text, style = ChittaTheme.type.body, color = ChittaTheme.colors.ink)
-                ChittaButton("Done", { vm.reset() })
+                ChittaButton("Done", { vm.reset() }, modifier = Modifier.fillMaxWidth())
             }
             is IntakeStage.Review -> ReviewStep(vm, s)
         }
@@ -114,7 +118,7 @@ private fun HomeStep(vm: IntakeViewModel, s: IntakeStage.Home) {
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
         s.message?.let { Text(it, style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(vertical = Dimens.Gap3)) }
-        SectionHeader("Waiting for your look")
+        Section("Waiting for your look")
         HairlineRule()
         ValueRow("Bank messages waiting", if (pending == 0) "None" else "$pending", onClick = if (pending > 0) ({ vm.openWaiting() }) else null)
         Text(
@@ -122,18 +126,16 @@ private fun HomeStep(vm: IntakeViewModel, s: IntakeStage.Home) {
             style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2),
         )
 
-        Spacer(Modifier.height(Dimens.SectionGap))
-        SectionHeader("UPI payments")
+        Section("UPI payments")
         HairlineRule()
         ValueRow("Screenshot of a payment", "PhonePe, Google Pay, Paytm, BHIM, CRED, MobiKwik", onClick = { image.launch(arrayOf("image/*")) })
         ValueRow("Statement PDF", "PhonePe", onClick = { pdf.launch(arrayOf("application/pdf")) })
         ValueRow("Statement CSV", "PhonePe", onClick = { csv.launch(arrayOf("text/*", "application/csv", "application/vnd.ms-excel", "*/*")) })
         Text("The picture is read on this phone and never sent anywhere. You review every payment before it is saved.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2))
 
-        Spacer(Modifier.height(Dimens.SectionGap))
-        SectionHeader("From Ping")
+        Section("From Ping")
         HairlineRule()
-        ValueRow("Ping file (a date range)", "", onClick = { ping.launch(arrayOf("*/*")) })
+        NavRow("Ping file (a date range)", { ping.launch(arrayOf("*/*")) })
         ValueRow("Known accounts", if (known == 0) "None" else "$known", onClick = { sheet = "known" })
         Text(
             "Known accounts are your own names for the cards and accounts in your bank messages. Only messages for those accounts are ever saved without a look. Your list from the old app comes with Chitta; loading a file replaces it.",
@@ -158,7 +160,7 @@ private fun stillApplies(reason: IntakeReason, ch: IntakeChoice): Boolean = when
 private fun Logo(brandKey: String, sender: String) {
     val context = LocalContext.current
     val bitmap by produceState<Bitmap?>(null, brandKey, sender) { value = PingBridge.logo(context, brandKey.ifEmpty { null }, sender) }
-    bitmap?.let { Image(it.asImageBitmap(), contentDescription = null, modifier = Modifier.size(Dimens.GlyphCircleLegacy)) } ?: Spacer(Modifier)
+    bitmap?.let { Image(it.asImageBitmap(), contentDescription = null, modifier = Modifier.size(Dimens.GlyphCircle)) } ?: Spacer(Modifier)
 }
 
 @Composable
@@ -181,7 +183,7 @@ private fun ReviewStep(vm: IntakeViewModel, s: IntakeStage.Review) {
             if (s.alreadyImported > 0 || s.skipped > 0) Text("${s.alreadyImported + s.skipped} left out because they are already in your book or repeated", style = ChittaTheme.type.label, color = c.inkMuted)
             if (s.claims.isNotEmpty()) Text("${s.claims.size} ${if (s.claims.size == 1) "payment is" else "payments are"} already in your book from its other half. Saving adds the details to those entries' notes.", style = ChittaTheme.type.label, color = c.inkMuted)
             Text("Rows that need a look start unticked. Tap a row to change it.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap1))
-            if (missingCategory > 0) ChittaButton("Set a category for $missingCategory ${if (missingCategory == 1) "row" else "rows"} without one", { bulk = true }, style = ButtonStyle.Quiet)
+            if (missingCategory > 0) ChittaButton("Set a category for $missingCategory ${if (missingCategory == 1) "row" else "rows"} without one", { bulk = true }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
         }
         if (s.choices.isEmpty()) Text("Nothing to look at.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(Dimens.Margin))
         LazyColumn(Modifier.weight(1f).padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.InlineGap)) {
@@ -191,7 +193,7 @@ private fun ReviewStep(vm: IntakeViewModel, s: IntakeStage.Review) {
                     Modifier.fillMaxWidth().heightIn(min = Dimens.RowTall).pressClickable(role = Role.Button) { rowSheet = i to "row" }.padding(vertical = Dimens.Gap2),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TickBox(ch.ticked)
+                    TickBox(ch.ticked, Modifier.semantics { if (ch.ticked) contentDescription = "Will be saved" })
                     Spacer(Modifier.width(Dimens.Gap3))
                     if (!r.isUpi) { Logo(r.brandKey, r.sender); Spacer(Modifier.width(Dimens.Gap2)) }
                     Column(Modifier.weight(1f)) {
@@ -209,7 +211,7 @@ private fun ReviewStep(vm: IntakeViewModel, s: IntakeStage.Review) {
             }
         }
         Column(Modifier.padding(horizontal = Dimens.Margin).padding(top = Dimens.Gap2, bottom = Dimens.Gap4)) {
-            ChittaButton("Save $ticked ${if (ticked == 1) "entry" else "entries"}", { vm.save() }, enabled = canSave, confirmHaptic = true)
+            ChittaButton("Save $ticked ${if (ticked == 1) "entry" else "entries"}", { vm.save() }, enabled = canSave, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
         }
     }
 
@@ -250,10 +252,3 @@ private fun ReviewStep(vm: IntakeViewModel, s: IntakeStage.Review) {
     }
 }
 
-/** A 24 dp tick box: a check when the row will be saved, an empty outline when it will not. */
-@Composable
-private fun TickBox(ticked: Boolean) {
-    val c = ChittaTheme.colors
-    if (ticked) Icon(ChittaIcons.Check, contentDescription = "Will be saved", tint = c.ink, modifier = Modifier.size(Dimens.IconSize))
-    else Spacer(Modifier.size(Dimens.IconSize).border(1.dp, c.rule, RoundedCornerShape(4.dp)))
-}

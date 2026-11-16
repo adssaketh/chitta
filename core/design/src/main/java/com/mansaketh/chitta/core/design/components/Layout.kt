@@ -52,67 +52,6 @@ fun FootNote(text: String, modifier: Modifier = Modifier) {
 }
 
 /**
- * A section title: Hanken Grotesk Medium (never heavier), sentence case, an optional action on the right.
- *
- * The heading is as tall as its text, followed by [Dimens.HeadingGap] before whatever comes next (a rule
- * or the first content). Only a heading with an action keeps the 48 dp touch height, because the action
- * needs it; the action's own padding supplies the air under the text in that case.
- * Space above the heading is the screen's job: use [Section], which adds [Dimens.SectionGap].
- */
-@Composable
-fun SectionHeader(
-    title: String,
-    modifier: Modifier = Modifier,
-    action: String? = null,
-    onAction: (() -> Unit)? = null,
-) {
-    val hasAction = action != null && onAction != null
-    Row(
-        modifier
-            .fillMaxWidth()
-            .then(if (hasAction) Modifier.heightIn(min = Dimens.TouchTarget) else Modifier.padding(bottom = Dimens.HeadingGap)),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(title.rupeeAware(), style = ChittaTheme.type.sectionHeading, color = ChittaTheme.colors.ink, modifier = Modifier.semantics { heading() })
-        if (hasAction) {
-            Text(
-                action.orEmpty(),
-                style = ChittaTheme.type.link,
-                color = ChittaTheme.colors.ink,
-                modifier = Modifier
-                    .heightIn(min = Dimens.TouchTarget)
-                    .pressClickable(role = Role.Button, onClick = onAction!!)
-                    .padding(horizontal = Dimens.InlineGap, vertical = Dimens.HeadingGap),
-            )
-        }
-    }
-}
-
-/**
- * One section of a screen: [Dimens.SectionGap] above, the heading, [Dimens.HeadingGap], an optional rule,
- * then the content. Every screen uses this instead of building its own gaps, so the rhythm is the same
- * everywhere. Set [first] on the first section under a title or tab rule: it gets [Dimens.HeadingGap]
- * above instead of the full section gap.
- */
-@Composable
-fun Section(
-    title: String,
-    modifier: Modifier = Modifier,
-    first: Boolean = false,
-    rule: Boolean = false,
-    action: String? = null,
-    onAction: (() -> Unit)? = null,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    Column(modifier.fillMaxWidth().padding(top = if (first) Dimens.HeadingGap else Dimens.SectionGap)) {
-        SectionHeader(title, action = action, onAction = onAction)
-        if (rule) HairlineRule()
-        content()
-    }
-}
-
-/**
  * The one list row: [title] (and an optional [meta] line) on the left, an optional [trailing] amount or
  * value on the right, an optional [leading] icon or date. [Dimens.RowPadV] top and bottom, at least 56 dp
  * (68 dp with a meta line, [minHeight] to override). The title and meta are limited to [titleMaxLines] and
@@ -207,58 +146,6 @@ fun SheetSurface(
     }
 }
 
-/**
- * A main-screen title with its bottom-bar icon beside it. The icon is decoration: the title carries the meaning.
- * Every main tab uses this with no extra vertical padding: the row is [Dimens.TitleBarMin] tall, so the
- * titles sit on the same line on every tab. Left and right margins belong to the screen.
- */
-@Composable
-fun ScreenTitle(title: String, icon: ImageVector, modifier: Modifier = Modifier) {
-    Row(
-        modifier.heightIn(min = Dimens.TitleBarMin).semantics(mergeDescendants = true) { heading() },
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(icon, contentDescription = null, tint = ChittaTheme.colors.ink, modifier = Modifier.size(Dimens.IconSize))
-        Box(Modifier.width(Dimens.InlineGap))
-        Text(title, style = ChittaTheme.type.screenTitle, color = ChittaTheme.colors.ink)
-    }
-}
-
-/** Top bar: optional back arrow, a title, actions on the right. Plain, no elevation. */
-@Composable
-fun ChittaTopBar(
-    title: String,
-    modifier: Modifier = Modifier,
-    onBack: (() -> Unit)? = null,
-    titleIcon: ImageVector? = null,
-    actions: @Composable RowScope.() -> Unit = {},
-) {
-    Row(
-        modifier
-            .fillMaxWidth()
-            .heightIn(min = Dimens.ButtonHeight)
-            .padding(horizontal = Dimens.Gap2),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (onBack != null) {
-            IconAction(ChittaIcons.ArrowLeft, "Back", onBack)
-        } else {
-            Box(Modifier.width(Dimens.Gap4))
-        }
-        if (titleIcon != null) {
-            Icon(titleIcon, contentDescription = null, tint = ChittaTheme.colors.ink, modifier = Modifier.size(Dimens.IconSize))
-            Box(Modifier.width(Dimens.Gap2))
-        }
-        Text(
-            title,
-            style = ChittaTheme.type.title,
-            color = ChittaTheme.colors.ink,
-            modifier = Modifier.weight(1f).semantics { heading() },
-        )
-        actions()
-    }
-}
-
 /** The eye icon on Home: one tap masks every amount on every screen. */
 @Composable
 fun HideAmountsAction(hidden: Boolean, onToggle: () -> Unit) {
@@ -347,72 +234,6 @@ fun ChittaBottomNav(
                 }
             }
         }
-    }
-}
-
-/**
- * The Undo bar. In Paper it is an ink bar with paper text; in Ink it turns into a light bar with dark
- * text (dark PDF, screen 05), which falls out of using ink and background colours.
- */
-@Composable
-fun UndoBar(
-    message: String,
-    onUndo: () -> Unit,
-    modifier: Modifier = Modifier,
-    actionLabel: String = "Undo",
-) {
-    val c = ChittaTheme.colors
-    Row(
-        modifier
-            .fillMaxWidth()
-            .heightIn(min = Dimens.ButtonHeight)
-            .clip(Shapes.Control)
-            .background(c.ink)
-            .padding(start = Dimens.Gap4),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(message.rupeeAware(), style = ChittaTheme.type.body, color = c.background, modifier = Modifier.weight(1f).padding(vertical = Dimens.Gap3))
-        Text(
-            actionLabel,
-            style = ChittaTheme.type.bodyMedium,
-            color = c.background,
-            textDecoration = TextDecoration.Underline,
-            modifier = Modifier
-                .heightIn(min = Dimens.TouchTarget)
-                .pressClickable(role = Role.Button, onClick = onUndo)
-                .padding(horizontal = Dimens.Gap4, vertical = Dimens.Gap3),
-        )
-    }
-}
-
-/** First use: one plain sentence and one action. Never fake entries, never an illustration. */
-@Composable
-fun EmptyState(
-    message: String,
-    actionLabel: String,
-    onAction: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier.fillMaxWidth().padding(top = Dimens.HeadingGap, bottom = Dimens.SectionGap), verticalArrangement = Arrangement.spacedBy(Dimens.Gap4)) {
-        Text(message, style = ChittaTheme.type.body, color = ChittaTheme.colors.inkMuted)
-        ChittaButton(actionLabel, onAction, style = ButtonStyle.Quiet)
-    }
-}
-
-/** Error: what failed, whether anything was saved, how to retry (master section 13). */
-@Composable
-fun ErrorState(
-    whatFailed: String,
-    savedStatus: String,
-    onRetry: () -> Unit,
-    modifier: Modifier = Modifier,
-    retryLabel: String = "Try again",
-) {
-    Column(modifier.fillMaxWidth().padding(top = Dimens.HeadingGap, bottom = Dimens.SectionGap), verticalArrangement = Arrangement.spacedBy(Dimens.Gap3)) {
-        Text(whatFailed, style = ChittaTheme.type.bodyMedium, color = ChittaTheme.colors.warningText)
-        Text(savedStatus, style = ChittaTheme.type.body, color = ChittaTheme.colors.inkMuted)
-        Box(Modifier.height(Dimens.Gap1))
-        ChittaButton(retryLabel, onRetry, style = ButtonStyle.Quiet)
     }
 }
 
