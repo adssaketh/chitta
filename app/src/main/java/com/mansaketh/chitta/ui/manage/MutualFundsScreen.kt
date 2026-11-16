@@ -25,6 +25,8 @@ import com.mansaketh.chitta.core.intake.AmfiScheme
 import com.mansaketh.chitta.core.intake.CasPlan
 import com.mansaketh.chitta.core.intake.CasReading
 import com.mansaketh.chitta.core.intake.CasSummary
+import com.mansaketh.chitta.core.intake.HoldingsReport
+import com.mansaketh.chitta.core.intake.XlsxReader
 import com.mansaketh.chitta.core.intake.IntakeFormatException
 import com.mansaketh.chitta.core.intake.NpsPlan
 import com.mansaketh.chitta.core.intake.NpsReading
@@ -111,6 +113,16 @@ fun MutualFundsScreen(vm: ManageViewModel, onBack: () -> Unit) {
         cas = CasUi.Reading
         scope.launch {
             cas = try {
+                // An Excel holdings report is told from a PDF by its first bytes.
+                val head = TextReaders.readBytes(context, uri)
+                if (XlsxReader.looksLikeXlsx(head)) {
+                    val rows = XlsxReader.firstSheet(head) ?: throw IntakeFormatException("That Excel file could not be opened.")
+                    if (!HoldingsReport.looksLike(rows)) throw IntakeFormatException("That Excel sheet is not a holdings report. It needs the columns Fund Name, ISIN, Total Units, Invested Value and Current Value.")
+                    when (val r = HoldingsReport.read(rows)) {
+                        is CasReading.Ready -> CasUi.Preview(vm.planCas(r), r)
+                        is CasReading.Refused -> CasUi.Error(r.reason)
+                    }
+                } else {
                 val text = TextReaders.readPdf(context, uri, password)
                 // One file picker serves both: an NPS statement is told from a mutual fund summary by its text.
                 if (NpsStatement.looksLike(text)) when (val r = NpsStatement.read(text)) {
@@ -120,10 +132,13 @@ fun MutualFundsScreen(vm: ManageViewModel, onBack: () -> Unit) {
                     is CasReading.Ready -> CasUi.Preview(vm.planCas(r), r)
                     is CasReading.Refused -> CasUi.Error(r.reason)
                 }
+                }
             } catch (e: TextReaders.PdfPasswordRequired) {
                 CasUi.NeedPassword(uri, e.wrong)
             } catch (e: IntakeFormatException) {
                 CasUi.Error((e.message ?: "That file could not be read.") + " Nothing was changed.")
+            } catch (e: Exception) {
+                CasUi.Error("That file could not be read (${e.message ?: e.javaClass.simpleName}). Nothing was changed.")
             }
         }
     }
@@ -154,7 +169,7 @@ fun MutualFundsScreen(vm: ManageViewModel, onBack: () -> Unit) {
         when (val s = sheet) {
             FundSheet.Import -> ImportHoldingsSheet(
                 nps = tab == 1,
-                onStatement = { sheet = FundSheet.None; pickStatement.launch(arrayOf("application/pdf")) },
+                onStatement = { sheet = FundSheet.None; pickStatement.launch(arrayOf("*/*")) },
                 onByHand = { sheet = if (tab == 1) FundSheet.NpsAccountEdit(null) else FundSheet.Edit(null) }, onClose = { sheet = FundSheet.None },
             )
             is FundSheet.Detail -> {
@@ -333,6 +348,7 @@ private fun ImportHoldingsSheet(nps: Boolean, onStatement: () -> Unit, onByHand:
             ValueRow("By hand", "Add an account", onClick = onByHand)
         } else {
             ValueRow("CAMS, KFintech or MFCentral summary (PDF)", "Choose file", onClick = onStatement)
+            ValueRow("Holdings report (Excel, .xlsx)", "Choose file", onClick = onStatement)
             ValueRow("Zerodha Console file", "Not built yet")
             ValueRow("By hand", "Add a fund", onClick = onByHand)
         }

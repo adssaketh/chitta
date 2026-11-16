@@ -15,6 +15,8 @@ data class CasHolding(
     val navDate: LocalDate,
     val nav: BigDecimal,
     val valuePaise: Long,
+    /** Only an Excel holdings report carries it; the PDF summary has none. */
+    val isin: String = "",
 )
 
 sealed interface CasReading {
@@ -35,9 +37,12 @@ object CasSummary {
     private const val MONEY = """[\d,]+\.\d{2}"""
     private val dateFmt = DateTimeFormatter.ofPattern("dd-MMM-yyyy", Locale.ENGLISH)
 
-    /** invested, market value, gain, (pct), units, NAV date, folio, NAV: the cells of one row once the text is joined with spaces. */
+    /**
+     * invested, market value, gain, (pct), units, NAV date, folio, NAV: the cells of one row once the text is joined with spaces. The real PDF
+     * gives the date and the folio with no space between them ("12-Nov-202622939772"); the year is always four digits, so the folio is what follows.
+     */
     private val row = Rx.of(
-        """($MONEY)\s+($MONEY)\s+\(?-?$MONEY\)?\s+\([+\-]?[\d.,]+%\)\s+([\d,]+\.\d{3})\s+(\d{1,2}-[A-Za-z]{3}-\d{4})\s+(\S+)\s+([\d,]+\.\d{2,4})(?=\s|\z)""",
+        """($MONEY)\s+($MONEY)\s+\(?-?$MONEY\)?\s+\([+\-]?[\d.,]+%\)\s+([\d,]+\.\d{3})\s+(\d{1,2}-[A-Za-z]{3}-\d{4})\s*(\S+?)\s+([\d,]+\.\d{2,4})(?=\s|\z)""",
     )
     private val total = Rx.of("""\bTotal\s+($MONEY)""")
     private val asOfRe = Rx.of("""As on Date:\s*(\d{1,2}-[A-Za-z]{3}-\d{4})""", ignoreCase = true)
@@ -118,7 +123,7 @@ object CasImport {
             seen += k
             val old = fromCas[k]
             val fund = MutualFund(
-                id = old?.id ?: newId(), name = h.name, isin = old?.isin ?: "", schemeCode = old?.schemeCode ?: "",
+                id = old?.id ?: newId(), name = h.name, isin = old?.isin?.ifBlank { h.isin } ?: h.isin, schemeCode = old?.schemeCode ?: "",
                 units = h.units.stripTrailingZeros().toPlainString(), investedPaise = h.investedPaise, source = MutualFund.SOURCE_CAS,
                 unitsAsOfMs = importedAtMs, navText = h.nav.stripTrailingZeros().toPlainString(), navDate = h.navDate.toString(),
                 note = old?.note ?: "", updatedAtMs = importedAtMs, folio = h.folio, groupId = "",

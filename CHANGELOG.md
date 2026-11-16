@@ -1,5 +1,11 @@
 # Changelog
 
+## Phase 10d: statement files (16 Nov 2026)
+- Mutual funds > Import: the CAMS / MFCentral summary PDF is read again (the real file prints the NAV date and folio number with no space, which the reader did not expect).
+- An NPS statement that is only pictures (a printed or screenshot PDF) is now read: the pages are drawn and read on the phone. The figures are checked against the statement's own total before anything is offered; scheme names are shown for you to check.
+- New: Holdings report (Excel, .xlsx) with Fund Name, ISIN, Total Units, Invested Value, Current Value and Folio Number. Checked against its Total Invested and Total Current values; brings the ISIN of each fund.
+- Any other error while reading a file now shows a message instead of closing the app.
+
 ## Phase 10c: Federal accounts (16 Nov 2026)
 - Built-in list: the Federal Signet Rupay card (••9368) is marked operating and goes into "Saketh - Federal". The three Federal savings accounts (••3269, ••4365, ••6299) stay closed, as you confirmed.
 

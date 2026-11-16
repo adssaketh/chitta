@@ -38,26 +38,44 @@ sealed interface NpsReading {
  */
 object NpsStatement {
     private const val MONEY = """[\d,]+\.\d{2}"""
-    private val summary = Rx.of(
-        """\d+\s+($MONEY)\s+($MONEY)\s+$MONEY\s+($MONEY)\s+-?$MONEY\s+Investment\s+Details\s+as\s+on\s+(\d{2})-(\d{2})-(\d{4})""",
-    )
+    /** No of contributions, contributions, withdrawals, deductions, current valuation, gain. */
+    private val summary = Rx.of("""\b\d+\s+($MONEY)\s+($MONEY)\s+$MONEY\s+($MONEY)\s+-?$MONEY""")
+    private val asOnRe = Rx.of("""Investment\s+Details\s+as\s+on\s+(\d{2})-(\d{2})-(\d{4})""", ignoreCase = true)
     private val tierRe = Rx.of("""Transaction\s+Statement\s*-\s*(Tier\s+I{1,2})""", ignoreCase = true)
     private val row = Rx.of("""([\d,]+\.\d{3,4})\s+([\d,]+\.\d{4})\s+($MONEY)(?:\s+-?\d+\.\d+%)?(?=\s|\z)""")
-    private val header = Rx.of("""Scheme\s+Name\s+Total\s+Units\s+Latest\s+NAV\s+Value\s+at\s+NAV\s+XIRR""", ignoreCase = true)
+    private val header = Rx.of("""Scheme\s+Name\s+Total\s+Units\s+Latest\s+NAV\s+Value\s+at\s+NAV(?:\s+X?IRR)?""", ignoreCase = true)
     private val totalRe = Rx.of("""\bTotal\s+($MONEY)""")
+
+    private val houses = listOf("ICICI", "HDFC", "SBI", "UTI", "LIC", "KOTAK", "ADITYA BIRLA", "ABSL", "AXIS", "DSP", "TATA", "MAX", "SUD", "STAR UNION", "NPS TRUST")
+    private val tierEnd = Regex("""(?i)(TIER)\s*([Il1|!]{1,2})(\s+POP)?\s*$""")
+
+    /**
+     * A scheme name as the statement prints it ("ICICI PENSION FUND SCHEME E - TIER I"). A text recogniser can add stray letters in front of
+     * the fund house name or read the tier's "I" as "|" or "1"; those are put right. A name that is already clean comes back unchanged.
+     */
+    internal fun cleanSchemeName(raw: String): String {
+        var n = raw.replace(Regex("""\s+"""), " ").trim()
+        val upper = n.uppercase()
+        val at = houses.mapNotNull { h -> upper.indexOf(h).takeIf { it in 1..12 } }.minOrNull()
+        if (at != null && upper.contains("PENSION")) n = n.substring(at)
+        n = tierEnd.replace(n) { m -> m.groupValues[1].uppercase() + " " + (if (m.groupValues[2].length >= 2) "II" else "I") + (if (m.groupValues[3].isNotEmpty()) " POP" else "") }
+        return n
+    }
 
     private fun paise(text: String): Long = BigDecimal(text.replace(",", "")).movePointRight(2).longValueExact()
 
     /** True when the text is an NPS statement of this kind, so one file picker can serve both statement types. */
     fun looksLike(text: String): Boolean {
         val flat = text.replace(Regex("""\s+"""), " ")
-        return flat.contains("NATIONAL PENSION SYSTEM", ignoreCase = true) && flat.contains("Investment Details as on", ignoreCase = true)
+        return (flat.contains("NATIONAL PENSION SYSTEM", ignoreCase = true) || flat.contains("PRAN", ignoreCase = false)) && flat.contains("Investment Details as on", ignoreCase = true)
     }
 
     fun read(text: String): NpsReading {
         val flat = text.replace(' ', ' ').replace(Regex("""\s+"""), " ")
+        // The page can give the heading before the figures (a printed or scanned page) or after them (the text layer): both are read.
+        val d = asOnRe.find(flat) ?: return NpsReading.Refused("The \"Investment Details as on\" date was not found. Nothing was changed.")
         val s = summary.find(flat) ?: return NpsReading.Refused("The summary line (contributions, withdrawals, current valuation) was not found. Nothing was changed.")
-        val priceDate = try { LocalDate.of(s.groupValues[6].toInt(), s.groupValues[5].toInt(), s.groupValues[4].toInt()) } catch (e: Exception) {
+        val priceDate = try { LocalDate.of(d.groupValues[3].toInt(), d.groupValues[2].toInt(), d.groupValues[1].toInt()) } catch (e: Exception) {
             return NpsReading.Refused("The statement's price date could not be read. Nothing was changed.")
         }
         val tier = tierRe.find(flat)?.groupValues?.get(1)?.replace(Regex("""\s+"""), " ")?.let { t -> if (t.endsWith("II", true)) "Tier II" else "Tier I" } ?: "Tier I"
@@ -72,10 +90,18 @@ object NpsStatement {
         val schemes = ArrayList<NpsHolding>()
         var cursor = 0
         for (m in rows) {
-            val name = afterHeader.substring(cursor, m.range.first).replace(Regex("""\s+"""), " ").trim()
+            val name = cleanSchemeName(afterHeader.substring(cursor, m.range.first))
             cursor = m.range.last + 1
             if (name.isEmpty()) return NpsReading.Refused("A scheme name could not be read. Nothing was changed.")
             schemes += NpsHolding(name, BigDecimal(m.groupValues[1].replace(",", "")), BigDecimal(m.groupValues[2].replace(",", "")), paise(m.groupValues[3]))
+        }
+        // Every scheme of one statement is from one fund house: a name whose fund house was misread takes the one the others agree on.
+        val prefixRe = Regex("""(?i)^(.*?)\s+PENSION\s+FUND\b""")
+        val prefixes = schemes.mapNotNull { prefixRe.find(it.name)?.groupValues?.get(1) }
+        val house = prefixes.filter { p -> houses.any { it.equals(p, ignoreCase = true) } }.groupingBy { it.uppercase() }.eachCount().maxByOrNull { it.value }?.key
+        if (house != null) for (i in schemes.indices) {
+            val m = prefixRe.find(schemes[i].name) ?: continue
+            if (!m.groupValues[1].equals(house, ignoreCase = true)) schemes[i] = schemes[i].copy(name = house + schemes[i].name.substring(m.groupValues[1].length))
         }
         val statedValue = paise(s.groupValues[3])
         val tableTotal = totalRe.find(afterHeader, cursor)?.groupValues?.get(1)?.let { paise(it) }
