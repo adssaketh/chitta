@@ -79,6 +79,8 @@ fun AmountEntryText(
     modifier: Modifier = Modifier,
     style: TextStyle = ChittaTheme.type.amountHero,
     color: Color = ChittaTheme.colors.ink,
+    /** The caret is drawn only while the amount is being typed; when hidden it still holds its space so nothing shifts. */
+    showCaret: Boolean = true,
 ) {
     val c = ChittaTheme.colors
     val figure = IndianFormat.entry(raw.ifEmpty { "0" })
@@ -91,7 +93,7 @@ fun AmountEntryText(
             modifier = Modifier.alignByBaseline().padding(end = Dimens.Space1),
         )
         TabularText(text = figure, modifier = Modifier.alignByBaseline(), style = style, color = color)
-        Caret(caretHeight, if (c.isDark) c.ink else c.sindoor)
+        Caret(caretHeight, if (!showCaret) Color.Transparent else if (c.isDark) c.ink else c.sindoor)
     }
 }
 

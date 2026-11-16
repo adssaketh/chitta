@@ -9,6 +9,7 @@ import com.mansaketh.chitta.core.design.kit.SheetHandle
 import com.mansaketh.chitta.core.design.kit.CategoryChip
 import com.mansaketh.chitta.core.design.kit.ValueRow
 import com.mansaketh.chitta.core.design.kit.ChittaButton
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -16,6 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -58,6 +60,15 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
     val types = EntryType.entries
     var moreOptions by remember { mutableStateOf(false) }
     val formScroll = rememberScrollState()
+    // The amount's caret shows only while it is being typed: after a tap on the amount or a key press, and for 2 s after the last one.
+    // A field taking focus (Title) hides it at once.
+    var typingTick by remember { mutableStateOf(0) }
+    var typing by remember { mutableStateOf(false) }
+    LaunchedEffect(typingTick) {
+        typing = typingTick > 0
+        if (typingTick > 0) { kotlinx.coroutines.delay(2000); typing = false }
+    }
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
     // The keypad and Save are fixed, so the rows "More options" opens land below the visible form: scroll them into view.
     LaunchedEffect(moreOptions) {
         if (moreOptions) {
@@ -88,7 +99,12 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
                     },
                 )
                 Spacer(Modifier.height(Dimens.Space2))
-                AmountEntryText(d.amountRaw)
+                AmountEntryText(
+                    d.amountRaw, showCaret = typing,
+                    modifier = Modifier.clickable(interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null) {
+                        focusManager.clearFocus(); typingTick++
+                    },
+                )
                 Box(Modifier.heightIn(min = Dimens.Space4)) {
                     val after = safeAfter
                     if (d.type == EntryType.Expense && after != null) {
@@ -98,7 +114,10 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
                 Spacer(Modifier.height(Dimens.Space4))
 
                 if (!transfer) {
-                    ChittaField(d.title, vm::setTitle, label = null, placeholder = "Title", minHeight = Dimens.TouchTarget, description = "Title")
+                    ChittaField(
+                        d.title, vm::setTitle, label = null, placeholder = "Title", minHeight = Dimens.TouchTarget, description = "Title",
+                        modifier = Modifier.onFocusChanged { if (it.hasFocus) typingTick = 0 },
+                    )
                     if (ui.suggestions.isNotEmpty() && d.title.isNotBlank()) {
                         LazyRow(
                             Modifier.bleed(Dimens.Margin).padding(top = Dimens.Gap2), contentPadding = PaddingValues(horizontal = Dimens.Margin),
@@ -163,7 +182,7 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
                 )
                 LaunchedEffect(Unit) { amountFocus.requestFocus() }
             } else {
-                Keypad(vm::key, modifier = Modifier.bleed(Dimens.KeypadBleed), showEquals = com.mansaketh.chitta.core.domain.AmountExpression.isCalculation(d.amountRaw))
+                Keypad({ typingTick++; vm.key(it) }, modifier = Modifier.bleed(Dimens.KeypadBleed), showEquals = com.mansaketh.chitta.core.domain.AmountExpression.isCalculation(d.amountRaw))
             }
             // The one thing p.15 does not draw: the master prompt keeps the way to the phone keyboard, so it sits as a small link between the keypad and Save.
             Row(Modifier.fillMaxWidth().tightVertical(Dimens.Space2), horizontalArrangement = Arrangement.End) {
