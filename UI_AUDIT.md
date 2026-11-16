@@ -213,3 +213,24 @@ Not done, and why
 Done: all Settings sections are ExpandGroups (D271); FootNote component; SectionHeader gap rule (D272); Accounts button row and currency case (D273).
 Not checked on a phone yet. Open: whole-screen snapshots (D246); Quick Add "INR" comparison (money logic); More's groups (D270).
 
+## Phase 11a: the v8 kit (16 Nov 2026, branch `phase-11a-kit`)
+Scope: tokens, D277 to D283, the shared components, the gallery and screenshot tests. No screen changed. Reference: `Paddhu-Pusthakam-final-design-v8.pdf`, pages 3 to 5 (kit), 16 (date sheet), 36 (group headers).
+
+How the kit stays out of the screens' way until 11b
+- The new components live in `com.mansaketh.chitta.core.design.kit`, under the names the Phase 11 prompt uses (`Section`, `NavRow`, `ValueRow`, `ChittaButton`, `EmptyState`, `ExpandGroup`, `GaugeBar`). The old components of the same name stay in `core.design.components` and the app. A screen moves by changing its import in 11b, so no existing screen drew differently in 11a.
+- `ChittaButton` (kit) has no forced full width and four kinds (Primary sindoor, Secondary, Link, Danger). The old `ChittaButton` (components) keeps its full width and its Primary / Attention / Quiet styles; its 142 call sites move in 11b.
+- Where the v8 value differs from the old one, the old one keeps its name: `GlyphCircleLegacy` (32 dp), the old `SheetHandleWidth`, the old `sectionHeading` and `rowMeta` type roles, `Shapes.Stamp` (2 dp). New roles have new names (`sectionTitle`, `rowMeta14`, `sheetTitle`, `stepperLabel`, `badge`, `marginDay`).
+
+Checked against the PDF (kit pages)
+- Page 3: main bar with bell + badge and gear; detail bar with icon actions and bottom hairline; Section with trailing "See all"; NavRow with icon, sub, value and caret; SwitchRow (ink, both states); TickRow; CheckRow.
+- Page 4: EntryRow with glyph, meta and tag; text field and error (existing `ChittaField`, unchanged); Primary, ButtonPair, Link + Danger; CategoryChip (selected and not); FilterChip + "Clear all".
+- Page 5: Segmented; MonthStepper; badge 4 and 99+; stamps and tags; gauges (10, 20, over); MessageBar (save, error); EmptyState; EmptyLine.
+- Page 16: DateSheet. Page 36: GroupHeader / ExpandGroup (icon, title, caret up or down, hairline).
+
+Known gaps, so 11b to 11e do not assume otherwise
+- Touch targets: chips (40, 36) and day cells (46 rows) keep a hit area of at least their spec'd height by a 48 dp outer box, except the Segmented parts, which are 34 dp tall because the prompt spec'd 34 dp parts in a 3 dp padded outline.
+- The 10 s timeout for saves is a constant (`MESSAGE_BAR_SAVE_MILLIS`); the timer itself stays in `UndoCenter` and moves in 11b.
+- `EntryRow` has no select mode. Multi-select in the Ledger is `CheckRow` per the prompt; how it looks beside the glyph is decided in 11c.
+- `DateSheet` takes the first day of the week as a parameter; it is read from the Customise setting at the call site in 11b.
+- Screenshots of the new sections are recorded by CI (`[record snapshots]` in the commit message) and need a look on the first run before merging.
+

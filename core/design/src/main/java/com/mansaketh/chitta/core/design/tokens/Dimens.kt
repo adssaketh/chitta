@@ -96,9 +96,12 @@ object Dimens {
     /** Small icon beside a label (tabs, carets). */
     val IconSmall = 16.dp
 
-    /** A category glyph: a soft circle with the icon inside. */
-    val GlyphCircle = 32.dp
+    /** A category glyph: a soft circle with the icon inside. v8 (D279): 40 dp circle, 20 dp icon. */
+    val GlyphCircle = 40.dp
     val GlyphIcon = 20.dp
+
+    /** The pre-v8 glyph circle (32 dp). Screens that still draw the old rows keep it until 11b moves them to EntryRow. */
+    val GlyphCircleLegacy = 32.dp
 
     /** The coloured dot before a chip label. */
     val Dot = 8.dp
@@ -127,17 +130,106 @@ object Dimens {
 
     /** A tag's side padding; its text line supplies the height. */
     val TagPadH = Space2
+
+    // ---- v8 kit (Phase 11a, D277 to D283). Components in `kit` read only these. ----
+
+    val Space5 = 20.dp
+
+    /** Corners (D278): 4 tags, tick boxes and stamps; 12 every control; 28 sheet tops. */
+    val CornerTag = 4.dp
+    val CornerControl = 12.dp
+    val CornerSheet = 28.dp
+
+    /** Switch (D280: ink, never sindoor). */
+    val SwitchWidth = 46.dp
+    val SwitchHeight = 28.dp
+    val SwitchKnob = 19.dp
+    val SwitchBorder = 1.5.dp
+
+    /** Tick box (pick many) and the tick at the end of a pick-one row. */
+    val TickBoxSize = 22.dp
+    val TickBoxBorder = 1.5.dp
+
+    /** Count badge: least size, ring in the page colour, and where it sits on a 48 dp icon button. */
+    val BadgeMin = 20.dp
+    val BadgeRing = 2.dp
+    val BadgeTop = 5.dp
+    val BadgeEnd = 3.dp
+    val BadgePadH = Space1
+
+    val ButtonHeightSmall = 48.dp
+    val ChipHeight = 40.dp
+    val FilterChipHeight = 36.dp
+    val ChipBorderSelected = 1.5.dp
+
+    /** Segmented switch: 3 dp padding, 34 dp parts. The part radius (12 - 3 = 9) is the inner radius of the 12 dp outline. */
+    val SegmentPad = 3.dp
+    val SegmentHeight = 34.dp
+    val SegmentRadius = 9.dp
+    val SegmentPadH = Space4
+
+    val TopBarMainHeight = 76.dp
+    val TopBarDetailHeight = 64.dp
+
+    /** Sheet handle: 36 x 4 dp, rule colour, 6 dp below. The 2 dp radius is half its height. */
+    val SheetHandleSizeW = 36.dp
+    val SheetHandleSizeH = 4.dp
+    val SheetHandleRadius = 2.dp
+    val SheetHandleGap = 6.dp
+
+    val MessageBarMinHeight = 56.dp
+    val MessageBarInset = 16.dp
+    val MessageBarBottom = 88.dp
+
+    val RowMinOneLine = 56.dp
+    val RowMinTwoLine = 68.dp
+
+    /** Icon sizes (v8 kit). */
+    val IconTopBar = 24.dp
+    val IconMainTitle = 26.dp
+    val IconRowLeading = 22.dp
+    val IconCaret = 18.dp
+    val IconChip = 18.dp
+    val IconFilterX = 14.dp
+    val IconEmpty = 40.dp
+    val IconTick = 22.dp
+
+    /** Gauge bar: 6 dp tall; 3 dp between 10 segments, 2 dp between 20. */
+    val GaugeHeight = 6.dp
+    val GaugeGap10 = 3.dp
+    val GaugeGap20 = 2.dp
+
+    /** Group header (settings, accounts): space above and below the title row. */
+    val GroupTop = Space5
+    val GroupBottom = Space3
+
+    /** Date sheet: 46 dp rows, 40 dp day circles, 1.5 dp ring for today. */
+    val DateRow = 46.dp
+    val DayCircle = 40.dp
+    val TodayRing = 1.5.dp
+
+    /** The margin column of an entry row that shows a date. */
+    val EntryMarginColumn = MarginColumn
+
+    /** Inside a Note: all four sides. */
+    val NoteInner = Space4
+
+    /** A pressed entry row or chip keeps its hit area at least this tall even when it draws smaller. */
+    val HitMin = TouchTarget
 }
 
 object Shapes {
-    /** Controls: 12 to 14 dp. */
-    val Control = RoundedCornerShape(12.dp)
+    /** Controls: 12 dp (D278). */
+    val Control = RoundedCornerShape(Dimens.CornerControl)
 
-    /** Bottom-sheet top corners. */
-    val Sheet = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    /** Bottom-sheet top corners: 28 dp. */
+    val Sheet = RoundedCornerShape(topStart = Dimens.CornerSheet, topEnd = Dimens.CornerSheet)
 
-    /** Tags (Split, Possible duplicate): hairline outline, small corners, never a pill. */
-    val Tag = RoundedCornerShape(4.dp)
+    /** Tags (Split, Possible duplicate) and tick boxes: hairline outline, 4 dp corners, never a pill. */
+    val Tag = RoundedCornerShape(Dimens.CornerTag)
+
+    /** The selected part inside a Segmented switch. */
+    val SegmentPart = RoundedCornerShape(Dimens.SegmentRadius)
 
     /** Stamps are outlined labels, not pills. */
     val Stamp = RoundedCornerShape(2.dp)

@@ -337,6 +337,7 @@ fun ComponentGallery(
         }
         GalleryColors(); GalleryType(); GalleryAmounts(); GalleryLedger(); GalleryRows(); GalleryControls()
         GalleryCharts(); GalleryKeypad(); GalleryNav(); GalleryStates(); GalleryIcons()
+        GalleryKitBars(); GalleryKitRows(); GalleryKitControls(); GalleryKitFeedback(); GalleryKitSheets()
         Box(Modifier.height(Dimens.SectionGap))
     }
 }

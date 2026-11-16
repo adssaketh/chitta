@@ -91,7 +91,7 @@ fun ExpandGroup(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (icon != null) {
-                Box(Modifier.size(Dimens.GlyphCircle).clip(CircleShape).background(c.ink.copy(alpha = 0.08f)), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(Dimens.GlyphCircleLegacy).clip(CircleShape).background(c.ink.copy(alpha = 0.08f)), contentAlignment = Alignment.Center) {
                     Icon(icon, contentDescription = null, tint = c.inkMuted, modifier = Modifier.size(Dimens.GlyphIcon))
                 }
                 Box(Modifier.width(Dimens.Gap3))

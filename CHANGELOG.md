@@ -1,5 +1,13 @@
 # Changelog
 
+## Phase 11a: the v8 kit (16 Nov 2026) - on branch `phase-11a-kit`
+- Nothing on any screen changes. This phase adds the building blocks that 11b to 11e will swap in, plus the gallery and screenshot tests for them.
+- New package `core/design/kit` with the 22 shared components of the Phase 11 prompt (section 4): TopBarMain, TopBarDetail, CountBadge (and BadgedIconAction), Section, NavRow, ValueRow, SwitchRow (and ChittaSwitch), TickRow, CheckRow (and TickBox), EntryRow (and Glyph), ChittaButton with four kinds and ButtonPair, CategoryChip, FilterChip, Segmented, MonthStepper, GaugeBar, MessageBar (and MessageBarSlot), EmptyState and EmptyLine, SheetHeader, DateSheet, Note, GroupHeader and ExpandGroup.
+- New tokens in `Dimens`, `Type` and `Palette` (including `warningOnInverse`), `CaretLeft` and `CaretUp` icons, and decisions D277 to D283.
+- `Dimens.GlyphCircle` is 40 dp now; the old 32 dp is `GlyphCircleLegacy` and the old rows use it until 11b. `SheetSurface` takes `handle = false` for sheets that use `SheetHeader`.
+- Component gallery: five new "Kit" sections. Screenshot tests in Paper and Ink at 393 dp, at 200% text, and at 360 dp with 130% text (30 new images). New unit tests for the tokens, the badge, the date grid and the contrast of the message-bar icon; new semantics tests for roles and labels.
+- Not built or run here: this chat has no Android SDK, so nothing was compiled or tested locally. GitHub Actions is the first compile; the commit message asks it to record the new screenshots.
+
 ## Phase 10d: statement files (16 Nov 2026)
 - Mutual funds > Import: the CAMS / MFCentral summary PDF is read again (the real file prints the NAV date and folio number with no space, which the reader did not expect).
 - An NPS statement that is only pictures (a printed or screenshot PDF) is now read: the pages are drawn and read on the phone. The figures are checked against the statement's own total before anything is offered; scheme names are shown for you to check.

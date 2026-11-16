@@ -158,7 +158,7 @@ private fun stillApplies(reason: IntakeReason, ch: IntakeChoice): Boolean = when
 private fun Logo(brandKey: String, sender: String) {
     val context = LocalContext.current
     val bitmap by produceState<Bitmap?>(null, brandKey, sender) { value = PingBridge.logo(context, brandKey.ifEmpty { null }, sender) }
-    bitmap?.let { Image(it.asImageBitmap(), contentDescription = null, modifier = Modifier.size(Dimens.GlyphCircle)) } ?: Spacer(Modifier)
+    bitmap?.let { Image(it.asImageBitmap(), contentDescription = null, modifier = Modifier.size(Dimens.GlyphCircleLegacy)) } ?: Spacer(Modifier)
 }
 
 @Composable

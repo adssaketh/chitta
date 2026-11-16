@@ -115,12 +115,12 @@ fun LedgerRow(
     val stacked = LocalDensity.current.fontScale >= 1.5f
     val glyph: @Composable () -> Unit = {
         if (entry.selected) {
-            Box(Modifier.size(Dimens.GlyphCircle).clip(CircleShape).background(c.ink), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(Dimens.GlyphCircleLegacy).clip(CircleShape).background(c.ink), contentAlignment = Alignment.Center) {
                 Icon(ChittaIcons.Check, contentDescription = "Selected", tint = c.background, modifier = Modifier.size(Dimens.GlyphIcon))
             }
         } else {
             Box(
-                Modifier.size(Dimens.GlyphCircle).clip(CircleShape).background(entry.categoryColor.copy(alpha = 0.16f)),
+                Modifier.size(Dimens.GlyphCircleLegacy).clip(CircleShape).background(entry.categoryColor.copy(alpha = 0.16f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(entry.glyph, contentDescription = null, tint = entry.categoryColor, modifier = Modifier.size(Dimens.GlyphIcon))

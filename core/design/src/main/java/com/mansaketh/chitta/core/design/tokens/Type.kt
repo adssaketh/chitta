@@ -93,6 +93,34 @@ class ChittaType internal constructor() {
     val rowMeta get() = label
     val rowAmount get() = amountRow
 
+    // v8 kit roles (D277). New names, so screens that still use the old roles do not move until 11b.
+    /** Section heading, Hanken 15 medium; its trailing note is 14 muted. */
+    val sectionTitle = hanken(15.sp, 20.sp, FontWeight.Medium)
+    val sectionNote = hanken(14.sp, 20.sp, FontWeight.Normal)
+
+    /** Sheet title and empty-state title: Fraunces 22 medium. */
+    val sheetTitle = amountStyle(22.sp, 28.sp, 500)
+
+    /** Row meta line, 14 muted; chip text, 14. */
+    val rowMeta14 = hanken(14.sp, 20.sp, FontWeight.Normal)
+    val chip = hanken(14.sp, 20.sp, FontWeight.Normal)
+    val chipSelected = hanken(14.sp, 20.sp, FontWeight.Medium)
+
+    /** Month stepper label: Fraunces 19 medium. */
+    val stepperLabel = amountStyle(19.sp, 24.sp, 500)
+
+    /** Count badge: Plex Mono 11 medium (like a stamp, the one place below 13 sp besides stamps). */
+    val badge = TextStyle(fontFamily = ChittaFonts.PlexMono, fontSize = 11.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium)
+
+    /** The margin date of an entry row: day in Fraunces 20, weekday in Plex 13 (use [mono]). */
+    val marginDay = amountStyle(20.sp, 24.sp, 500)
+
+    /** A figure inside a sheet: 16 (the screens use [rowAmount], 18). */
+    val rowAmountSheet get() = amountSmall
+
+    /** Empty-state body, 15 muted. */
+    val emptyBody = hanken(15.sp, 24.sp, FontWeight.Normal)
+
     /** The font a rupee sign is drawn in wherever it sits inside interface text. */
     val rupeeFamily: FontFamily = ChittaFonts.fraunces(500, 16.sp)
 

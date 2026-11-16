@@ -30,6 +30,9 @@ object Palette {
     /** NEW: mid-grey for graphics (ring "bills" ticks, field borders). 3.18:1 on paper, above the 3:1 for graphics. */
     const val PAPER_MARK = 0xFF8C877B
 
+    /** v8 (D282): the warning icon inside the message bar. The bar is ink in Paper, so the light red; 7.57:1 on it. */
+    const val PAPER_WARNING_ON_INVERSE = 0xFFFF8A73
+
     // Ink (dark)
     const val INK_BACKGROUND = 0xFF121110
     const val INK_SURFACE = 0xFF1C1A18
@@ -45,6 +48,9 @@ object Palette {
 
     /** NEW: mid-grey for graphics on Ink. 4.06:1 on the Ink background. */
     const val INK_MARK = 0xFF7A7468
+
+    /** v8 (D282): the warning icon inside the message bar. The bar is light in Ink, so the darker red; 4.29:1 on it. */
+    const val INK_WARNING_ON_INVERSE = 0xFFC9331B
 
     /**
      * NEW: twelve earthy category hues for Paper (master section 3 asks for "a 12-hue earthy set
@@ -86,6 +92,8 @@ data class ChittaColors(
     val onSindoor: Color,
     /** Red as text. Lighter than the fill on Ink, darker on Paper, so both pass AA. */
     val warningText: Color,
+    /** The warning icon inside the inverse message bar (light red in Paper, dark red in Ink). */
+    val warningOnInverse: Color,
     /** Income and money in. */
     val green: Color,
     val scrim: Color,
@@ -113,6 +121,7 @@ data class ChittaColors(
             sindoor = Color(Palette.PAPER_SINDOOR),
             onSindoor = Color(Palette.PAPER_ON_SINDOOR),
             warningText = Color(Palette.PAPER_WARNING_TEXT),
+            warningOnInverse = Color(Palette.PAPER_WARNING_ON_INVERSE),
             green = Color(Palette.PAPER_GREEN),
             scrim = Color(Palette.PAPER_INK).copy(alpha = 0.40f),
             category = Palette.CATEGORY_PAPER.map { Color(it) },
@@ -129,6 +138,7 @@ data class ChittaColors(
             sindoor = Color(Palette.INK_SINDOOR),
             onSindoor = Color(Palette.INK_ON_SINDOOR),
             warningText = Color(Palette.INK_WARNING_TEXT),
+            warningOnInverse = Color(Palette.INK_WARNING_ON_INVERSE),
             green = Color(Palette.INK_GREEN),
             // "a sheet is #1C1A18 over a near-black scrim. No pure black or pure white anywhere."
             scrim = Color(0xFF0A0908).copy(alpha = 0.72f),

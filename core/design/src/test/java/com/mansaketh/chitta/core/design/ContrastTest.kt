@@ -81,6 +81,14 @@ class ContrastTest {
         atLeast(3.0, INK_SINDOOR, INK_BACKGROUND, "Ink accent mark on page")
     }
 
+    @Test fun warningIconInsideTheMessageBarIsVisible() = with(Palette) {
+        // v8 (D282): the message bar is ink in Paper and light in Ink; its warning icon is a graphic, so 3:1.
+        atLeast(3.0, PAPER_WARNING_ON_INVERSE, PAPER_INK, "light red warning icon on the Paper message bar")
+        atLeast(3.0, INK_WARNING_ON_INVERSE, INK_INK, "dark red warning icon on the Ink message bar")
+        atLeast(4.5, PAPER_BACKGROUND, PAPER_INK, "message text on the Paper message bar")
+        atLeast(4.5, INK_BACKGROUND, INK_INK, "message text on the Ink message bar")
+    }
+
     @Test fun categoryHuesAreVisibleInBothThemes() {
         val ink = ChittaColors.Ink.category
         Palette.CATEGORY_PAPER.forEachIndexed { i, hex ->

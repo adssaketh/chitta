@@ -180,6 +180,8 @@ fun ListRow(
 @Composable
 fun SheetSurface(
     modifier: Modifier = Modifier,
+    /** The pre-v8 handle. The v8 `SheetHeader` draws its own, so a sheet that uses it passes false (11b). */
+    handle: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val c = ChittaTheme.colors
@@ -191,15 +193,17 @@ fun SheetSurface(
             .padding(horizontal = Dimens.Margin)
             .padding(top = Dimens.Gap3, bottom = Dimens.Gap6),
     ) {
-        Box(
-            Modifier
-                .align(Alignment.CenterHorizontally)
-                .width(Dimens.SheetHandleWidth)
-                .height(Dimens.SheetHandleHeight)
-                .clip(Shapes.Stamp)
-                .background(c.mark),
-        )
-        Column(Modifier.padding(top = Dimens.Gap4), content = content)
+        if (handle) {
+            Box(
+                Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .width(Dimens.SheetHandleWidth)
+                    .height(Dimens.SheetHandleHeight)
+                    .clip(Shapes.Stamp)
+                    .background(c.mark),
+            )
+        }
+        Column(Modifier.padding(top = if (handle) Dimens.Gap4 else 0.dp), content = content)
     }
 }
 
