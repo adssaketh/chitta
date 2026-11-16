@@ -2,6 +2,9 @@ package com.mansaketh.chitta.ui
 
 import com.mansaketh.chitta.core.design.kit.SheetHeader
 import com.mansaketh.chitta.core.design.kit.TickRow
+import com.mansaketh.chitta.core.design.kit.MessageBar
+import com.mansaketh.chitta.core.design.kit.MessageBarSlot
+import com.mansaketh.chitta.core.design.kit.MessageKind
 import com.mansaketh.chitta.core.design.kit.SwitchRow
 import androidx.compose.foundation.background
 import com.mansaketh.chitta.core.design.kit.ButtonKind
@@ -119,8 +122,8 @@ data class Choice<T>(
 /** A result or problem at the top of a screen, as the one message bar (v8 §4.17): it stays until closed (D282). Put it in the screen's root Box. */
 @Composable
 fun BoxScope.NoticeBar(text: String, onClose: () -> Unit) {
-    com.mansaketh.chitta.core.design.kit.MessageBarSlot {
-        com.mansaketh.chitta.core.design.kit.MessageBar(text, kind = com.mansaketh.chitta.core.design.kit.MessageKind.Error, onClose = onClose)
+    MessageBarSlot {
+        MessageBar(text, kind = MessageKind.Error, onClose = onClose)
     }
 }
 
