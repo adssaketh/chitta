@@ -2,6 +2,8 @@ package com.mansaketh.chitta.core.design.icons
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.graphics.vector.group
@@ -36,4 +38,18 @@ object KitIcons {
 
     /** phosphor: caret-up (caret-down turned) */
     val CaretUp: ImageVector by lazy { turned("CaretUp", CARET_DOWN) }
+
+    private fun stroked(name: String, pathData: String): ImageVector =
+        ImageVector.Builder(name = name, defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 256f, viewportHeight = 256f)
+            .addPath(
+                pathData = PathParser().parsePathString(pathData).toNodes(), fill = null, stroke = SolidColor(Color.Black),
+                strokeLineWidth = 16f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round,
+            )
+            .build()
+
+    /** Drawn here, not from Phosphor (11c, D285): a thumbtack for Pin, same 16 dp round stroke as the Phosphor regular set. */
+    val Pin: ImageVector by lazy { stroked("Pin", "M96,40H160M112,40V104L80,144H176L144,104V40M128,144V216") }
+
+    /** Drawn here, not from Phosphor (11c, D285): one line forking into two arrows, for Split. */
+    val Split: ImageVector by lazy { stroked("Split", "M128,216V136M128,136L56,64M128,136L200,64M56,104V64H96M200,104V64H160") }
 }

@@ -243,3 +243,15 @@ Left on purpose (not in the 11b list)
 - Literal dp in chart drawing (`InsightsCharts`, `BudgetRing`), tab-swipe distances and the Household radio ring (`HouseholdScreen`): same as D267.
 - Quick Add keeps its own top (tabs, no title) with the old handle: the v8 sheet header needs a title and the prompt gives it none.
 - Ledger rows (`LedgerRow` inside `DayGroup`, with its own selection circle) and Home's Coming up rows: not yet on `EntryRow` / `CheckRow`. The prompt lists the swap under the shared components but gives no 11b step for it, and `LedgerRow` carries long-press, tags, stamps and the 200% layout, so it needs your go-ahead. Open question in the 11b report.
+
+## Phase 11c: daily screens (16 Nov 2026, branch `phase-11c-daily`)
+Matched to the PDF: Home p.13, Safe to spend p.14 (Note only), Quick Add p.15, Ledger filtered p.18, Entry p.20, Split p.21, Delete p.22.
+Not built (not in app)
+- Ledger filtered: the "5 entries / total" line under the chips (the app has no filtered total); Home p.13 "Over pace" stamp placement kept as today.
+- Entry p.20: the mono "Expense · from a bank message" line and the History list inline (History stays a row that opens its own screen).
+- Bell list p.23: the "Ready" / "Needs a look" groups, counts and "Fix selected" (not in app).
+Left as is, needs your decision
+- Bell list rows keep their own tap (opens the row sheet to change account or category), with the shared tick box; `CheckRow` would make a tap only tick, which removes editing.
+- Date sheet, Saved with Undo, Ledger first use, Delete layout: already on the kit from 11b / earlier in 11c.
+Not verified on a phone: everything. Not compiled locally.
+

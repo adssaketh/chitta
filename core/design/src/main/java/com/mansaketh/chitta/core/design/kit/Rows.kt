@@ -39,6 +39,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -399,6 +400,10 @@ fun EntryRow(
     tag: String? = null,
     stamp: String? = null,
     stampTone: StampTone = StampTone.Neutral,
+    /** More flags after [tag] (a row can be Split and a Possible duplicate at once); drawn on the same line, wrapping if needed. */
+    moreTags: List<String> = emptyList(),
+    /** In multi-select: null = not selecting; otherwise a tick box ([TickBox]) before the glyph, ticked or not. */
+    selectMark: Boolean? = null,
     onClick: () -> Unit = {},
     onLongClick: (() -> Unit)? = null,
     rule: Boolean = true,
@@ -412,7 +417,16 @@ fun EntryRow(
                 Text(meta.rupeeAware(), style = ChittaTheme.type.rowMeta14, color = c.inkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                 if (stamp != null) Stamp(stamp, tone = stampTone)
             }
-            if (tag != null) TagChip(tag, Modifier.padding(top = Dimens.Space1))
+            val allTags = listOfNotNull(tag) + moreTags
+            if (allTags.isNotEmpty()) {
+                Row(Modifier.padding(top = Dimens.Space1), horizontalArrangement = Arrangement.spacedBy(Dimens.InlineGap)) { allTags.forEach { TagChip(it) } }
+            }
+        }
+    }
+    val leadMark: @Composable () -> Unit = {
+        if (selectMark != null) {
+            TickBox(selectMark, Modifier.clearAndSetSemantics { })
+            Spacer(Modifier.width(Dimens.Space3))
         }
     }
     Column(modifier.fillMaxWidth()) {
@@ -420,7 +434,8 @@ fun EntryRow(
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = Dimens.RowMinTwoLine)
-                .pressCombinedClickable(role = Role.Button, onLongClick = onLongClick, onClick = onClick)
+                .pressCombinedClickable(role = if (selectMark != null) Role.Checkbox else Role.Button, onLongClick = onLongClick, onClick = onClick)
+                .then(if (selectMark != null) Modifier.semantics { selected = selectMark } else Modifier)
                 .padding(vertical = Dimens.RowPadV),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -440,6 +455,7 @@ fun EntryRow(
             if (stacked) {
                 Column(Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.Top) {
+                        leadMark()
                         Glyph(glyph, glyphColor)
                         textColumn(Modifier.weight(1f).padding(start = Dimens.Space3))
                     }
@@ -448,6 +464,7 @@ fun EntryRow(
                     }
                 }
             } else {
+                leadMark()
                 Glyph(glyph, glyphColor)
                 textColumn(Modifier.weight(1f).padding(start = Dimens.Space3, end = Dimens.TitleAmountGap))
                 AmountText(amount, style = ChittaTheme.type.amountRow, tone = tone, fallbackStyles = listOf(ChittaTheme.type.amountSmall))

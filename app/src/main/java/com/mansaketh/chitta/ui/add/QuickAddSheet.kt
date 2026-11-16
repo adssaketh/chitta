@@ -4,6 +4,9 @@ import com.mansaketh.chitta.core.design.kit.DateSheet
 import com.mansaketh.chitta.ui.LocalFirstDay
 import android.app.DatePickerDialog
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
+import com.mansaketh.chitta.core.design.icons.KitIcons
+import com.mansaketh.chitta.core.design.kit.Segmented
+import com.mansaketh.chitta.core.design.kit.SheetHeader
 import com.mansaketh.chitta.core.design.kit.CategoryChip
 import com.mansaketh.chitta.core.design.kit.ValueRow
 import com.mansaketh.chitta.core.design.kit.ButtonKind
@@ -49,9 +52,17 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
     val zone = remember { ZoneId.systemDefault() }
     val types = EntryType.entries
 
-    BottomOverlay(onClose) {
+    var moreOptions by remember { mutableStateOf(false) }
+    BottomOverlay(onClose, handle = false) {
         Column(Modifier.heightIn(max = sheetMax(0.8f)).verticalScroll(rememberScrollState())) {
-            TextTabs(listOf("Expense", "Income", "Transfer"), types.indexOf(d.type), { vm.setType(types[it]) })
+            SheetHeader("Add a transaction", onClose = onClose)
+            // Type at the top left; Pin and Split are icons at the top right, so Save is the only full-width button (PDF p.15).
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Segmented(listOf("Expense", "Income", "Transfer"), types.indexOf(d.type), { vm.setType(types[it]) }, Modifier.weight(1f, fill = false))
+                Spacer(Modifier.weight(1f))
+                if (d.type != EntryType.Transfer && d.categoryId != null) IconAction(KitIcons.Pin, "Pin", vm::pinCurrent)
+                if (ui.ready && d.type != EntryType.Transfer && ui.categories.isNotEmpty()) IconAction(KitIcons.Split, "Split", { splitTotal = vm.splitTotal() })
+            }
             Spacer(Modifier.height(Dimens.Gap3))
             AmountEntryText(d.amountRaw)
             ui.preview?.let { Text("About ${IndianFormat.rupees(it)} at ${ui.rateText}", style = ChittaTheme.type.label, color = c.inkMuted) }
@@ -79,11 +90,14 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
             ValueRow(if (d.type == EntryType.Transfer) "From" else "Account", accountName(d.accountId ?: "", ui.accounts), onClick = { pick = Pick.Account })
             if (d.type == EntryType.Transfer) ValueRow("To", d.toAccountId?.let { accountName(it, ui.accounts) } ?: "Pick an account", onClick = { pick = Pick.ToAccount })
             ValueRow("Date", friendlyDay(d.dateMs, System.currentTimeMillis(), zone), onClick = { pick = Pick.Date })
-            if (d.type != EntryType.Transfer || true) {
-                val acct = ui.accounts.firstOrNull { it.id == d.accountId }?.currency ?: "INR"
+            val acct = ui.accounts.firstOrNull { it.id == d.accountId }?.currency ?: "INR"
+            val otherCurrency = d.originalCurrency != null && d.originalCurrency != acct
+            // The Currency row shows only when it differs from the account's, or after "More options" (PDF p.15).
+            if (otherCurrency || moreOptions) {
                 ValueRow("Currency", (d.originalCurrency ?: acct) + if (d.originalCurrency != null && d.originalCurrency != acct) " · rate ${ui.rateText ?: "unknown"}" else "", onClick = { pick = Pick.Currency })
             }
             ValueRow("Note", d.note.ifBlank { "Add a note" }, onClick = { pick = Pick.Note })
+            if (!otherCurrency && !moreOptions) ChittaButton("More options", { moreOptions = true }, kind = ButtonKind.Link)
             val sharing by vm.sharing.collectAsState()
             val mineOnly by vm.mineOnly.collectAsState()
             if (sharing) ValueRow("Who sees it", if (mineOnly) "Mine only" else "Everyone in the household", onClick = { vm.setMineOnly(!mineOnly) })
@@ -111,11 +125,7 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
                     .padding(top = Dimens.CardInner),
             )
             Spacer(Modifier.height(Dimens.Gap3))
-            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2), modifier = Modifier.fillMaxWidth()) {
-                if (d.type != EntryType.Transfer && d.categoryId != null) ChittaButton("Pin", vm::pinCurrent, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
-                if (ui.ready && d.type != EntryType.Transfer && ui.categories.isNotEmpty()) ChittaButton("Split", { splitTotal = vm.splitTotal() }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
-                ChittaButton("Save", { vm.save(onClose) }, modifier = Modifier.weight(1f), enabled = ui.ready, confirmHaptic = true)
-            }
+            ChittaButton("Save", { vm.save(onClose) }, modifier = Modifier.fillMaxWidth(), enabled = ui.ready, confirmHaptic = true)
         }
     }
 

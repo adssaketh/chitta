@@ -1,5 +1,7 @@
 package com.mansaketh.chitta.core.design.components
 
+import com.mansaketh.chitta.core.design.kit.EntryRow
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
@@ -57,8 +59,9 @@ data class LedgerEntry(
 )
 
 /**
- * One day of the ledger: the date sits in a fixed margin column (large day number, small weekday),
- * entries run to its right, and the day's total sits on the rule beneath the last row.
+ * One day of the ledger: every entry is an [EntryRow] (v8 §4.10). The first row carries the date in the margin column (day number in Fraunces,
+ * weekday under it); later rows of the day keep that room empty. The day's total sits under the last row, on the rule. While [selecting]
+ * every row shows a tick box before its glyph.
  */
 @Composable
 fun LedgerDay(
@@ -67,34 +70,33 @@ fun LedgerDay(
     entries: List<LedgerEntry>,
     dayTotal: Paise,
     modifier: Modifier = Modifier,
+    selecting: Boolean = false,
     onEntryClick: (LedgerEntry) -> Unit = {},
     onEntryLongClick: (LedgerEntry) -> Unit = {},
 ) {
     val c = ChittaTheme.colors
-    Row(modifier.fillMaxWidth().height(IntrinsicSize.Min).semantics(mergeDescendants = false) {}) {
-        Column(Modifier.width(Dimens.MarginColumn)) {
-            // The day number's baseline matches the first title's: the row pads 12 dp, then the title line puts its baseline about 17 dp down.
-            Text(
-                dayNumber.toString(),
-                style = ChittaTheme.type.dayNumber,
-                color = c.ink,
-                modifier = Modifier.paddingFromBaseline(top = Dimens.RowPadV + 17.dp).semantics { contentDescription = "$weekday $dayNumber" },
+    Column(modifier.fillMaxWidth()) {
+        entries.forEachIndexed { i, e ->
+            EntryRow(
+                title = e.title, meta = e.category, glyph = e.glyph, glyphColor = e.categoryColor, amount = e.amount, tone = e.tone,
+                marginDay = if (i == 0) dayNumber else null, weekday = if (i == 0) weekday else null, reserveMargin = true,
+                tag = e.tags.firstOrNull(), moreTags = e.tags.drop(1),
+                stamp = e.stamp, stampTone = e.stampTone,
+                selectMark = if (selecting) e.selected else null,
+                onClick = { onEntryClick(e) }, onLongClick = { onEntryLongClick(e) },
+                rule = i != entries.lastIndex,
             )
-            Text(weekday, style = ChittaTheme.type.label, color = c.inkMuted)
         }
-        Column(Modifier.weight(1f)) {
-            entries.forEach { LedgerRow(it, onClick = { onEntryClick(it) }, onLongClick = { onEntryLongClick(it) }) }
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = Dimens.Gap8).padding(top = Dimens.Gap2),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.End,
-            ) {
-                Text("Day total", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(end = Dimens.Gap2))
-                AmountText(dayTotal, style = ChittaTheme.type.amountSmall, color = c.inkMuted)
-            }
-            HairlineRule()
-            Box(Modifier.height(Dimens.Gap2))
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = Dimens.Gap8).padding(start = Dimens.EntryMarginColumn, top = Dimens.Gap2),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End,
+        ) {
+            Text("Day total", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(end = Dimens.Gap2))
+            AmountText(dayTotal, style = ChittaTheme.type.amountSmall, color = c.inkMuted)
         }
+        HairlineRule()
+        Box(Modifier.height(Dimens.Gap2))
     }
 }
 
