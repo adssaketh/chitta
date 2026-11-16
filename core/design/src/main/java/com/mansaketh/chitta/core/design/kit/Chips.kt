@@ -142,6 +142,8 @@ fun Segmented(
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    /** Side padding of each part (16 on the page). A narrow screen may ask for less so all parts fit on one line (Quick Add). */
+    partPadding: androidx.compose.ui.unit.Dp = Dimens.SegmentPadH,
 ) {
     require(options.size in 2..3) { "Segmented takes 2 or 3 parts" }
     val c = ChittaTheme.colors
@@ -160,7 +162,7 @@ fun Segmented(
                             .heightIn(min = Dimens.SegmentHeight)
                             .clip(Shapes.SegmentPart)
                             .background(if (on) c.ink else Color.Transparent)
-                            .padding(horizontal = Dimens.SegmentPadH),
+                            .padding(horizontal = partPadding),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(label, style = if (on) ChittaTheme.type.chipSelected else ChittaTheme.type.chip, color = if (on) c.background else c.ink, maxLines = 1)

@@ -11,6 +11,7 @@
 - Kept though p.15 does not draw them (the master prompt needs them): the Pinned strip and title suggestions between the title and the chips, and "Use the phone keyboard" as a small link between the keypad and Save.
 - Currency codes show in capitals.
 - New: `SheetHandle`, `IconAction(enabled)`, `ChittaField(label = null, minHeight)`, tokens `AmountCaretWidth`, `KeypadBleed`, `TopActionsBleed`, `QuickAddFigures` (unit-tested with the p.15 numbers).
+- Follow-up after the first phone check: the type switch now fits on one line on a 360 dp phone (its side padding steps from 16 to 12 to 8 dp only as far as needed; it scrolls only at very large text). "More options" now scrolls Note and Currency into view above the fixed keypad. "Safe to spend after this" shows whole rupees, as Home does. The amount sits a little closer to the switch and the line under it, as on the page.
 - Not compiled locally (no Android SDK here); CI builds and re-records the screenshots. Not verified on a phone.
 
 ## Screen 06 Safe to spend, explained, to PDF p.14 (16 Nov 2026) - on branch `ui-06-safe-to-spend-explained`

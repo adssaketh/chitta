@@ -10,7 +10,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.Placeable
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
@@ -42,25 +43,27 @@ internal fun Modifier.tightVertical(by: Dp): Modifier = layout { measurable, con
 }
 
 /**
- * The top row: the type switch at the start, Pin and Split at the end (PDF p.15). The icons are measured first and keep their 48 dp; the switch
- * takes what is left and scrolls sideways if text is large. The icons reach [Dimens.TopActionsBleed] into the end margin, because the switch
- * and two 48 dp icons are wider than the content area on a 390 dp phone. The parent must be wide enough to hold that bleed (the form area is).
+ * The top row: the type switch at the start, Pin and Split at the end (PDF p.15). The icons are measured first and keep their 48 dp. The switch
+ * is tried with its side padding at 16 dp (as drawn), then 12, then 8, and the first that fits the space left is used, so all three parts always
+ * show on one line, even on a 360 dp phone. Only if text is so large that even 8 does not fit does the switch scroll sideways.
+ * The icons reach [Dimens.TopActionsBleed] into the end margin; the parent must be wide enough to hold that bleed (the form area is).
  */
 @Composable
-internal fun QuickAddTopRow(type: @Composable () -> Unit, actions: @Composable () -> Unit, modifier: Modifier = Modifier) {
-    Layout(
-        content = {
-            Box(Modifier.horizontalScroll(rememberScrollState())) { type() }
-            Row(verticalAlignment = Alignment.CenterVertically) { actions() }
-        },
-        modifier = modifier,
-    ) { measurables, constraints ->
+internal fun QuickAddTopRow(type: @Composable (Dp) -> Unit, actions: @Composable () -> Unit, modifier: Modifier = Modifier) {
+    SubcomposeLayout(modifier) { constraints ->
         val total = constraints.maxWidth + Dimens.TopActionsBleed.roundToPx()
-        val actionsPlaced = measurables[1].measure(Constraints(maxWidth = total))
-        val typePlaced = measurables[0].measure(Constraints(maxWidth = (total - actionsPlaced.width).coerceAtLeast(0)))
-        val height = maxOf(actionsPlaced.height, typePlaced.height)
+        val actionsPlaced = subcompose("actions") { Row(verticalAlignment = Alignment.CenterVertically) { actions() } }.first().measure(Constraints(maxWidth = total))
+        val available = (total - actionsPlaced.width).coerceAtLeast(0)
+        val steps = listOf(Dimens.SegmentPadH, Dimens.Space3, Dimens.Space2)
+        var typePlaced: Placeable? = null
+        for ((i, pad) in steps.withIndex()) {
+            val natural = subcompose("type$i") { Box { type(pad) } }.first().measure(Constraints())
+            if (natural.width <= available) { typePlaced = natural; break }
+        }
+        val chosen = typePlaced ?: subcompose("typeFit") { Box(Modifier.horizontalScroll(rememberScrollState())) { type(steps.last()) } }.first().measure(Constraints(maxWidth = available))
+        val height = maxOf(actionsPlaced.height, chosen.height)
         layout(constraints.maxWidth, height) {
-            typePlaced.place(0, (height - typePlaced.height) / 2)
+            chosen.place(0, (height - chosen.height) / 2)
             actionsPlaced.place(total - actionsPlaced.width, (height - actionsPlaced.height) / 2)
         }
     }

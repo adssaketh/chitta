@@ -57,6 +57,15 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
     val zone = remember { ZoneId.systemDefault() }
     val types = EntryType.entries
     var moreOptions by remember { mutableStateOf(false) }
+    val formScroll = rememberScrollState()
+    // The keypad and Save are fixed, so the rows "More options" opens land below the visible form: scroll them into view.
+    LaunchedEffect(moreOptions) {
+        if (moreOptions) {
+            withFrameNanos { }
+            withFrameNanos { }
+            formScroll.animateScrollTo(formScroll.maxValue)
+        }
+    }
 
     val transfer = d.type == EntryType.Transfer
     val acct = ui.accounts.firstOrNull { it.id == d.accountId }?.currency ?: "INR"
@@ -69,22 +78,21 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
             SheetHandle(Modifier.align(Alignment.CenterHorizontally))
             Spacer(Modifier.height(Dimens.SheetHandleGap))
             Column(
-                Modifier.weight(1f, fill = false).bleed(Dimens.Margin).verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin),
+                Modifier.weight(1f, fill = false).bleed(Dimens.Margin).verticalScroll(formScroll).padding(horizontal = Dimens.Margin),
             ) {
                 QuickAddTopRow(
-                    type = { Segmented(listOf("Expense", "Income", "Transfer"), types.indexOf(d.type), { vm.setType(types[it]) }) },
+                    type = { pad -> Segmented(listOf("Expense", "Income", "Transfer"), types.indexOf(d.type), { vm.setType(types[it]) }, partPadding = pad) },
                     actions = {
                         IconAction(KitIcons.Pin, "Pin", vm::pinCurrent, enabled = !transfer && d.categoryId != null)
                         IconAction(KitIcons.Split, "Split", { splitTotal = vm.splitTotal() }, enabled = ui.ready && !transfer && ui.categories.isNotEmpty())
                     },
                 )
-                Spacer(Modifier.height(Dimens.Space3))
-                AmountEntryText(d.amountRaw)
                 Spacer(Modifier.height(Dimens.Space2))
+                AmountEntryText(d.amountRaw)
                 Box(Modifier.heightIn(min = Dimens.Space4)) {
                     val after = safeAfter
                     if (d.type == EntryType.Expense && after != null) {
-                        Text("Safe to spend after this: ${IndianFormat.rupees(after)}".rupeeAware(), style = ChittaTheme.type.label, color = c.inkMuted)
+                        Text("Safe to spend after this: ${IndianFormat.rupeesRounded(after)}".rupeeAware(), style = ChittaTheme.type.label, color = c.inkMuted)
                     }
                 }
                 Spacer(Modifier.height(Dimens.Space4))
