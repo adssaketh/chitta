@@ -1,6 +1,10 @@
 package com.mansaketh.chitta.ui.sync
 
 import androidx.compose.foundation.layout.Column
+import com.mansaketh.chitta.core.design.kit.NavRow
+import com.mansaketh.chitta.core.design.kit.Section
+import com.mansaketh.chitta.core.design.kit.ValueRow
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -15,16 +19,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.mansaketh.chitta.core.design.components.ButtonStyle
-import com.mansaketh.chitta.core.design.components.ChittaButton
-import com.mansaketh.chitta.core.design.components.ChittaTopBar
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
+import com.mansaketh.chitta.core.design.kit.TopBarDetail
 import com.mansaketh.chitta.core.design.components.HairlineRule
-import com.mansaketh.chitta.core.design.components.SectionHeader
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.tokens.Dimens
 import com.mansaketh.chitta.ui.Choice
 import com.mansaketh.chitta.ui.ChoiceSheet
-import com.mansaketh.chitta.ui.ValueRow
 import com.mansaketh.chitta.ui.dayAndTime
 import java.time.ZoneId
 
@@ -40,11 +42,11 @@ fun SyncScreen(vm: SyncViewModel, onBack: () -> Unit) {
     var choiceOpen by remember { mutableStateOf(true) }
 
     Column(Modifier.fillMaxSize()) {
-        ChittaTopBar("Sync between phones", onBack = onBack)
+        TopBarDetail("Sync between phones", onBack = onBack)
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
             if (ui.notice != null) {
                 Text(ui.notice!!, style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(vertical = Dimens.Gap2))
-                ChittaButton("Dismiss", { vm.dismissNotice() }, style = ButtonStyle.Quiet)
+                ChittaButton("Dismiss", { vm.dismissNotice() }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(Dimens.Gap4))
             }
             Spacer(Modifier.height(Dimens.Gap4))
@@ -54,15 +56,14 @@ fun SyncScreen(vm: SyncViewModel, onBack: () -> Unit) {
                     style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(bottom = Dimens.Gap4),
                 )
             } else {
-                ChittaButton(if (ui.running) "Syncing" else "Sync now", { vm.syncNow() }, enabled = !ui.running && !ui.needsChoice)
-                Spacer(Modifier.height(Dimens.SectionGap))
-                SectionHeader("Status")
+                ChittaButton(if (ui.running) "Syncing" else "Sync now", { vm.syncNow() }, enabled = !ui.running && !ui.needsChoice, modifier = Modifier.fillMaxWidth())
+                Section("Status")
                 HairlineRule()
                 ValueRow("Status", ui.line)
                 ValueRow("Last synced", ui.lastSyncMs?.let { dayAndTime(it, zone) } ?: "Never")
                 ValueRow("Waiting to send", ui.waiting.toString())
                 if (ui.error != null) Text(ui.error!!, style = ChittaTheme.type.label, color = c.warningText, modifier = Modifier.padding(vertical = Dimens.Gap2))
-                if (ui.needsChoice) ValueRow("Choose how to sync", "", onClick = { choiceOpen = true })
+                if (ui.needsChoice) NavRow("Choose how to sync", { choiceOpen = true })
             }
             Text(
                 "Your whole book, apart from things that belong to one phone (lock, notifications, backup switches and household sharing), is kept in your own " +

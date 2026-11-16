@@ -1,5 +1,6 @@
 package com.mansaketh.chitta.ui.manage
 
+import com.mansaketh.chitta.core.design.kit.SheetHeader
 import com.mansaketh.chitta.core.design.components.pressClickable
 import androidx.compose.foundation.clickable
 import com.mansaketh.chitta.ui.sheetMax
@@ -25,8 +26,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import com.mansaketh.chitta.core.design.components.ButtonStyle
-import com.mansaketh.chitta.core.design.components.ChittaButton
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
 import com.mansaketh.chitta.core.design.components.ChittaField
 import com.mansaketh.chitta.core.design.components.HairlineRule
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
@@ -43,8 +44,8 @@ fun IconPickerSheet(category: Category, onPick: (String?) -> Unit, onDismiss: ()
     var query by remember { mutableStateOf("") }
     val found = IconSearch.search(query, CategoryIconCatalog.allChoices)
     val current = IconSearch.keyOf(category.iconName)
-    BottomOverlay(onDismiss) {
-        Text("Icon for ${category.name}", style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onDismiss, handle = false) {
+        SheetHeader("Icon for ${category.name}")
         Spacer(Modifier.height(Dimens.Gap2))
         ChittaField(value = query, onValueChange = { query = it }, label = "Search", singleLine = true, placeholder = "fuel, rent, doctor")
         if (found.isEmpty()) {
@@ -65,6 +66,6 @@ fun IconPickerSheet(category: Category, onPick: (String?) -> Unit, onDismiss: ()
             }
         }
         Spacer(Modifier.height(Dimens.Gap2))
-        ChittaButton("Plain tag", { onPick(null) }, style = ButtonStyle.Quiet)
+        ChittaButton("Plain tag", { onPick(null) }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
     }
 }

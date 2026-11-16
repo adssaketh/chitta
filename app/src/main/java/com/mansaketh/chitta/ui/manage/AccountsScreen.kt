@@ -1,6 +1,17 @@
 package com.mansaketh.chitta.ui.manage
 
+import com.mansaketh.chitta.core.design.kit.SheetHeader
 import androidx.compose.foundation.clickable
+import com.mansaketh.chitta.core.design.kit.SwitchRow
+import com.mansaketh.chitta.core.design.kit.NavRow
+import com.mansaketh.chitta.ui.FeatureIcons
+import com.mansaketh.chitta.core.domain.TabKey
+import com.mansaketh.chitta.core.design.kit.EmptyState
+import com.mansaketh.chitta.core.design.kit.Section
+import com.mansaketh.chitta.core.design.kit.ValueRow
+import com.mansaketh.chitta.core.design.kit.TopBarDetail
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -57,7 +68,7 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            ChittaTopBar("Accounts", onBack = onBack, actions = { IconAction(ChittaIcons.Plus, "Add an account", onClick = { sheet = AccSheet.Add }) })
+            TopBarDetail("Accounts", onBack = onBack, actions = { IconAction(ChittaIcons.Plus, "Add an account", onClick = { sheet = AccSheet.Add }) })
             LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
                 item {
                     Text("Total balance", style = ChittaTheme.type.label, color = c.inkMuted)
@@ -65,22 +76,21 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                     if (live.size != rupee.size) FootNote("Accounts in other currencies are listed below and not added in.")
                     notice?.let { FootNote(it) }
                     Row(horizontalArrangement = Arrangement.spacedBy(Dimens.InlineGap), modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.Gap3)) {
-                        ChittaButton("Move money", onTransfer, modifier = Modifier.weight(1f), style = ButtonStyle.Quiet, enabled = live.size >= 2)
-                        ChittaButton("Exchange rates", { sheet = AccSheet.Rates }, modifier = Modifier.weight(1f), style = ButtonStyle.Quiet)
+                        ChittaButton("Move money", onTransfer, modifier = Modifier.weight(1f), kind = ButtonKind.Secondary, enabled = live.size >= 2)
+                        ChittaButton("Exchange rates", { sheet = AccSheet.Rates }, modifier = Modifier.weight(1f), kind = ButtonKind.Secondary)
                     }
                     HairlineRule()
                 }
                 if (ui.loading) item { LoadingPlaceholder() }
-                if (!ui.loading && live.isEmpty()) item { EmptyState("No accounts yet. Add one to start.", "Add an account", { sheet = AccSheet.Add }) }
+                if (!ui.loading && live.isEmpty()) item { EmptyState(FeatureIcons.tab(TabKey.Accounts), null, "No accounts yet. Add one to start.", "Add an account", { sheet = AccSheet.Add }) }
                 items(live, key = { it.id }) { a -> AccountRow(a, ui.balances[a.id] ?: Paise.ZERO, ui.cards[a.id]) { sheet = AccSheet.Actions(a) } }
                 if (archived.isNotEmpty()) item {
-                    Spacer(Modifier.height(Dimens.SectionGap))
-                    SectionHeader("Archived", action = if (showArchived) "Hide" else "Show", onAction = { showArchived = !showArchived })
+                    Section("Archived", note = if (showArchived) "Hide" else "Show", onNote = { showArchived = !showArchived })
                 }
                 if (showArchived) items(archived, key = { "x-" + it.id }) { a -> AccountRow(a, ui.balances[a.id] ?: Paise.ZERO, null) { sheet = AccSheet.Actions(a) } }
                 item { Spacer(Modifier.height(Dimens.SectionGap)) }
                 // Fixed deposits (Phase 8b). Worth shown is today's value; Net worth counts them only when switched on.
-                item { SectionHeader("Fixed deposits", action = "Add", onAction = { sheet = AccSheet.DepositEdit(null) }) }
+                item { Section("Fixed deposits", note = "Add", onNote = { sheet = AccSheet.DepositEdit(null) }) }
                 if (ui.deposits.isEmpty() && !ui.loading) item {
                     FootNote("No fixed deposits. Add one, or a bank message can add it.")
                 }
@@ -91,7 +101,7 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                 if (ui.deposits.isNotEmpty()) {
                     val open = ui.deposits.count { !it.closed }
                     item {
-                        ValueRow("Count deposits in Net worth", if (ui.nwDeposits) "On" else "Off", onClick = { vm.setNetWorthDeposits(!ui.nwDeposits) })
+                        SwitchRow("Count deposits in Net worth", ui.nwDeposits, { vm.setNetWorthDeposits(it) })
                         FootNote(if (ui.nwDeposits) "$open open at today's value, as of ${dateText(ui.nowMs, ui.zone)}." else "Off, so Net worth leaves them out.")
                     }
                 }
@@ -101,12 +111,12 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                     ValueRow("Mutual funds", if (ui.funds.isEmpty()) "None yet" else if (t.priced > 0) maskedRupees(t.value) else "${t.count} ${if (t.count == 1) "fund" else "funds"}", onClick = onOpenFunds)
                 }
                 // Gold, EPF and PPF typed in by hand (Phase 8i) have their own screen.
-                item { ValueRow("Gold, EPF and PPF", "", onClick = onOpenAssets) }
-                item { ValueRow("Count instalment loans in Net worth", if (ui.nwInstalments) "On" else "Off", onClick = { vm.setNetWorthInstalments(!ui.nwInstalments) }) }
+                item { NavRow("Gold, EPF and PPF", onOpenAssets) }
+                item { SwitchRow("Count instalment loans in Net worth", ui.nwInstalments, { vm.setNetWorthInstalments(it) }) }
                 // Cards read from bank messages (Phase 8b).
                 val owed = CardDues.owedByCard(ui.dues)
                 if (owed.isNotEmpty()) {
-                    item { Spacer(Modifier.height(Dimens.SectionGap)); SectionHeader("Cards from bank messages") }
+                    item { Section("Cards from bank messages") }
                     items(owed.entries.toList(), key = { "cd-" + it.key }) { (card, v) ->
                         val matched = live.any { CardDues.forAccount(it, ui.dues.filter { d -> d.card == card }).isNotEmpty() }
                         ValueRow(card, (if (v < 0) "Credit " else "Owes ") + maskedRupees(Paise(kotlin.math.abs(v))), onClick = { sheet = AccSheet.CardOwed(card) })
@@ -209,8 +219,8 @@ private fun RatesSheet(vm: ManageViewModel, ui: ManageUi, say: (String) -> Unit,
     var editing by remember { mutableStateOf<String?>(null) }
     var bad by remember { mutableStateOf(false) }
     val wanted = (ui.accounts.mapNotNull { it.currency } + listOf("USD", "EUR", "GBP", "AED", "SGD")).filter { it != "INR" }.distinct()
-    BottomOverlay(onClose) {
-        Text("Exchange rates", style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader("Exchange rates")
         val asOf = ui.rates.firstOrNull()?.asOfDate
         Text(if (asOf == null) "No rates yet. Refresh needs internet." else "Daily rates as of $asOf. A rate you type wins over the daily one.", style = ChittaTheme.type.label, color = c.inkMuted)
         Spacer(Modifier.height(Dimens.Gap2))
@@ -220,7 +230,7 @@ private fun RatesSheet(vm: ManageViewModel, ui: ManageUi, say: (String) -> Unit,
             ValueRow("1 $code", (override?.rate?.let { "₹$it (yours)" } ?: daily?.let { "₹$it" } ?: "no rate"), onClick = { editing = code })
         }
         Spacer(Modifier.height(Dimens.Gap2))
-        ChittaButton("Refresh rates", { vm.refreshRates { r -> say(if (r is RefreshResult.Updated) "Rates updated (${r.asOf})." else (r as RefreshResult.Failed).reason + " Old rates kept.") }; onClose() })
+        ChittaButton("Refresh rates", { vm.refreshRates { r -> say(if (r is RefreshResult.Updated) "Rates updated (${r.asOf})." else (r as RefreshResult.Failed).reason + " Old rates kept.") }; onClose() }, modifier = Modifier.fillMaxWidth())
     }
     editing?.let { code ->
         val has = ui.overrides.any { it.fromCurrency == code && it.toCurrency == "INR" }

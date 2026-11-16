@@ -87,7 +87,6 @@ class KitLogicTest {
         assertEquals(28f, Dimens.CornerSheet.value)
         assertEquals(40f, Dimens.GlyphCircle.value)
         assertEquals(20f, Dimens.GlyphIcon.value)
-        assertEquals(32f, Dimens.GlyphCircleLegacy.value)
         assertEquals(46f, Dimens.SwitchWidth.value)
         assertEquals(28f, Dimens.SwitchHeight.value)
         assertEquals(19f, Dimens.SwitchKnob.value)

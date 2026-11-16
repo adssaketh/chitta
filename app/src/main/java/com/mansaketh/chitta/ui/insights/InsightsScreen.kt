@@ -1,6 +1,12 @@
 package com.mansaketh.chitta.ui.insights
 
+import com.mansaketh.chitta.core.design.kit.SheetHeader
 import androidx.compose.foundation.background
+import com.mansaketh.chitta.core.design.kit.Section
+import com.mansaketh.chitta.core.design.kit.ValueRow
+import com.mansaketh.chitta.core.design.kit.TopBarMain
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
 import com.mansaketh.chitta.ui.sheetMax
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -29,7 +35,6 @@ import com.mansaketh.chitta.ui.Choice
 import com.mansaketh.chitta.ui.ChoiceSheet
 import com.mansaketh.chitta.ui.TextSheet
 import com.mansaketh.chitta.ui.TextTabs
-import com.mansaketh.chitta.ui.ValueRow
 import com.mansaketh.chitta.ui.categoryName
 import com.mansaketh.chitta.ui.plan.MultiPickSheet
 import com.mansaketh.chitta.ui.plan.dateText
@@ -60,7 +65,7 @@ fun InsightsScreen(vm: InsightsViewModel, onOpenEntry: (String) -> Unit) {
     val c = ChittaTheme.colors
 
     Column(Modifier.fillMaxSize()) {
-        com.mansaketh.chitta.core.design.components.ScreenTitle("Insights", com.mansaketh.chitta.core.design.icons.ChittaIcons.Insights, Modifier.padding(horizontal = Dimens.Margin))
+        TopBarMain("Insights", com.mansaketh.chitta.core.design.icons.ChittaIcons.Insights)
         TextTabs(
             listOf("Current", "History", "Net worth", "Review"), tab, { tab = it },
             Modifier.ownsSideways().horizontalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin),
@@ -119,8 +124,8 @@ fun InsightsScreen(vm: InsightsViewModel, onOpenEntry: (String) -> Unit) {
     }
 
     ui.drill?.let { d ->
-        BottomOverlay(onDismiss = { vm.openDrill(null) }) {
-            Text(categoryName(d.categoryId, ui.categories), style = ChittaTheme.type.title, color = c.ink)
+        BottomOverlay(onDismiss = { vm.openDrill(null) }, handle = false) {
+            SheetHeader(categoryName(d.categoryId, ui.categories))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(rangeLabel(ui.range, ui.zone), style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.weight(1f))
                 AmountText(d.total, style = ChittaTheme.type.amountSmall)
@@ -195,8 +200,7 @@ private fun CurrentTab(ui: InsightsUi, onRange: () -> Unit, onAccounts: () -> Un
         }
     }
 
-    Spacer(Modifier.height(Dimens.SectionGap))
-    SectionHeader("Totals")
+    Section("Totals")
     HairlineRule()
     TotalRow("Net total", s.net, bold = true)
     TotalRow("Money in", s.income)
@@ -211,8 +215,7 @@ private fun CurrentTab(ui: InsightsUi, onRange: () -> Unit, onAccounts: () -> Un
         style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2),
     )
 
-    Spacer(Modifier.height(Dimens.SectionGap))
-    SectionHeader("Cash flow")
+    Section("Cash flow")
     if (ui.flow.isEmpty()) {
         Text("Nothing in this range.", style = ChittaTheme.type.body, color = c.inkMuted)
     } else {
@@ -220,8 +223,7 @@ private fun CurrentTab(ui: InsightsUi, onRange: () -> Unit, onAccounts: () -> Un
         Text("Money out in each ${bucketWord(ui.flowBucket)}. The grey outline is where this one ends at today's pace.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
     }
 
-    Spacer(Modifier.height(Dimens.SectionGap))
-    SectionHeader("By category")
+    Section("By category")
     TextTabs(listOf("Spending", "Income"), if (ui.showIncome) 1 else 0, { onIncome(it == 1) })
     Spacer(Modifier.height(Dimens.Gap2))
     if (ui.bars.isEmpty()) {
@@ -256,8 +258,7 @@ private fun CurrentTab(ui: InsightsUi, onRange: () -> Unit, onAccounts: () -> Un
     }
 
     if (ui.changes.isNotEmpty()) {
-        Spacer(Modifier.height(Dimens.SectionGap))
-        SectionHeader("Biggest changes")
+        Section("Biggest changes")
         HairlineRule()
         ui.changes.forEach { ch ->
             Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowTall).padding(vertical = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
@@ -358,8 +359,7 @@ private fun NetWorthTab(ui: InsightsUi) {
     // Gold, EPF and PPF are typed in: say how old the oldest value is, so a stale figure is never mistaken for a fresh one.
     val typedOldest = listOfNotNull(now.goldAsOfMs, now.epfAsOfMs, now.ppfAsOfMs).minOrNull()
     if (typedOldest != null) Text("Gold, EPF and PPF at the values you typed; the oldest is dated ${dateText(typedOldest, ui.zone)}.", style = ChittaTheme.type.label, color = c.inkMuted)
-    Spacer(Modifier.height(Dimens.SectionGap))
-    SectionHeader("Last 12 months")
+    Section("Last 12 months")
     if (ui.netSeries.size >= 2) {
         TrendLine(
             ui.netSeries.map { it.figures.total.value },
@@ -443,14 +443,14 @@ private fun DatesSheet(zone: ZoneId, onShow: (LocalDate, LocalDate?) -> Unit, on
     var from by remember { mutableStateOf(today.withDayOfMonth(1)) }
     var to by remember { mutableStateOf<LocalDate?>(null) }
     fun ms(d: LocalDate) = Periods.startOfDay(d, zone) + 12 * 3_600_000L
-    BottomOverlay(onDismiss) {
-        Text("Between two dates", style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
+    BottomOverlay(onDismiss, handle = false) {
+        SheetHeader("Between two dates")
         Spacer(Modifier.height(Dimens.Gap2))
-        ValueRow("From", from.format(dayMonthYear), onClick = { pickDate(context, ms(from), zone, { from = Periods.date(it, zone) }) })
-        ValueRow("To", to?.format(dayMonthYear) ?: "Up to today", onClick = { pickDate(context, ms(to ?: today), zone, { to = Periods.date(it, zone) }) })
-        if (to != null) ChittaButton("Leave the end open", { to = null }, style = ButtonStyle.Quiet)
+        ValueRow("From", from.format(dayMonthYear), onClick = { pickDate(ms(from), zone, { from = Periods.date(it, zone) }) })
+        ValueRow("To", to?.format(dayMonthYear) ?: "Up to today", onClick = { pickDate(ms(to ?: today), zone, { to = Periods.date(it, zone) }) })
+        if (to != null) ChittaButton("Leave the end open", { to = null }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton("Show", { onShow(from, to) }, confirmHaptic = true)
+        ChittaButton("Show", { onShow(from, to) }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
     }
 }
 

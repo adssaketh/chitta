@@ -1,6 +1,9 @@
 package com.mansaketh.chitta.ui.manage
 
+import com.mansaketh.chitta.core.design.kit.SheetHeader
 import androidx.compose.foundation.layout.Spacer
+import com.mansaketh.chitta.core.design.kit.ValueRow
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -10,8 +13,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import com.mansaketh.chitta.core.design.components.ButtonStyle
-import com.mansaketh.chitta.core.design.components.ChittaButton
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
 import com.mansaketh.chitta.core.design.components.HairlineRule
 import com.mansaketh.chitta.core.design.components.Stamp
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
@@ -27,7 +30,6 @@ import com.mansaketh.chitta.ui.Choice
 import com.mansaketh.chitta.ui.ChoiceSheet
 import com.mansaketh.chitta.ui.ConfirmSheet
 import com.mansaketh.chitta.ui.TextSheet
-import com.mansaketh.chitta.ui.ValueRow
 import com.mansaketh.chitta.ui.plan.dateText
 import com.mansaketh.chitta.ui.plan.pickDate
 import java.math.BigDecimal
@@ -67,8 +69,8 @@ fun DepositDetailSheet(
     val c = ChittaTheme.colors
     var confirmDelete by remember { mutableStateOf(false) }
     val bankFigure = FixedDeposits.isStatedByBank(d)
-    BottomOverlay(onClose) {
-        Text(d.bank + (if (d.fdNumber.isNotEmpty()) " · ${d.fdNumber}" else ""), style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader(d.bank + (if (d.fdNumber.isNotEmpty()) " · ${d.fdNumber}" else ""))
         if (d.closed) Stamp("Closed") else if (FixedDeposits.hasMatured(d, nowMs, zone)) Stamp("Matured")
         if (d.fromSms && !d.closed) Text("Read from a bank message. Check the details.", style = ChittaTheme.type.label, color = c.inkMuted)
         Spacer(Modifier.height(Dimens.Gap2))
@@ -88,11 +90,11 @@ fun DepositDetailSheet(
             style = ChittaTheme.type.label, color = c.inkMuted,
         )
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton("Edit", onEdit)
+        ChittaButton("Edit", onEdit, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Dimens.Gap2))
-        ChittaButton(if (d.closed) "Reopen" else "Mark closed", onToggleClosed, style = ButtonStyle.Quiet)
+        ChittaButton(if (d.closed) "Reopen" else "Mark closed", onToggleClosed, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Dimens.Gap2))
-        ChittaButton("Delete", { confirmDelete = true }, style = ButtonStyle.Quiet)
+        ChittaButton("Delete", { confirmDelete = true }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
     }
     if (confirmDelete) ConfirmSheet(
         "Delete this deposit?", listOf("It leaves the list and Net worth. No account balance changes. You can undo for 10 seconds."), "Delete",
@@ -120,15 +122,15 @@ fun DepositEditSheet(existing: FixedDeposit?, nowMs: Long, zone: ZoneId, onSave:
     var editing by remember { mutableStateOf<DepField?>(null) }
     var problem by remember { mutableStateOf<String?>(null) }
 
-    BottomOverlay(onClose) {
-        Text(if (existing == null) "New fixed deposit" else "Edit fixed deposit", style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader(if (existing == null) "New fixed deposit" else "Edit fixed deposit")
         Spacer(Modifier.height(Dimens.Gap2))
         HairlineRule()
         ValueRow("Bank", bank.ifBlank { "not set" }, onClick = { editing = DepField.Bank })
         ValueRow("Amount put in", principal?.let { maskedRupees(Paise(it)) } ?: "not set", onClick = { editing = DepField.Principal })
         ValueRow("Rate a year", if (rate.isBlank()) "not set" else "$rate%", onClick = { editing = DepField.Rate })
-        ValueRow("Booked on", dateText(start, zone), onClick = { pickDate(context, start, zone, { start = Periods.startOfDay(Periods.date(it, zone), zone) }) })
-        ValueRow("Matures on", dateText(maturity, zone), onClick = { pickDate(context, maturity, zone, { maturity = Periods.startOfDay(Periods.date(it, zone), zone) }) })
+        ValueRow("Booked on", dateText(start, zone), onClick = { pickDate(start, zone, { start = Periods.startOfDay(Periods.date(it, zone), zone) }) })
+        ValueRow("Matures on", dateText(maturity, zone), onClick = { pickDate(maturity, zone, { maturity = Periods.startOfDay(Periods.date(it, zone), zone) }) })
         ValueRow("Interest added", com.mansaketh.chitta.core.domain.FixedDeposits.COMPOUNDING_NAMES[comp] ?: "$comp a year", onClick = { editing = DepField.Compounding })
         ValueRow("Maturity amount from the bank", stated?.let { maskedRupees(Paise(it)) } ?: "not set", onClick = { editing = DepField.Stated })
         ValueRow("FD number", number.ifBlank { "not set" }, onClick = { editing = DepField.Number })
@@ -152,9 +154,9 @@ fun DepositEditSheet(existing: FixedDeposit?, nowMs: Long, zone: ZoneId, onSave:
                     existing?.accountId, existing?.closed ?: false, note.trim(), false, existing?.smsId ?: "", null,
                 ),
             )
-        }, confirmHaptic = true)
+        }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Dimens.Gap2))
-        ChittaButton("Close", onClose, style = ButtonStyle.Quiet)
+        ChittaButton("Close", onClose, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
     }
 
     when (editing) {

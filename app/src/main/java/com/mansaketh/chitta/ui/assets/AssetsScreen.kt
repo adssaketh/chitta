@@ -1,6 +1,13 @@
 package com.mansaketh.chitta.ui.assets
 
+import com.mansaketh.chitta.core.design.kit.SheetHeader
 import androidx.compose.foundation.clickable
+import com.mansaketh.chitta.core.design.kit.SwitchRow
+import com.mansaketh.chitta.core.design.kit.Section
+import com.mansaketh.chitta.core.design.kit.ValueRow
+import com.mansaketh.chitta.core.design.kit.TopBarDetail
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
@@ -50,7 +57,7 @@ fun AssetsScreen(vm: AssetsViewModel, onBack: () -> Unit) {
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            ChittaTopBar("Gold, EPF and PPF", onBack = onBack)
+            TopBarDetail("Gold, EPF and PPF", onBack = onBack)
             LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
                 item {
                     Text(
@@ -63,7 +70,7 @@ fun AssetsScreen(vm: AssetsViewModel, onBack: () -> Unit) {
                     val rows = ui.assets.filter { it.kind == kind }
                     val total = ManualAssets.total(kind, ui.assets, ui.values, ui.nowMs)
                     item(key = "h-" + kind.name) {
-                        SectionHeader(kind.label, action = "Add", onAction = { sheet = AssetSheet.New(kind) })
+                        Section(kind.label, note = "Add", onNote = { sheet = AssetSheet.New(kind) })
                         if (rows.isEmpty() && !ui.loading) Text("No ${kind.label} yet.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2))
                     }
                     rows.forEach { a ->
@@ -76,7 +83,7 @@ fun AssetsScreen(vm: AssetsViewModel, onBack: () -> Unit) {
                     }
                     if (rows.isNotEmpty()) item(key = "t-" + kind.name) {
                         ValueRow("Total ${kind.label}", maskedRupees(total.value))
-                        ValueRow("Count ${kind.label} in Net worth", if (ui.counts(kind)) "On" else "Off", onClick = { vm.setCounted(kind, !ui.counts(kind)) })
+                        SwitchRow("Count ${kind.label} in Net worth", ui.counts(kind), { vm.setCounted(kind, it) })
                         Text(
                             if (ui.counts(kind)) "Counted at the latest value of each, the oldest dated ${total.oldestAsOfMs?.let { dateText(it, ui.zone) } ?: "-"}." else "Off, so Net worth leaves ${kind.label} out.",
                             style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2),
@@ -182,8 +189,8 @@ private fun AssetFormSheet(
     var value by remember { mutableStateOf("") }
     var asOf by remember { mutableStateOf(ui.nowMs) }
     var problem by remember { mutableStateOf<String?>(null) }
-    BottomOverlay(onClose) {
-        Text(title, style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader(title)
         Spacer(Modifier.height(Dimens.Gap3))
         if (askName) {
             ChittaField(name, { name = it }, "Name", placeholder = "For example: Gold coins, EPF (main), PPF")
@@ -191,7 +198,7 @@ private fun AssetFormSheet(
         }
         if (askValue) {
             ChittaField(value, { value = it }, "Worth in rupees", keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
-            ValueRow("Value as of", dateText(asOf, ui.zone), onClick = { pickDate(context, asOf, ui.zone, { asOf = it }) })
+            ValueRow("Value as of", dateText(asOf, ui.zone), onClick = { pickDate(asOf, ui.zone, { asOf = it }) })
         }
         if (askName) {
             Spacer(Modifier.height(Dimens.Gap2))
@@ -199,6 +206,6 @@ private fun AssetFormSheet(
         }
         problem?.let { Text(it, style = ChittaTheme.type.label, color = c.warningText, modifier = Modifier.padding(top = Dimens.Gap2)) }
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton("Save", { problem = onSave(name, value, asOf, note); if (problem == null) onClose() }, confirmHaptic = true)
+        ChittaButton("Save", { problem = onSave(name, value, asOf, note); if (problem == null) onClose() }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
     }
 }

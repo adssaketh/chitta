@@ -1,6 +1,10 @@
 package com.mansaketh.chitta.ui.home
 
 import androidx.compose.foundation.clickable
+import com.mansaketh.chitta.core.design.kit.SwitchRow
+import com.mansaketh.chitta.core.design.kit.Section
+import com.mansaketh.chitta.core.design.kit.ValueRow
+import com.mansaketh.chitta.core.design.kit.TopBarDetail
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -8,6 +12,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.mansaketh.chitta.core.design.icons.KitIcons
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.mansaketh.chitta.core.design.components.*
@@ -18,7 +26,7 @@ import com.mansaketh.chitta.core.domain.MoreOrder
 import com.mansaketh.chitta.core.domain.TabKey
 import com.mansaketh.chitta.ui.Choice
 import com.mansaketh.chitta.ui.ChoiceSheet
-import com.mansaketh.chitta.ui.ValueRow
+import com.mansaketh.chitta.ui.FeatureIcons
 import com.mansaketh.chitta.ui.plan.MultiPickSheet
 import java.time.DayOfWeek
 import java.time.format.TextStyle
@@ -44,58 +52,48 @@ fun CustomiseScreen(vm: HomeViewModel, onBack: () -> Unit) {
     val liveAccounts = ui.accounts.filter { !it.archived }
 
     Column(Modifier.fillMaxSize()) {
-        ChittaTopBar("Customise", onBack = onBack)
+        TopBarDetail("Customise", onBack = onBack)
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
-            SectionHeader("Home sections")
+            Section("Home sections", first = true)
             Text("Budgets and Recent entries are on to start. Add what you want to see.", style = ChittaTheme.type.label, color = c.inkMuted)
             HairlineRule()
             layout.sections.forEachIndexed { i, cfg ->
-                Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowTall), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     androidx.compose.material3.Icon(
-                        sectionIcon(cfg.section), contentDescription = null, tint = if (cfg.visible) c.ink else c.inkMuted,
+                        FeatureIcons.homeSection(cfg.section), contentDescription = null, tint = if (cfg.visible) c.ink else c.inkMuted,
                         modifier = Modifier.padding(end = Dimens.Gap3).size(Dimens.GlyphIcon),
                     )
-                    Text(
-                        cfg.section.title + if (cfg.visible) "" else "  (off)", style = if (cfg.visible) ChittaTheme.type.bodyMedium else ChittaTheme.type.body,
-                        color = if (cfg.visible) c.ink else c.inkMuted,
-                        modifier = Modifier.weight(1f).heightIn(min = Dimens.TouchTarget).pressClickable(role = Role.Switch, onClickLabel = if (cfg.visible) "Turn off" else "Turn on") { prefs.setHomeLayout(layout.toggle(cfg.section)) }.wrapContentHeight(Alignment.CenterVertically),
-                    )
+                    SwitchRow(cfg.section.title, cfg.visible, { prefs.setHomeLayout(layout.toggle(cfg.section)) }, Modifier.weight(1f), rule = false)
                     if (cfg.visible) {
                         if (cfg.section.usesAccounts) SmallAction("Accounts") { sheet = "acc:" + cfg.section.key }
                         if (cfg.section.usesRange) SmallAction("${cfg.rangeDays ?: 30} days") { sheet = "range:" + cfg.section.key }
                     }
-                    SmallAction("Up", enabled = i > 0) { prefs.setHomeLayout(layout.move(cfg.section, -1)) }
-                    SmallAction("Down", enabled = i < layout.sections.lastIndex) { prefs.setHomeLayout(layout.move(cfg.section, 1)) }
+                    MoveButtons(i > 0, i < layout.sections.lastIndex, { prefs.setHomeLayout(layout.move(cfg.section, -1)) }, { prefs.setHomeLayout(layout.move(cfg.section, 1)) })
                 }
                 HairlineRule()
             }
 
-            Spacer(Modifier.height(Dimens.SectionGap))
-            SectionHeader("Bottom tabs")
+            Section("Bottom tabs")
             Text("Four tabs you can swap. More is always the fifth. Press and hold the tab bar anywhere to come back here.", style = ChittaTheme.type.label, color = c.inkMuted)
             tabs.slots.forEachIndexed { i, key -> ValueRow("Tab ${i + 1}", key.label, onClick = { sheet = "slot:$i" }) }
             ValueRow("Opens first", tabs.first.label, onClick = { sheet = "first" })
 
-            Spacer(Modifier.height(Dimens.SectionGap))
-            SectionHeader("More shortcuts")
+            Section("More shortcuts")
             more.forEachIndexed { i, item ->
                 Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin), verticalAlignment = Alignment.CenterVertically) {
                     Text(item.label, style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.weight(1f))
-                    SmallAction("Up", enabled = i > 0) { prefs.setMoreOrder(MoreOrder.move(more, item, -1)) }
-                    SmallAction("Down", enabled = i < more.lastIndex) { prefs.setMoreOrder(MoreOrder.move(more, item, 1)) }
+                    MoveButtons(i > 0, i < more.lastIndex, { prefs.setMoreOrder(MoreOrder.move(more, item, -1)) }, { prefs.setMoreOrder(MoreOrder.move(more, item, 1)) })
                 }
                 HairlineRule()
             }
 
-            Spacer(Modifier.height(Dimens.SectionGap))
-            SectionHeader("Cash check")
+            Section("Cash check")
             Text("Pick the accounts that hold money you spend from. Savings and investment accounts stay out.", style = ChittaTheme.type.label, color = c.inkMuted)
             ValueRow("Accounts for spending", if (cash.isEmpty()) "None picked" else "${cash.size} picked", onClick = { sheet = "cash" })
-            ValueRow("Always show the cash check", if (preferCash) "On" else "Off", onClick = { prefs.setPreferCash(!preferCash) })
+            SwitchRow("Always show the cash check", preferCash, { prefs.setPreferCash(it) })
             Text("Off means Home shows the cash check only when it is lower than Safe to spend.", style = ChittaTheme.type.label, color = c.inkMuted)
 
-            Spacer(Modifier.height(Dimens.SectionGap))
-            SectionHeader("Week")
+            Section("Week")
             ValueRow("First day of the week", firstDay.getDisplayName(TextStyle.FULL, Locale.ENGLISH), onClick = { sheet = "weekday" })
         }
     }
@@ -128,6 +126,23 @@ fun CustomiseScreen(vm: HomeViewModel, onBack: () -> Unit) {
     }
 }
 
+/** The two arrow buttons that move a Home section or a More shortcut. An arrow with nowhere to go is dimmed and does nothing. */
+@Composable
+private fun MoveButtons(canUp: Boolean, canDown: Boolean, onUp: () -> Unit, onDown: () -> Unit) {
+    Row {
+        MoveButton(KitIcons.ArrowUp, "Move up", canUp, onUp)
+        MoveButton(KitIcons.ArrowDown, "Move down", canDown, onDown)
+    }
+}
+
+@Composable
+private fun MoveButton(icon: androidx.compose.ui.graphics.vector.ImageVector, description: String, enabled: Boolean, onClick: () -> Unit) {
+    IconAction(
+        icon, description, if (enabled) onClick else ({}),
+        Modifier.alpha(if (enabled) 1f else 0.4f).semantics { if (!enabled) disabled() },
+    )
+}
+
 @Composable
 private fun SmallAction(label: String, enabled: Boolean = true, onClick: () -> Unit) {
     Text(
@@ -136,16 +151,3 @@ private fun SmallAction(label: String, enabled: Boolean = true, onClick: () -> U
     )
 }
 
-/** The icon beside each Home section (Customise). All come from the existing Phosphor set; nothing new was added to it. */
-private fun sectionIcon(section: HomeSection): androidx.compose.ui.graphics.vector.ImageVector = com.mansaketh.chitta.core.design.icons.ChittaIcons.let {
-    when (section) {
-        HomeSection.Budgets -> it.Plan
-        HomeSection.Balances -> it.Wallet
-        HomeSection.Recent -> it.Ledger
-        HomeSection.NetWorth -> it.CatChartLineUp
-        HomeSection.Goals -> it.CatPiggyBank
-        HomeSection.Loans -> it.Bank
-        HomeSection.Spending -> it.Tag
-        HomeSection.Heatmap -> it.Calendar
-    }
-}

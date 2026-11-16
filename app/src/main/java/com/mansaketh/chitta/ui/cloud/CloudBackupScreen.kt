@@ -1,6 +1,11 @@
 package com.mansaketh.chitta.ui.cloud
 
 import androidx.activity.compose.rememberLauncherForActivityResult
+import com.mansaketh.chitta.core.design.kit.SwitchRow
+import com.mansaketh.chitta.core.design.kit.NavRow
+import com.mansaketh.chitta.core.design.kit.Section
+import com.mansaketh.chitta.core.design.kit.ValueRow
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -22,11 +27,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
-import com.mansaketh.chitta.core.design.components.ButtonStyle
-import com.mansaketh.chitta.core.design.components.ChittaButton
-import com.mansaketh.chitta.core.design.components.ChittaTopBar
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
+import com.mansaketh.chitta.core.design.kit.TopBarDetail
 import com.mansaketh.chitta.core.design.components.HairlineRule
-import com.mansaketh.chitta.core.design.components.SectionHeader
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.tokens.Dimens
 import com.mansaketh.chitta.core.domain.CloudBackup
@@ -35,7 +39,6 @@ import com.mansaketh.chitta.core.domain.DriveFile
 import com.mansaketh.chitta.ui.Choice
 import com.mansaketh.chitta.ui.ChoiceSheet
 import com.mansaketh.chitta.ui.ConfirmSheet
-import com.mansaketh.chitta.ui.ValueRow
 import com.mansaketh.chitta.ui.dayAndTime
 import com.mansaketh.chitta.ui.settings.closeApp
 import java.io.File
@@ -75,11 +78,11 @@ fun CloudBackupScreen(vm: CloudBackupViewModel, onBack: () -> Unit, onPaddhuFile
     val behind = if (ui.email != null) CloudBackups.behindNote(ui.auto, ui.lastBackupMs, now, zone) else null
 
     Column(Modifier.fillMaxSize()) {
-        ChittaTopBar("Google Drive backup", onBack = onBack)
+        TopBarDetail("Google Drive backup", onBack = onBack)
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
             if (ui.notice != null) {
                 Text(ui.notice!!, style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(vertical = Dimens.Gap2))
-                ChittaButton("Dismiss", { vm.dismissNotice() }, style = ButtonStyle.Quiet)
+                ChittaButton("Dismiss", { vm.dismissNotice() }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(Dimens.Gap4))
             }
             if (ui.busy) Text("Working. Keep this screen open.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2))
@@ -89,25 +92,25 @@ fun CloudBackupScreen(vm: CloudBackupViewModel, onBack: () -> Unit, onPaddhuFile
                     "Sign in with Google to keep copies of your book in your own Drive. Only Paddhu Pusthakam can open them.",
                     style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(vertical = Dimens.Gap4),
                 )
-                ChittaButton("Sign in with Google", { activity?.let(vm::signIn) }, enabled = activity != null && !ui.busy)
+                ChittaButton("Sign in with Google", { activity?.let(vm::signIn) }, enabled = activity != null && !ui.busy, modifier = Modifier.fillMaxWidth())
                 Text(
                     "Backups go to a hidden folder in your Google Drive. Entries never go anywhere else, and nothing is sent until you sign in.",
                     style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap4),
                 )
             } else {
                 Spacer(Modifier.height(Dimens.Gap4))
-                ChittaButton("Back up now", { vm.backupNow() }, enabled = !ui.busy)
+                ChittaButton("Back up now", { vm.backupNow() }, enabled = !ui.busy, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(Dimens.SectionGap))
 
-                SectionHeader("Account")
+                Section("Account")
                 HairlineRule()
                 ValueRow("Signed in as", ui.email!!)
                 ValueRow("Last backup", ui.lastBackupMs?.let { dayAndTime(it, zone) } ?: "None yet")
                 if (ui.lastError != null) Text(ui.lastError!!, style = ChittaTheme.type.label, color = c.warningText, modifier = Modifier.padding(vertical = Dimens.Gap2))
                 else if (behind != null) Text(behind, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2))
-                ValueRow("Automatic daily backup", if (ui.auto) "On" else "Off", onClick = { vm.setAuto(!ui.auto) })
+                SwitchRow("Automatic daily backup", ui.auto, { vm.setAuto(it) })
                 ValueRow("Backups in Drive", ui.listing?.backups?.size?.toString() ?: "Show", onClick = { if (ui.listing == null) vm.refreshListing(); listOpen = true })
-                ValueRow("Sign out", "", onClick = { vm.signOut() })
+                NavRow("Sign out", { vm.signOut() })
 
                 Text(
                     "A backup is a copy of the whole book. The newest 20 are kept. Receipt photos stay on this phone and are not in a backup. " +

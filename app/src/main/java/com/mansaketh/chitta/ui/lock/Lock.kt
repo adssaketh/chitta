@@ -1,6 +1,7 @@
 package com.mansaketh.chitta.ui.lock
 
 import android.content.Context
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.Image
@@ -28,8 +29,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
-import com.mansaketh.chitta.core.design.components.ButtonStyle
-import com.mansaketh.chitta.core.design.components.ChittaButton
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.tokens.Dimens
 
@@ -70,7 +71,7 @@ fun LockScreen(onUnlock: () -> Unit, message: String? = null) {
         Spacer(Modifier.height(Dimens.Gap3))
         Text(message ?: "Your book is locked.", style = ChittaTheme.type.body, color = c.inkMuted)
         Spacer(Modifier.height(Dimens.Gap6))
-        ChittaButton("Unlock", onUnlock, style = ButtonStyle.Primary)
+        ChittaButton("Unlock", onUnlock, modifier = Modifier.fillMaxWidth())
     }
 }
 

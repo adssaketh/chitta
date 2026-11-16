@@ -1,6 +1,13 @@
 package com.mansaketh.chitta.ui.add
 
+import com.mansaketh.chitta.core.design.kit.DateSheet
+import com.mansaketh.chitta.ui.LocalFirstDay
 import android.app.DatePickerDialog
+import com.mansaketh.chitta.core.design.icons.ChittaIcons
+import com.mansaketh.chitta.core.design.kit.CategoryChip
+import com.mansaketh.chitta.core.design.kit.ValueRow
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -54,18 +61,18 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
                 ChittaField(d.title, vm::setTitle, "Title")
                 if (ui.suggestions.isNotEmpty() && d.title.isNotBlank()) {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2), modifier = Modifier.padding(top = Dimens.Gap2)) {
-                        items(ui.suggestions) { s -> ChoiceChip(s.title, selected = false, onClick = { vm.pickSuggestion(s) }) }
+                        items(ui.suggestions) { s -> CategoryChip(s.title, selected = false, onClick = { vm.pickSuggestion(s) }) }
                     }
                 }
                 if (d.title.isBlank() && ui.pinned.isNotEmpty()) {
                     Text("Pinned", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap3))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
-                        items(ui.pinned) { p -> ChoiceChip(p.title + (p.amount?.let { " " + IndianFormat.rupees(Paise(it)) } ?: ""), selected = false, onClick = { vm.reset(pin = p) }) }
+                        items(ui.pinned) { p -> CategoryChip(p.title + (p.amount?.let { " " + IndianFormat.rupees(Paise(it)) } ?: ""), selected = false, onClick = { vm.reset(pin = p) }) }
                     }
                 }
                 Text("Category", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap3))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
-                    items(ui.categories) { cc -> ChoiceChip(cc.category.name, selected = d.categoryId == cc.category.id, onClick = { vm.setCategory(cc.category.id) }, tint = c.categoryTint(cc.category.id)) }
+                    items(ui.categories) { cc -> CategoryChip(cc.category.name, selected = d.categoryId == cc.category.id, onClick = { vm.setCategory(cc.category.id) }, icon = com.mansaketh.chitta.ui.manage.CategoryIconCatalog.imageFor(cc.category.iconName, cc.category.name) ?: ChittaIcons.Tag, color = c.categoryTint(cc.category.id)) }
                 }
             }
 
@@ -105,8 +112,8 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
             )
             Spacer(Modifier.height(Dimens.Gap3))
             Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2), modifier = Modifier.fillMaxWidth()) {
-                if (d.type != EntryType.Transfer && d.categoryId != null) ChittaButton("Pin", vm::pinCurrent, style = ButtonStyle.Quiet)
-                if (ui.ready && d.type != EntryType.Transfer && ui.categories.isNotEmpty()) ChittaButton("Split", { splitTotal = vm.splitTotal() }, style = ButtonStyle.Quiet)
+                if (d.type != EntryType.Transfer && d.categoryId != null) ChittaButton("Pin", vm::pinCurrent, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
+                if (ui.ready && d.type != EntryType.Transfer && ui.categories.isNotEmpty()) ChittaButton("Split", { splitTotal = vm.splitTotal() }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
                 ChittaButton("Save", { vm.save(onClose) }, modifier = Modifier.weight(1f), enabled = ui.ready, confirmHaptic = true)
             }
         }
@@ -135,15 +142,13 @@ fun QuickAddSheet(vm: QuickAddViewModel, onClose: () -> Unit) {
         )
         Pick.Rate -> TextSheet("Exchange rate", "Rate (account currency per 1 unit typed)", ui.rateText ?: "", { vm.setRate(it); pick = Pick.None }, { pick = Pick.None }, numeric = true)
         Pick.Note -> TextSheet("Note", "Note", d.note, { vm.setNote(it); pick = Pick.None }, { pick = Pick.None }, singleLine = false)
-        Pick.Date -> {
-            LaunchedEffect(Unit) {
-                val day = Instant.ofEpochMilli(d.dateMs).atZone(zone).toLocalDate()
-                DatePickerDialog(context, { _, y, m, dd ->
-                    val time = Instant.ofEpochMilli(d.dateMs).atZone(zone).toLocalTime()
-                    vm.setDate(LocalDate.of(y, m + 1, dd).atTime(time).atZone(zone).toInstant().toEpochMilli())
-                    pick = Pick.None
-                }, day.year, day.monthValue - 1, day.dayOfMonth).apply { setOnCancelListener { pick = Pick.None } }.show()
-            }
+        Pick.Date -> BottomOverlay({ pick = Pick.None }, handle = false) {
+            val time = Instant.ofEpochMilli(d.dateMs).atZone(zone).toLocalTime()
+            DateSheet(
+                initial = Instant.ofEpochMilli(d.dateMs).atZone(zone).toLocalDate(), today = LocalDate.now(zone), firstDayOfWeek = LocalFirstDay.current,
+                onUse = { day -> vm.setDate(day.atTime(time).atZone(zone).toInstant().toEpochMilli()); pick = Pick.None },
+                onClose = { pick = Pick.None },
+            )
         }
         Pick.None -> Unit
     }

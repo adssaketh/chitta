@@ -1,6 +1,8 @@
 package com.mansaketh.chitta.ui.household
 
 import androidx.compose.foundation.clickable
+import com.mansaketh.chitta.core.design.kit.MonthStepper
+import com.mansaketh.chitta.core.design.kit.GaugeBar
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,8 +28,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.mansaketh.chitta.core.design.components.AmountText
-import com.mansaketh.chitta.core.design.components.ChittaTopBar
-import com.mansaketh.chitta.core.design.components.GaugeBar
+import com.mansaketh.chitta.core.design.kit.TopBarDetail
+import com.mansaketh.chitta.core.design.kit.GaugeBar
 import com.mansaketh.chitta.core.design.components.HairlineRule
 import com.mansaketh.chitta.core.design.components.pressClickable
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
@@ -55,9 +57,9 @@ fun WhoSpentScreen(vm: HouseholdViewModel, onBack: () -> Unit) {
     LaunchedEffect(Unit) { vm.opened() }
 
     Column(Modifier.fillMaxSize()) {
-        ChittaTopBar("Who spent how much", onBack = onBack)
+        TopBarDetail("Who spent how much", onBack = onBack)
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
-            MonthRow(month, canGoLater = month < YearMonth.now(), onEarlier = vm::earlierMonth, onLater = vm::laterMonth)
+            MonthStepper(monthLabel(month), vm::earlierMonth, vm::laterMonth, canLater = month < YearMonth.now())
             val r = result
             when {
                 !ui.local.inHousehold -> Note("You are not in a household.")
@@ -90,24 +92,9 @@ private fun Note(text: String) {
     Text(text, style = ChittaTheme.type.body, color = ChittaTheme.colors.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap4))
 }
 
-/** "November · shared entries only" with an arrow each side. The later arrow stops at the current month. */
-@Composable
-private fun MonthRow(month: YearMonth, canGoLater: Boolean, onEarlier: () -> Unit, onLater: () -> Unit) {
-    val c = ChittaTheme.colors
-    val name = month.month.getDisplayName(TextStyle.FULL, Locale.ENGLISH) + if (month.year != YearMonth.now().year) " ${month.year}" else ""
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-        Icon(
-            // The icon set has only a right-pointing caret; turned half a circle it points left.
-            ChittaIcons.CaretRight, contentDescription = "Earlier month", tint = c.ink,
-            modifier = Modifier.size(Dimens.TouchTarget).rotate(180f).pressClickable(role = Role.Button, shape = CircleShape, onClick = onEarlier).padding(Dimens.Space3),
-        )
-        Text("$name · shared entries only", style = ChittaTheme.type.label, color = c.inkMuted)
-        Icon(
-            ChittaIcons.CaretRight, contentDescription = "Later month", tint = if (canGoLater) c.ink else c.rule,
-            modifier = Modifier.size(Dimens.TouchTarget).then(if (canGoLater) Modifier.pressClickable(role = Role.Button, shape = CircleShape, onClick = onLater) else Modifier).padding(Dimens.Space3),
-        )
-    }
-}
+/** "November · shared entries only": the label between the month arrows. */
+private fun monthLabel(month: YearMonth): String =
+    month.month.getDisplayName(TextStyle.FULL, Locale.ENGLISH) + (if (month.year != YearMonth.now().year) " ${month.year}" else "") + " · shared entries only"
 
 @Composable
 private fun MemberSpendRow(m: MemberSpend, total: Paise) {

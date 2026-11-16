@@ -1,6 +1,15 @@
 package com.mansaketh.chitta.ui.plan
 
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.mansaketh.chitta.core.design.kit.TickBox
 import androidx.compose.foundation.ExperimentalFoundationApi
+import com.mansaketh.chitta.core.design.kit.GaugeBar
+import com.mansaketh.chitta.core.design.kit.Section
+import com.mansaketh.chitta.core.design.kit.ValueRow
+import com.mansaketh.chitta.core.design.kit.TopBarDetail
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -56,7 +65,7 @@ fun BudgetDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit
     var deleting by remember { mutableStateOf(false) }
     val c = ChittaTheme.colors
     Column(Modifier.fillMaxSize()) {
-        ChittaTopBar("Budget", onBack = onBack, actions = { IconAction(com.mansaketh.chitta.core.design.icons.ChittaIcons.Pencil, "Edit budget", onEdit) })
+        TopBarDetail("Budget", onBack = onBack, actions = { IconAction(com.mansaketh.chitta.core.design.icons.ChittaIcons.Pencil, "Edit budget", onEdit) })
         if (b == null) { if (!ui.loading) Gone("budget"); return@Column }
         val period = remember(b, ui.nowMs) { Budgets.periodAt(b, ui.nowMs, ui.zone) }
         val s = remember(b, ui.entries, ui.categories, ui.nowMs) { Budgets.summarize(b, period, ui.entries, ui.categories, ui.nowMs, ui.zone) }
@@ -84,8 +93,7 @@ fun BudgetDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit
                 else if (!s.ended) FootNote("The forecast shows from day 7, when there is enough to go on.")
                 if (!s.ended) s.limitDay?.let { Text("At this pace the limit is reached on day $it.", style = ChittaTheme.type.label, color = c.inkMuted) }
             }
-            Spacer(Modifier.height(Dimens.SectionGap))
-            SectionHeader("Where it went")
+            Section("Where it went")
             Text(if (b.absoluteSpendingLimit) "Press and hold a category to set its goal as an amount." else "Press and hold a category to set its goal as a percentage of the budget.", style = ChittaTheme.type.label, color = c.inkMuted)
             if (lines.isEmpty()) Text("Nothing counted yet in this period.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap3))
             lines.forEach { l ->
@@ -102,8 +110,7 @@ fun BudgetDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit
                 HairlineRule()
             }
             if (history.isNotEmpty()) {
-                Spacer(Modifier.height(Dimens.SectionGap))
-                SectionHeader("Earlier periods")
+                Section("Earlier periods")
                 history.forEach { (p, spent, limit) ->
                     Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin), verticalAlignment = Alignment.CenterVertically) {
                         Text(periodText(p, ui.zone), style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.weight(1f))
@@ -117,7 +124,7 @@ fun BudgetDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit
             if (b.addedTransactionsOnly) Text("This was an \"added only\" budget in the old Paddhu Pusthakam app. This app cannot tell which entries were added to it, so it counts every matching entry.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap3))
             Text("Counts paid entries only. Lent and borrowed money is ${if (Budgets.filterOn(b.filters, BudgetFilter.INCLUDE_DEBT_AND_CREDIT)) "included" else "left out"}.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
             Spacer(Modifier.height(Dimens.Gap4))
-            ChittaButton("Delete this budget", { deleting = true }, style = ButtonStyle.Quiet)
+            ChittaButton("Delete this budget", { deleting = true }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
         }
     }
     editing?.let { l ->
@@ -142,7 +149,7 @@ fun GoalDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit: 
     var deleting by remember { mutableStateOf(false) }
     val c = ChittaTheme.colors
     Column(Modifier.fillMaxSize()) {
-        ChittaTopBar("Goal", onBack = onBack, actions = { IconAction(com.mansaketh.chitta.core.design.icons.ChittaIcons.Pencil, "Edit goal", onEdit) })
+        TopBarDetail("Goal", onBack = onBack, actions = { IconAction(com.mansaketh.chitta.core.design.icons.ChittaIcons.Pencil, "Edit goal", onEdit) })
         if (o == null) { if (!ui.loading) Gone("goal"); return@Column }
         val p = remember(o, ui.entries, ui.nowMs) { Goals.progress(o, ui.entries, ui.nowMs, ui.zone) }
         val linked = ui.entries.filter { it.objectiveId == o.id }.sortedByDescending { it.dateMs }
@@ -161,14 +168,13 @@ fun GoalDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit: 
             p.perMonthNeeded?.let { Figure("Needed each month (${p.monthsLeft} left)", it) }
             o.endDateMs?.let { Text("Finish by ${dateText(it, ui.zone)}", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2)) }
             Spacer(Modifier.height(Dimens.Gap4))
-            ChittaButton(if (o.income) "Add money" else "Add a payment", { adding = true })
-            Spacer(Modifier.height(Dimens.SectionGap))
-            SectionHeader("Added so far")
+            ChittaButton(if (o.income) "Add money" else "Add a payment", { adding = true }, modifier = Modifier.fillMaxWidth())
+            Section("Added so far")
             if (linked.isEmpty()) Text("Nothing added yet.", style = ChittaTheme.type.body, color = c.inkMuted)
             linked.forEach { EntryLine(it, ui) { onOpenEntry(it.id) } }
             Text("Counts paid entries linked to this goal.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
             Spacer(Modifier.height(Dimens.Gap4))
-            ChittaButton("Delete this goal", { deleting = true }, style = ButtonStyle.Quiet)
+            ChittaButton("Delete this goal", { deleting = true }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
         }
         if (adding) AmountAccountSheet(if (o.income) "Add money" else "Add a payment", "Amount", ui.accounts, o.accountId, confirmLabel = "Save", onSave = { amount, account, problem -> if (vm.contribute(o, amount, account, problem)) adding = false }, onDismiss = { adding = false })
         if (deleting) ConfirmSheet("Delete ${o.name}?", listOf("The ${linked.size} linked ${if (linked.size == 1) "entry stays" else "entries stay"} in your ledger but are no longer linked to a goal.", "You can undo this for 10 seconds."), "Delete", { vm.deleteObjective(id); deleting = false; onBack() }, { deleting = false })
@@ -186,7 +192,7 @@ fun LoanDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit: 
     var sharing by remember { mutableStateOf(false) }
     val c = ChittaTheme.colors
     Column(Modifier.fillMaxSize()) {
-        ChittaTopBar("Loan", onBack = onBack, actions = { IconAction(com.mansaketh.chitta.core.design.icons.ChittaIcons.Pencil, "Edit loan", onEdit) })
+        TopBarDetail("Loan", onBack = onBack, actions = { IconAction(com.mansaketh.chitta.core.design.icons.ChittaIcons.Pencil, "Edit loan", onEdit) })
         if (o == null) { if (!ui.loading) Gone("loan"); return@Column }
         val linked = ui.entries.filter { it.objectiveLoanId == o.id }.sortedByDescending { it.dateMs }
         Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.FabInset)) {
@@ -202,8 +208,8 @@ fun LoanDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit: 
                 Figure("Total", p.total); Figure("Repaid so far", p.repaid)
                 if (!p.overpaid.isZero) Figure("Paid beyond the total", p.overpaid)
                 Spacer(Modifier.height(Dimens.Gap4))
-                ChittaButton(if (o.income) "Record money back" else "Record a payment", { action = "repay" })
-                ChittaButton(if (o.income) "Lend more" else "Borrow more", { action = "more" }, style = ButtonStyle.Quiet)
+                ChittaButton(if (o.income) "Record money back" else "Record a payment", { action = "repay" }, modifier = Modifier.fillMaxWidth())
+                ChittaButton(if (o.income) "Lend more" else "Borrow more", { action = "more" }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
             } else {
                 val p = remember(terms, linked) { Instalments.progress(terms, linked.sumOf { it.amount }, ui.zone) }
                 val sum = remember(terms) { Instalments.summarize(terms, ui.zone) }
@@ -218,12 +224,12 @@ fun LoanDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit: 
                 com.mansaketh.chitta.ui.household.editedByLine(vm.shared, SharedItems.KIND_LOAN, o.id)?.let { Text(it, style = ChittaTheme.type.label, color = c.inkMuted) }
                 if (terms.note.isNotBlank()) ValueRow("Note", terms.note)
                 FootNote("Interest is worked on the balance left each month; the last instalment is adjusted so the loan ends at zero. Tick an instalment when you have paid it.")
-                Spacer(Modifier.height(Dimens.SectionGap))
-                SectionHeader("Instalments")
+                Section("Instalments")
                 rows.forEach { r ->
                     val paid = r.number in terms.paidInstalments
                     Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = Role.Checkbox) { vm.tick(terms, r.number, !paid) }, verticalAlignment = Alignment.CenterVertically) {
-                        Text(if (paid) "✓" else "○", style = ChittaTheme.type.title, color = c.ink, modifier = Modifier.width(Dimens.Gap8))
+                        TickBox(paid, Modifier.semantics { contentDescription = if (paid) "Paid" else "Not paid" })
+                        Spacer(Modifier.width(Dimens.Gap3))
                         Column(Modifier.weight(1f)) {
                             Text("${r.number}. ${dateText(r.dueMs, ui.zone)}", style = ChittaTheme.type.body, color = c.ink)
                             Text("interest ${rupees(r.interest)}, principal ${rupees(r.principalPart)}", style = ChittaTheme.type.label, color = c.inkMuted)
@@ -234,12 +240,11 @@ fun LoanDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit: 
                 }
             }
             if (linked.isNotEmpty()) {
-                Spacer(Modifier.height(Dimens.SectionGap))
-                SectionHeader("Entries")
+                Section("Entries")
                 linked.forEach { EntryLine(it, ui) { onOpenEntry(it.id) } }
             }
             Spacer(Modifier.height(Dimens.Gap4))
-            ChittaButton("Delete this loan", { deleting = true }, style = ButtonStyle.Quiet)
+            ChittaButton("Delete this loan", { deleting = true }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
         }
         when (action) {
             "repay", "more" -> {

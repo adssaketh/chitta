@@ -1,6 +1,9 @@
 package com.mansaketh.chitta.ui.imports
 
 import androidx.activity.compose.rememberLauncherForActivityResult
+import com.mansaketh.chitta.core.design.kit.TopBarDetail
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -31,27 +34,27 @@ fun ImportScreen(vm: ImportViewModel, onBack: () -> Unit, onFinished: () -> Unit
     val zone = remember { ZoneId.systemDefault() }
 
     Column(Modifier.fillMaxSize()) {
-        ChittaTopBar(if (firstRun) "Bring over your book" else "Bring over your book", onBack = onBack)
+        TopBarDetail(if (firstRun) "Bring over your book" else "Bring over your book", onBack = onBack)
         Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset), verticalArrangement = Arrangement.spacedBy(Dimens.Gap3)) {
             when (val s = state) {
                 ImportState.Idle -> {
                     Text("Pick the backup file from the old Paddhu Pusthakam app. This app reads a copy and shows you what it found. Nothing is saved until you confirm.", style = ChittaTheme.type.body, color = c.ink)
-                    ChittaButton("Choose backup file", { picker.launch(arrayOf("*/*")) })
+                    ChittaButton("Choose backup file", { picker.launch(arrayOf("*/*")) }, modifier = Modifier.fillMaxWidth())
                     val days = vm.undoDaysLeft()
                     if (days > 0 && !firstRun) {
                         HairlineRule()
                         Text("You imported a book recently. You can undo it for $days more ${if (days == 1L) "day" else "days"}. This empties the book, including anything added since.", style = ChittaTheme.type.label, color = c.inkMuted)
-                        ChittaButton("Undo import", { confirmUndo = true }, style = ButtonStyle.Attention)
+                        ChittaButton("Undo import", { confirmUndo = true }, modifier = Modifier.fillMaxWidth())
                     }
                 }
                 ImportState.Reading -> LoadingPlaceholder()
-                is ImportState.Refused -> { Text(s.reason, style = ChittaTheme.type.body, color = c.ink); ChittaButton("Choose another file", { vm.reset() }, style = ButtonStyle.Quiet) }
-                is ImportState.Failed -> { Text(s.message, style = ChittaTheme.type.body, color = c.ink); ChittaButton("Try again", { vm.reset() }, style = ButtonStyle.Quiet) }
-                is ImportState.Blocked -> { Text(s.message, style = ChittaTheme.type.body, color = c.ink); ChittaButton("Back", onBack, style = ButtonStyle.Quiet) }
+                is ImportState.Refused -> { Text(s.reason, style = ChittaTheme.type.body, color = c.ink); ChittaButton("Choose another file", { vm.reset() }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth()) }
+                is ImportState.Failed -> { Text(s.message, style = ChittaTheme.type.body, color = c.ink); ChittaButton("Try again", { vm.reset() }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth()) }
+                is ImportState.Blocked -> { Text(s.message, style = ChittaTheme.type.body, color = c.ink); ChittaButton("Back", onBack, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth()) }
                 ImportState.Importing -> { Text("Importing. Keep this screen open.", style = ChittaTheme.type.body, color = c.ink); LoadingPlaceholder() }
                 is ImportState.Done -> {
                     Text("Done. ${s.rows} rows are in your book. A copy of the backup is kept on this phone for 30 days.", style = ChittaTheme.type.body, color = c.ink)
-                    ChittaButton("Open my book", onFinished)
+                    ChittaButton("Open my book", onFinished, modifier = Modifier.fillMaxWidth())
                 }
                 is ImportState.Preview -> {
                     val r = s.report
@@ -80,8 +83,8 @@ fun ImportScreen(vm: ImportViewModel, onBack: () -> Unit, onFinished: () -> Unit
                         r.notCarriedOver.forEach { (k, n) -> ValueLine(k, "$n") }
                     }
                     Spacer(Modifier.height(Dimens.Gap2))
-                    ChittaButton("Import this book", { vm.import(s) }, confirmHaptic = true)
-                    ChittaButton("Choose another file", { vm.reset() }, style = ButtonStyle.Quiet)
+                    ChittaButton("Import this book", { vm.import(s) }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
+                    ChittaButton("Choose another file", { vm.reset() }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
                 }
             }
         }

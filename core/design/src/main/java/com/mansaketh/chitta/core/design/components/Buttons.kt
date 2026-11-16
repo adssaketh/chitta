@@ -33,17 +33,6 @@ import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.tokens.Dimens
 import com.mansaketh.chitta.core.design.tokens.Shapes
 
-enum class ButtonStyle {
-    /** Ink fill. The default primary action. */
-    Primary,
-
-    /** Accent fill. Only for the one thing on the screen that needs attention. */
-    Attention,
-
-    /** Outlined, for a secondary action next to a primary one. */
-    Quiet,
-}
-
 /** Ignores a second tap within [windowMillis]: save buttons cannot be double-tapped (master section 13). */
 @Composable
 fun rememberOnce(windowMillis: Long = 700, action: () -> Unit): () -> Unit {
@@ -54,58 +43,6 @@ fun rememberOnce(windowMillis: Long = 700, action: () -> Unit): () -> Unit {
             last[0] = now
             action()
         }
-    }
-}
-
-/** 56 dp tall, 12 dp corners, one per screen as the primary action. */
-@Composable
-fun ChittaButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    style: ButtonStyle = ButtonStyle.Primary,
-    icon: ImageVector? = null,
-    enabled: Boolean = true,
-    /** Firmer haptic on success, for save buttons. */
-    confirmHaptic: Boolean = false,
-) {
-    val c = ChittaTheme.colors
-    val haptics = LocalHapticFeedback.current
-    val once = rememberOnce {
-        if (confirmHaptic) haptics.performHapticFeedback(HapticFeedbackType.Confirm)
-        onClick()
-    }
-    val fill = when (style) {
-        ButtonStyle.Primary -> c.ink
-        ButtonStyle.Attention -> c.sindoor
-        ButtonStyle.Quiet -> c.background
-    }
-    val content = when (style) {
-        ButtonStyle.Primary -> c.background
-        ButtonStyle.Attention -> c.onSindoor
-        ButtonStyle.Quiet -> c.ink
-    }
-    val shown = if (enabled) 1f else 0.4f
-    val source = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-    Row(
-        modifier
-            .pressScale(source)
-            .fillMaxWidth()
-            .heightIn(min = Dimens.ButtonHeight)
-            .clip(Shapes.Control)
-            .background(fill.copy(alpha = fill.alpha * shown))
-            .then(if (style == ButtonStyle.Quiet) Modifier.border(Dimens.Hairline, c.mark, Shapes.Control) else Modifier)
-            .focusRing(source, Shapes.Control)
-            .clickable(interactionSource = source, indication = null, enabled = enabled, role = Role.Button, onClick = once)
-            .padding(horizontal = Dimens.Gap6, vertical = Dimens.Gap3),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (icon != null) {
-            Icon(icon, contentDescription = null, tint = content.copy(alpha = shown), modifier = Modifier.size(Dimens.IconSize))
-            Spacer(Modifier.width(Dimens.Gap2))
-        }
-        Text(text, style = ChittaTheme.type.button, color = content.copy(alpha = shown))
     }
 }
 

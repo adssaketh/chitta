@@ -1,6 +1,9 @@
 package com.mansaketh.chitta.ui
 
+import com.mansaketh.chitta.core.design.kit.SheetHeader
 import androidx.compose.foundation.background
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -76,7 +79,7 @@ fun sheetMax(fraction: Float): androidx.compose.ui.unit.Dp =
  * no bounce and the backdrop fades in (master section 3, Motion); with animations off it appears at once.
  */
 @Composable
-fun BottomOverlay(onDismiss: () -> Unit, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+fun BottomOverlay(onDismiss: () -> Unit, modifier: Modifier = Modifier, handle: Boolean = true, content: @Composable ColumnScope.() -> Unit) {
     val motion = com.mansaketh.chitta.core.design.theme.rememberMotionEnabled()
     val rise = androidx.compose.runtime.remember { androidx.compose.animation.core.Animatable(if (motion) 0f else 1f) }
     androidx.compose.runtime.LaunchedEffect(Unit) {
@@ -91,7 +94,7 @@ fun BottomOverlay(onDismiss: () -> Unit, modifier: Modifier = Modifier, content:
             Modifier.align(Alignment.BottomCenter).imePadding().navigationBarsPadding()
                 .graphicsLayer { translationY = (1f - rise.value.coerceIn(0f, 1f)) * size.height },
         ) {
-            SheetSurface(modifier, content = content)
+            SheetSurface(modifier, handle = handle, content = content)
         }
     }
 }
@@ -101,8 +104,8 @@ data class Choice<T>(val label: String, val value: T, val detail: String? = null
 /** A short list to pick one thing from, in a sheet. */
 @Composable
 fun <T> ChoiceSheet(title: String, choices: List<Choice<T>>, onPick: (T) -> Unit, onDismiss: () -> Unit, emptyText: String = "Nothing to pick.") {
-    BottomOverlay(onDismiss) {
-        Text(title, style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
+    BottomOverlay(onDismiss, handle = false) {
+        SheetHeader(title)
         Spacer(Modifier.height(Dimens.Gap2))
         if (choices.isEmpty()) {
             Text(emptyText, style = ChittaTheme.type.body, color = ChittaTheme.colors.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap4))
@@ -130,69 +133,29 @@ fun <T> ChoiceSheet(title: String, choices: List<Choice<T>>, onPick: (T) -> Unit
 @Composable
 fun TextSheet(title: String, label: String, initial: String, onSave: (String) -> Unit, onDismiss: () -> Unit, numeric: Boolean = false, singleLine: Boolean = true, saveLabel: String = "Save", placeholder: String = "") {
     var text by remember { mutableStateOf(initial) }
-    BottomOverlay(onDismiss) {
-        Text(title, style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
+    BottomOverlay(onDismiss, handle = false) {
+        SheetHeader(title)
         Spacer(Modifier.height(Dimens.Gap4))
         ChittaField(
             value = text, onValueChange = { text = it }, label = label, singleLine = singleLine, placeholder = placeholder,
             keyboardOptions = if (numeric) KeyboardOptions(keyboardType = KeyboardType.Decimal) else KeyboardOptions.Default,
         )
         Spacer(Modifier.height(Dimens.Gap6))
-        ChittaButton(saveLabel, { onSave(text) }, confirmHaptic = true)
+        ChittaButton(saveLabel, { onSave(text) }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
     }
 }
 
 /** Plain confirm sheet with an explanation, used before anything destructive (master section 13). */
 @Composable
 fun ConfirmSheet(title: String, lines: List<String>, confirmLabel: String, onConfirm: () -> Unit, onDismiss: () -> Unit, attention: Boolean = true) {
-    BottomOverlay(onDismiss) {
-        Text(title, style = ChittaTheme.type.title, color = ChittaTheme.colors.ink)
+    BottomOverlay(onDismiss, handle = false) {
+        SheetHeader(title)
         Spacer(Modifier.height(Dimens.Gap3))
         lines.forEach { Text(it.rupeeAware(), style = ChittaTheme.type.body, color = ChittaTheme.colors.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2)) }
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton(confirmLabel, onConfirm, style = if (attention) ButtonStyle.Attention else ButtonStyle.Primary, confirmHaptic = true)
+        ChittaButton(confirmLabel, onConfirm, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Dimens.Gap2))
-        ChittaButton("Cancel", onDismiss, style = ButtonStyle.Quiet)
-    }
-}
-
-/** A label on the left, its value and a caret on the right: the detail screen's editable rows. */
-@Composable
-fun ValueRow(label: String, value: String, onClick: (() -> Unit)? = null, modifier: Modifier = Modifier) {
-    Column(modifier) {
-        Row(
-            Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin)
-                .then(if (onClick != null) Modifier.pressClickable(role = Role.Button, onClick = onClick) else Modifier)
-                .padding(vertical = Dimens.RowPadV),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // Label first at its own width (never wider than Dimens.LabelMaxWidth); the value takes the rest, right-aligned, and is cut after two lines.
-            Text(label, style = ChittaTheme.type.body, color = ChittaTheme.colors.inkMuted, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = Dimens.LabelMaxWidth))
-            Text(
-                value, style = ChittaTheme.type.body, color = ChittaTheme.colors.ink, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.weight(1f).padding(start = Dimens.TitleAmountGap),
-            )
-            if (onClick != null) {
-                Spacer(Modifier.width(Dimens.Gap2))
-                Icon(ChittaIcons.CaretRight, contentDescription = null, tint = ChittaTheme.colors.inkMuted, modifier = Modifier.size(Dimens.IconSmall))
-            }
-        }
-        HairlineRule()
-    }
-}
-
-/** A small outlined chip for choices on Quick Add (never a filled pill for every label; only the selected one is filled). */
-@Composable
-fun ChoiceChip(text: String, selected: Boolean, onClick: () -> Unit, tint: Color? = null, modifier: Modifier = Modifier) {
-    val c = ChittaTheme.colors
-    Row(
-        modifier.heightIn(min = Dimens.TouchTarget).clip(Shapes.Control).then(if (selected) Modifier.background(c.ink) else Modifier.border(Dimens.Hairline, c.mark, Shapes.Control))
-            .pressClickable(role = Role.Button, shape = Shapes.Control, onClick = onClick).padding(horizontal = Dimens.Gap3),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2),
-    ) {
-        if (tint != null) Box(Modifier.size(Dimens.Dot).background(tint))
-        Text(text, style = ChittaTheme.type.label, color = if (selected) c.background else c.ink, maxLines = 1)
+        ChittaButton("Cancel", onDismiss, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
     }
 }
 

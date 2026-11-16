@@ -1,6 +1,10 @@
 package com.mansaketh.chitta.ui.manage
 
+import com.mansaketh.chitta.core.design.kit.SheetHeader
 import androidx.compose.foundation.layout.Spacer
+import com.mansaketh.chitta.core.design.kit.GaugeBar
+import com.mansaketh.chitta.core.design.kit.ValueRow
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -10,9 +14,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.mansaketh.chitta.core.design.components.AmountText
-import com.mansaketh.chitta.core.design.components.ChittaButton
-import com.mansaketh.chitta.core.design.components.ButtonStyle
-import com.mansaketh.chitta.core.design.components.GaugeBar
+import com.mansaketh.chitta.core.design.kit.ChittaButton
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.GaugeBar
 import com.mansaketh.chitta.core.design.components.HairlineRule
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.tokens.Dimens
@@ -24,7 +28,6 @@ import com.mansaketh.chitta.core.money.Paise
 import com.mansaketh.chitta.core.money.Segments
 import com.mansaketh.chitta.ui.BottomOverlay
 import com.mansaketh.chitta.ui.TextSheet
-import com.mansaketh.chitta.ui.ValueRow
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -48,8 +51,8 @@ fun CardSheet(account: Account, figures: CardFigures?, onSave: (limit: Long?, st
     var editing by remember { mutableStateOf<CardField?>(null) }
     var problem by remember { mutableStateOf<String?>(null) }
 
-    BottomOverlay(onClose) {
-        Text(account.name, style = ChittaTheme.type.title, color = c.ink)
+    BottomOverlay(onClose, handle = false) {
+        SheetHeader(account.name)
         if (figures == null) {
             Text("Set the statement day and the due day to see what is owed.", style = ChittaTheme.type.label, color = c.inkMuted)
         } else {
@@ -85,9 +88,9 @@ fun CardSheet(account: Account, figures: CardFigures?, onSave: (limit: Long?, st
         ValueRow("Remind me", "${remind ?: 3} days before", onClick = { editing = CardField.Remind })
         problem?.let { Text(it, style = ChittaTheme.type.label, color = c.warningText) }
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton("Save", { onSave(limit, statement, due, minimum, remind) }, confirmHaptic = true)
+        ChittaButton("Save", { onSave(limit, statement, due, minimum, remind) }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Dimens.Gap2))
-        ChittaButton("Close", onClose, style = ButtonStyle.Quiet)
+        ChittaButton("Close", onClose, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
     }
 
     fun money(text: String): Long? = if (text.isBlank()) null else AmountExpression.evaluate(text)?.value

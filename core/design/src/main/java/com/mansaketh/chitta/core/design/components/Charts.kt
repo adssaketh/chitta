@@ -37,38 +37,6 @@ import com.mansaketh.chitta.core.money.RingTicks
 import com.mansaketh.chitta.core.money.Segments
 
 /**
- * A 10- or 20-segment gauge for budgets, goals, loans and card utilisation. Ink when fine; the accent
- * only when over the limit. Unused segments are the rule colour (decoration, exempt from text contrast).
- * [description] should say what the gauge measures, for example "Food budget".
- */
-@Composable
-fun GaugeBar(
-    gauge: Segments.Gauge,
-    description: String,
-    modifier: Modifier = Modifier,
-) {
-    val c = ChittaTheme.colors
-    val fill = if (gauge.over) c.sindoor else c.ink
-    val spoken = "$description: ${gauge.filled} of ${gauge.segments} segments" + if (gauge.over) ", over the limit" else ""
-    Canvas(
-        modifier
-            .fillMaxWidth()
-            .height(8.dp)
-            .clearAndSetSemantics { contentDescription = spoken },
-    ) {
-        val gap = 2.dp.toPx()
-        val segW = (size.width - gap * (gauge.segments - 1)) / gauge.segments
-        repeat(gauge.segments) { i ->
-            drawRect(
-                color = if (i < gauge.filled) fill else c.rule,
-                topLeft = Offset(i * (segW + gap), 0f),
-                size = androidx.compose.ui.geometry.Size(segW, size.height),
-            )
-        }
-    }
-}
-
-/**
  * The month rule: one glanceable pace line for a budget period (master section 3). Days run left to
  * right along a baseline with a tick per day. Money runs up. Drawn in this order:
  *  - a solid ink line for money spent so far, and an ink dot for today,

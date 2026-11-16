@@ -1,6 +1,12 @@
 package com.mansaketh.chitta.ui.plan
 
+import com.mansaketh.chitta.core.design.kit.SheetHeader
 import androidx.compose.foundation.layout.*
+import com.mansaketh.chitta.core.design.kit.TickRow
+import com.mansaketh.chitta.core.design.kit.EmptyState
+import com.mansaketh.chitta.core.design.kit.ValueRow
+import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ChittaButton
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -32,7 +38,7 @@ fun FundsTab(ui: PlanUi, onSheet: (String) -> Unit) {
     val c = ChittaTheme.colors
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
         if (funds.isEmpty()) item {
-            EmptyState("A sinking fund spreads a yearly cost, like insurance, over the months before it is due, so that month is not a shock.", "Add a sinking fund", { onSheet("new-fund") })
+            EmptyState(null, null, "A sinking fund spreads a yearly cost, like insurance, over the months before it is due, so that month is not a shock.", "Add a sinking fund", { onSheet("new-fund") })
         } else item {
             Spacer(Modifier.height(Dimens.Gap3))
             Text("Set aside this month", style = ChittaTheme.type.label, color = c.inkMuted)
@@ -53,7 +59,7 @@ fun FundsTab(ui: PlanUi, onSheet: (String) -> Unit) {
                 attention = s.past && !s.paid, onClick = { onSheet("edit-fund:${f.id}") },
             )
         }
-        if (funds.isNotEmpty()) item { Spacer(Modifier.height(Dimens.Gap4)); ChittaButton("Add a sinking fund", { onSheet("new-fund") }, style = ButtonStyle.Quiet) }
+        if (funds.isNotEmpty()) item { Spacer(Modifier.height(Dimens.Gap4)); ChittaButton("Add a sinking fund", { onSheet("new-fund") }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth()) }
     }
 }
 
@@ -79,26 +85,26 @@ fun FundSheet(
     val c = ChittaTheme.colors
 
     when (step) {
-        FStep.Category -> BottomOverlay({ step = FStep.Form }) {
-            Text("Which category pays this bill?", style = ChittaTheme.type.title, color = c.ink)
+        FStep.Category -> BottomOverlay({ step = FStep.Form }, handle = false) {
+            SheetHeader("Which category pays this bill?")
             Text("Entries in it take money out of the fund automatically.", style = ChittaTheme.type.label, color = c.inkMuted)
             Spacer(Modifier.height(Dimens.Gap2))
             Column(Modifier.heightIn(max = sheetMax(0.45f)).verticalScroll(rememberScrollState())) {
-                ValueRow("None", if (categoryId == null) "Chosen" else "", onClick = { categoryId = null; step = FStep.Form })
+                TickRow("None", categoryId == null, { categoryId = null; step = FStep.Form })
                 ui.categories.filter { it.mainCategoryId == null && !it.archived && !it.income }.sortedBy { it.sortOrder }.forEach { cat ->
-                    ValueRow(cat.name, if (categoryId == cat.id) "Chosen" else "", onClick = { categoryId = cat.id; step = FStep.Form })
+                    TickRow(cat.name, categoryId == cat.id, { categoryId = cat.id; step = FStep.Form })
                 }
             }
         }
-        FStep.Form -> BottomOverlay(onDismiss) {
+        FStep.Form -> BottomOverlay(onDismiss, handle = false) {
             Column(Modifier.heightIn(max = sheetMax(0.7f)).verticalScroll(rememberScrollState())) {
-                Text(if (existing == null) "New sinking fund" else "Edit sinking fund", style = ChittaTheme.type.title, color = c.ink)
+                SheetHeader(if (existing == null) "New sinking fund" else "Edit sinking fund")
                 Spacer(Modifier.height(Dimens.Gap4))
                 ChittaField(name, { name = it; problem = null }, "Name, for example Insurance")
                 Spacer(Modifier.height(Dimens.Gap3))
                 ChittaField(target, { target = it; problem = null }, problem ?: "Total cost", keyboardOptions = NumKeys)
-                ValueRow("Set aside from", dateText(startMs, zone), onClick = { pickDate(context, startMs, zone, { startMs = Periods.startOfDay(Periods.date(it, zone), zone) }) })
-                ValueRow("Due on", dateText(dueMs, zone), onClick = { pickDate(context, dueMs, zone, { dueMs = Periods.startOfDay(Periods.date(it, zone), zone) }) })
+                ValueRow("Set aside from", dateText(startMs, zone), onClick = { pickDate(startMs, zone, { startMs = Periods.startOfDay(Periods.date(it, zone), zone) }) })
+                ValueRow("Due on", dateText(dueMs, zone), onClick = { pickDate(dueMs, zone, { dueMs = Periods.startOfDay(Periods.date(it, zone), zone) }) })
                 ValueRow("Paid from category", categoryId?.let { categoryName(it, ui.categories) } ?: "None", onClick = { step = FStep.Category })
                 val total = AmountExpression.evaluate(target)
                 if (total != null && !total.isZero && dueMs >= startMs) {
@@ -113,10 +119,10 @@ fun FundSheet(
                         dueMs < startMs -> problem = "The due date must not be before the start"
                         else -> onSave(name, total, startMs, dueMs, categoryId)
                     }
-                }, confirmHaptic = true)
+                }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
                 if (existing != null) {
                     Spacer(Modifier.height(Dimens.Gap2))
-                    ChittaButton("Delete this fund", { deleting = true }, style = ButtonStyle.Quiet)
+                    ChittaButton("Delete this fund", { deleting = true }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
                 }
             }
         }

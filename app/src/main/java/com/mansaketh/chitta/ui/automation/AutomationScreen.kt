@@ -1,6 +1,9 @@
 package com.mansaketh.chitta.ui.automation
 
 import androidx.compose.foundation.layout.Column
+import com.mansaketh.chitta.core.design.kit.NavRow
+import com.mansaketh.chitta.core.design.kit.Section
+import com.mansaketh.chitta.core.design.kit.ValueRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -15,13 +18,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.mansaketh.chitta.core.design.components.ChittaTopBar
+import com.mansaketh.chitta.core.design.kit.TopBarDetail
 import com.mansaketh.chitta.core.design.components.HairlineRule
-import com.mansaketh.chitta.core.design.components.SectionHeader
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.tokens.Dimens
 import com.mansaketh.chitta.ui.ConfirmSheet
-import com.mansaketh.chitta.ui.ValueRow
 
 private sealed interface AutoSheet {
     data object None : AutoSheet
@@ -38,13 +39,13 @@ fun AutomationScreen(vm: AutomationViewModel, onBack: () -> Unit) {
     LaunchedEffect(Unit) { vm.refresh() }
 
     Column(Modifier.fillMaxSize()) {
-        ChittaTopBar("Automation", onBack = onBack)
+        TopBarDetail("Automation", onBack = onBack)
         LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.EndInset)) {
             item {
-                SectionHeader("Add from another app")
+                Section("Add from another app", first = true)
                 HairlineRule()
                 ValueRow("Background add", if (ui.secretSet) "On" else "Off", onClick = { sheet = if (ui.secretSet) AutoSheet.ConfirmNew else AutoSheet.NewSecret(vm.newSecret()) })
-                if (ui.secretSet) ValueRow("Turn background add off", "", onClick = { vm.turnOffReceiver() })
+                if (ui.secretSet) NavRow("Turn background add off", { vm.turnOffReceiver() })
                 Text(
                     "Another app (Tasker, a shortcut) can add an entry without opening Paddhu Pusthakam, but only if it sends your secret. The entry needs an amount, one of your accounts and one of your categories, or it is refused with a notice. " +
                         "Every add shows a notice with Undo for 10 seconds. Transfers cannot be added this way. Making a new secret stops the old one at once.",
