@@ -86,7 +86,7 @@ fun AmountEntryText(
     Row(modifier.clearAndSetSemantics { contentDescription = "amount $raw" }) {
         Text(
             IndianFormat.RUPEE,
-            style = ChittaTheme.type.amountRow,
+            style = ChittaTheme.type.amount,
             color = c.inkMuted,
             modifier = Modifier.alignByBaseline().padding(end = Dimens.Space1),
         )
