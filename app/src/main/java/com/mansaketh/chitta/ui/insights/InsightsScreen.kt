@@ -145,7 +145,7 @@ fun InsightsScreen(vm: InsightsViewModel, onOpenEntry: (String) -> Unit) {
                 }
                 items(d.entries, key = { "e-" + it.id }) { t ->
                     Row(
-                        Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = Role.Button) { vm.openDrill(null); onOpenEntry(t.id) }.padding(vertical = Dimens.Gap2),
+                        Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = Role.Button) { vm.openDrill(null); onOpenEntry(t.id) }.padding(vertical = Dimens.RowPadV),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(Modifier.weight(1f)) {

@@ -136,6 +136,18 @@ object ChittaIcons {
     /** phosphor: arrow-counter-clockwise */
     val Undo: ImageVector by lazy { phosphor("Undo", "M224,128a96,96,0,0,1-94.71,96H128A95.38,95.38,0,0,1,62.1,197.8a8,8,0,0,1,11-11.63A80,80,0,1,0,71.43,71.39a3.07,3.07,0,0,1-.26.25L44.59,96H72a8,8,0,0,1,0,16H24a8,8,0,0,1-8-8V56a8,8,0,0,1,16,0V85.8L60.25,60A96,96,0,0,1,224,128Z") }
 
+    /** phosphor: archive */
+    val Archive: ImageVector by lazy { phosphor("Archive", "M224,48H32A16,16,0,0,0,16,64V88a16,16,0,0,0,16,16v88a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V104a16,16,0,0,0,16-16V64A16,16,0,0,0,224,48ZM208,192H48V104H208ZM224,88H32V64H224V88ZM96,136a8,8,0,0,1,8-8h48a8,8,0,0,1,0,16H104A8,8,0,0,1,96,136Z") }
+
+    /** phosphor: arrows-merge */
+    val Merge: ImageVector by lazy { phosphor("Merge", "M192,40v64a8,8,0,0,1-2.34,5.66L136,163.31v49.38l18.34-18.35a8,8,0,0,1,11.32,11.32l-32,32a8,8,0,0,1-11.32,0l-32-32a8,8,0,0,1,11.32-11.32L120,212.69V163.31L66.34,109.66A8,8,0,0,1,64,104V40a8,8,0,0,1,16,0v60.69l48,48,48-48V40a8,8,0,0,1,16,0Z") }
+
+    /** phosphor: skip-forward */
+    val Skip: ImageVector by lazy { phosphor("Skip", "M200,32a8,8,0,0,0-8,8v69.23L72.43,34.45A15.95,15.95,0,0,0,48,47.88V208.12a16,16,0,0,0,24.43,13.43L192,146.77V216a8,8,0,0,0,16,0V40A8,8,0,0,0,200,32ZM64,207.93V48.05l127.84,80Z") }
+
+    /** phosphor: sliders-horizontal */
+    val Sliders: ImageVector by lazy { phosphor("Sliders", "M40,88H73a32,32,0,0,0,62,0h81a8,8,0,0,0,0-16H135a32,32,0,0,0-62,0H40a8,8,0,0,0,0,16Zm64-24A16,16,0,1,1,88,80,16,16,0,0,1,104,64ZM216,168H199a32,32,0,0,0-62,0H40a8,8,0,0,0,0,16h97a32,32,0,0,0,62,0h17a8,8,0,0,0,0-16Zm-48,24a16,16,0,1,1,16-16A16,16,0,0,1,168,192Z") }
+
     /** phosphor: fork-knife */
     val CatForkKnife: ImageVector by lazy { phosphor("CatForkKnife", "M72,88V40a8,8,0,0,1,16,0V88a8,8,0,0,1-16,0ZM216,40V224a8,8,0,0,1-16,0V176H152a8,8,0,0,1-8-8,268.75,268.75,0,0,1,7.22-56.88c9.78-40.49,28.32-67.63,53.63-78.47A8,8,0,0,1,216,40ZM200,53.9c-32.17,24.57-38.47,84.42-39.7,106.1H200ZM119.89,38.69a8,8,0,1,0-15.78,2.63L112,88.63a32,32,0,0,1-64,0l7.88-47.31a8,8,0,1,0-15.78-2.63l-8,48A8.17,8.17,0,0,0,32,88a48.07,48.07,0,0,0,40,47.32V224a8,8,0,0,0,16,0V135.32A48.07,48.07,0,0,0,128,88a8.17,8.17,0,0,0-.11-1.31Z") }
 
@@ -838,6 +850,10 @@ object ChittaIcons {
             "Download" to Download,
             "Upload" to Upload,
             "Undo" to Undo,
+            "Archive" to Archive,
+            "Merge" to Merge,
+            "Skip" to Skip,
+            "Sliders" to Sliders,
         )
     }
 
@@ -883,6 +899,10 @@ object ChittaIcons {
             "download-simple" to Download,
             "upload-simple" to Upload,
             "arrow-counter-clockwise" to Undo,
+            "archive" to Archive,
+            "arrows-merge" to Merge,
+            "skip-forward" to Skip,
+            "sliders-horizontal" to Sliders,
             "fork-knife" to CatForkKnife,
             "coffee" to CatCoffee,
             "shopping-cart" to CatShoppingCart,

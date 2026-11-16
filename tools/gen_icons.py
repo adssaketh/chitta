@@ -19,6 +19,8 @@ ICONS = [
     ("Tag", "tag"), ("Repeat", "repeat"), ("Transfer", "arrows-left-right"), ("Calendar", "calendar-blank"),
     ("Receipt", "receipt"), ("Info", "info"), ("Warning", "warning"), ("Users", "users"), ("Filter", "funnel"),
     ("Download", "download-simple"), ("Upload", "upload-simple"), ("Undo", "arrow-counter-clockwise"),
+    # Phase 11e: sheet action icons.
+    ("Archive", "archive"), ("Merge", "arrows-merge"), ("Skip", "skip-forward"), ("Sliders", "sliders-horizontal"),
 ]
 
 # Category icons (Phase 8a icon search). Stored on a category as "ph:<phosphor name>"; see CategoryIcons in :core:design.

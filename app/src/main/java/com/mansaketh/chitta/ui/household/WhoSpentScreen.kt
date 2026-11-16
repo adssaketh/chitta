@@ -3,6 +3,7 @@ package com.mansaketh.chitta.ui.household
 import androidx.compose.foundation.clickable
 import com.mansaketh.chitta.core.design.kit.MonthStepper
 import com.mansaketh.chitta.core.design.kit.GaugeBar
+import com.mansaketh.chitta.core.design.kit.Section
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -66,16 +67,11 @@ fun WhoSpentScreen(vm: HouseholdViewModel, onBack: () -> Unit) {
                 r == null -> Note(if (ui.connected) "Reading the household." else "Open the Household page and continue with Google to read the members.")
                 else -> {
                     Spacer(Modifier.height(Dimens.Gap4))
-                    Text("Household total", style = ChittaTheme.type.label, color = c.inkMuted)
+                    Text("Household total", style = ChittaTheme.type.rowMeta14, color = c.inkMuted)
                     AmountText(r.total, style = ChittaTheme.type.amountHero)
-                    Spacer(Modifier.height(Dimens.SectionGap))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("Spending by member", style = ChittaTheme.type.title, color = c.ink)
-                        Text("${r.members.size}", style = ChittaTheme.type.label, color = c.inkMuted)
+                    Section("Spending by member", note = "${r.members.size}") {
+                        r.members.forEach { MemberSpendRow(it, r.total) }
                     }
-                    Spacer(Modifier.height(Dimens.HeadingGap))
-                    HairlineRule()
-                    r.members.forEach { MemberSpendRow(it, r.total) }
                     Spacer(Modifier.height(Dimens.Gap4))
                     Text(
                         "Private and personal entries aren't counted, and neither are loans or balance corrections.",
@@ -107,7 +103,7 @@ private fun MemberSpendRow(m: MemberSpend, total: Paise) {
         GaugeBar(Segments.gauge(m.spent, total, segments = 20), "${m.name}'s share of shared spending")
         Text(
             if (m.percent != null) "${m.percent}% of shared spending" else "Nothing shared this month",
-            style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2, bottom = Dimens.RowPadV),
+            style = ChittaTheme.type.rowMeta14, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2, bottom = Dimens.RowPadV),
         )
         HairlineRule()
     }

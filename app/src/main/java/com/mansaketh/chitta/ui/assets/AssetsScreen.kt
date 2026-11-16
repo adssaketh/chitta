@@ -1,5 +1,6 @@
 package com.mansaketh.chitta.ui.assets
 
+import com.mansaketh.chitta.core.design.icons.ChittaIcons
 import com.mansaketh.chitta.core.design.kit.SheetHeader
 import androidx.compose.foundation.clickable
 import com.mansaketh.chitta.core.design.kit.SwitchRow
@@ -103,10 +104,10 @@ fun AssetsScreen(vm: AssetsViewModel, onBack: () -> Unit) {
             is AssetSheet.Actions -> ChoiceSheet(
                 s.a.name,
                 listOf(
-                    Choice("Update value", "value", "Adds a dated value; the old ones stay as history"),
-                    Choice("History", "history"),
-                    Choice("Rename or edit note", "edit"),
-                    Choice("Delete", "delete", "Removes it and its history. You can undo for 10 seconds."),
+                    Choice("Update value", "value", "Adds a dated value; the old ones stay as history", icon = ChittaIcons.CatTrendUp),
+                    Choice("History", "history", icon = ChittaIcons.CatClock),
+                    Choice("Rename or edit note", "edit", icon = ChittaIcons.Pencil),
+                    Choice("Delete", "delete", "Removes it and its history. You can undo for 10 seconds.", icon = ChittaIcons.Trash, danger = true),
                 ),
                 { v -> sheet = when (v) { "value" -> AssetSheet.NewValue(s.a); "history" -> AssetSheet.History(s.a); "edit" -> AssetSheet.Edit(s.a); else -> AssetSheet.Delete(s.a) } },
                 { sheet = AssetSheet.None },
@@ -147,7 +148,7 @@ private fun maskedPaise(p: Long): String = maskedRupees(Paise(p))
 @Composable
 private fun AssetRow(a: ManualAsset, latest: AssetValue?, change: Paise?, stale: Boolean, stamp: Boolean, ui: AssetsUi, onClick: () -> Unit) {
     val c = ChittaTheme.colors
-    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick).padding(vertical = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick).padding(vertical = Dimens.RowPadV), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(a.name, style = ChittaTheme.type.title, color = c.ink)
             if (latest == null) {

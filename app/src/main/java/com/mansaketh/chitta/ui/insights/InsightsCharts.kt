@@ -51,7 +51,7 @@ fun FlowBars(
     average: Paise?,
     modifier: Modifier = Modifier,
     labelEvery: Int = 1,
-    height: Dp = 140.dp,
+    height: Dp = Dimens.ChartBarsHeight,
 ) {
     val c = ChittaTheme.colors
     if (points.isEmpty()) return
@@ -83,7 +83,7 @@ fun FlowBars(
             }
         }
         Box(Modifier.height(Dimens.Gap2))
-        Row(Modifier.fillMaxWidth().clearAndSetSemantics {}, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth().clearAndSetSemantics {}, horizontalArrangement = Arrangement.spacedBy(Dimens.Space2)) {
             points.forEachIndexed { i, p ->
                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     if (i % labelEvery == 0 || i == points.lastIndex && labelEvery == 1) {
@@ -104,7 +104,7 @@ fun TrendLine(
     values: List<Long>,
     description: String,
     modifier: Modifier = Modifier,
-    height: Dp = 120.dp,
+    height: Dp = Dimens.ChartLineHeight,
 ) {
     val c = ChittaTheme.colors
     if (values.size < 2) return
@@ -167,7 +167,7 @@ fun HeatGrid(
                                 .semantics { contentDescription = "${date.dayOfMonth} ${date.month.getDisplayName(TextStyle.FULL, Locale.ENGLISH)}, " + if (cell.spent.value > 0) "spent ${IndianFormat.spoken(cell.spent)}" else "nothing spent" },
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(date.dayOfMonth.toString(), style = ChittaTheme.type.label, color = if (dense) c.background else if (future) c.inkMuted else c.ink, modifier = Modifier.padding(0.dp))
+                            Text(date.dayOfMonth.toString(), style = ChittaTheme.type.label, color = if (dense) c.background else if (future) c.inkMuted else c.ink)
                         }
                     }
                 }
@@ -200,7 +200,7 @@ fun DonutChart(slices: List<com.mansaketh.chitta.core.domain.DonutSlice>, total:
     val c = ChittaTheme.colors
     val sum = slices.sumOf { it.amount.value }.coerceAtLeast(1L)
     Box(modifier.fillMaxWidth().aspectRatio(1.6f).clearAndSetSemantics { contentDescription = description }, contentAlignment = Alignment.Center) {
-        Canvas(Modifier.height(168.dp).aspectRatio(1f)) {
+        Canvas(Modifier.height(Dimens.ChartDonutSize).aspectRatio(1f)) {
             val stroke = 22.dp.toPx()
             val inset = stroke / 2
             val gapDeg = if (slices.size > 1) 2f else 0f

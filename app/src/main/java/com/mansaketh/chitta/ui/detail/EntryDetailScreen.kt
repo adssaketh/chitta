@@ -2,7 +2,6 @@ package com.mansaketh.chitta.ui.detail
 
 import com.mansaketh.chitta.core.design.kit.DateSheet
 import com.mansaketh.chitta.ui.LocalFirstDay
-import android.app.DatePickerDialog
 import com.mansaketh.chitta.core.design.kit.NavRow
 import com.mansaketh.chitta.core.design.kit.ValueRow
 import com.mansaketh.chitta.core.design.kit.TopBarDetail

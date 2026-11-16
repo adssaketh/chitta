@@ -122,6 +122,8 @@ fun GalleryKitRows() = KitSection("Kit: rows") {
             NavRow("Backup and restore", {}, icon = ChittaIcons.CatCloud, sub = "Last backup today, 6:40 pm")
             ValueRow("Theme", "Follow the phone", onClick = {})
             ValueRow("Account currency", "INR")
+            ValueRow("Account balances", "6 of 6", matched = true)
+            NavRow("Delete everything", {}, icon = ChittaIcons.Trash, danger = true)
         }
         Section("On or off") {
             SwitchRow("App lock", appLock, { appLock = it }, sub = "Fingerprint or PIN on open")

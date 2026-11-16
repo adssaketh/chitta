@@ -99,6 +99,13 @@ object Dimens {
     /** A category glyph: a soft circle with the icon inside. v8 (D279): 40 dp circle, 20 dp icon. */
     val GlyphCircle = 40.dp
     val GlyphIcon = 20.dp
+    /** Categories (PDF p.38): a subcategory shows a small colour dot and indents by the glyph's width plus the gap, so its name lines up under the parent's name. */
+    val SubcategoryDot = 8.dp
+    /** Insights charts: the bar chart, the line chart and the donut. Strokes and gaps drawn inside a Canvas stay in the chart file (D267). */
+    val ChartBarsHeight = 140.dp
+    val ChartLineHeight = 120.dp
+    val ChartDonutSize = 168.dp
+    val SubcategoryIndent = GlyphCircle + Space3
 
     /** Line weight of a drawn status mark (calendar marks). */
     val MarkStroke = 1.5.dp

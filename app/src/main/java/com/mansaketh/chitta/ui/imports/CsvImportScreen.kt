@@ -1,5 +1,8 @@
 package com.mansaketh.chitta.ui.imports
 
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.semantics
 import com.mansaketh.chitta.core.design.components.pressClickable
 import com.mansaketh.chitta.core.design.kit.Section
 import com.mansaketh.chitta.core.design.kit.ValueRow
@@ -185,10 +188,11 @@ private fun ReviewStep(vm: CsvImportViewModel, s: CsvStage.Review) {
             itemsIndexed(s.choices) { i, ch ->
                 val r = ch.row
                 Row(
-                    Modifier.fillMaxWidth().heightIn(min = Dimens.RowTall).pressClickable(role = Role.Button) { rowSheet = i to "row" }.padding(vertical = Dimens.Gap2),
+                    Modifier.fillMaxWidth().heightIn(min = Dimens.RowTall).pressClickable(role = Role.Button) { rowSheet = i to "row" }
+                        .semantics { stateDescription = if (ch.ticked) "Will be saved" else "Will not be saved" }.padding(vertical = Dimens.Gap2),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Box24(ch.ticked)
+                    com.mansaketh.chitta.core.design.kit.TickBox(ch.ticked, Modifier.clearAndSetSemantics { })
                     Spacer(Modifier.width(Dimens.Gap3))
                     Column(Modifier.weight(1f)) {
                         Text(r.title.ifBlank { "(no title)" }, style = ChittaTheme.type.body, color = c.ink, maxLines = 1)
@@ -236,12 +240,4 @@ private fun stillApplies(reason: com.mansaketh.chitta.core.domain.CsvReason, ch:
     com.mansaketh.chitta.core.domain.CsvReason.NoCategory, com.mansaketh.chitta.core.domain.CsvReason.UnknownCategory -> ch.categoryId == null
     com.mansaketh.chitta.core.domain.CsvReason.NoAccount, com.mansaketh.chitta.core.domain.CsvReason.UnknownAccount -> ch.accountId == null
     else -> true
-}
-
-/** A 24 dp tick box: a check when the row will be saved, an empty outline when it will not. */
-@Composable
-private fun Box24(ticked: Boolean) {
-    val c = ChittaTheme.colors
-    if (ticked) Icon(ChittaIcons.Check, contentDescription = "Will be saved", tint = c.ink, modifier = Modifier.size(Dimens.IconSize))
-    else Spacer(Modifier.size(Dimens.IconSize).border(1.dp, c.rule, RoundedCornerShape(4.dp)))
 }

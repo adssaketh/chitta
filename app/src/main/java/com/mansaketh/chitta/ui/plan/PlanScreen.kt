@@ -1,5 +1,6 @@
 package com.mansaketh.chitta.ui.plan
 
+import com.mansaketh.chitta.core.design.icons.ChittaIcons
 import com.mansaketh.chitta.core.design.kit.SheetHeader
 import androidx.compose.foundation.ExperimentalFoundationApi
 import com.mansaketh.chitta.core.design.kit.MonthStepper
@@ -354,10 +355,10 @@ private fun BillsTab(vm: PlanViewModel, ui: PlanUi, onSheet: (String) -> Unit, o
 
     acting?.let { t ->
         ChoiceSheet(t.name.ifBlank { "Bill" }, buildList {
-            if (Bills.needsAmount(t)) add(Choice("Set the amount", "amount")) else {
-                add(Choice("Pay ${rupees(Paise(Math.abs(t.amount)))}", "pay")); add(Choice("Pay a different amount or account", "different"))
+            if (Bills.needsAmount(t)) add(Choice("Set the amount", "amount", icon = ChittaIcons.Pencil)) else {
+                add(Choice("Pay ${rupees(Paise(Math.abs(t.amount)))}", "pay", icon = ChittaIcons.Check)); add(Choice("Pay a different amount or account", "different", icon = ChittaIcons.Transfer))
             }
-            add(Choice("Skip this one", "skip")); add(Choice("Edit", "edit")); add(Choice("Delete", "delete"))
+            add(Choice("Skip this one", "skip", icon = ChittaIcons.Skip)); add(Choice("Edit", "edit", icon = ChittaIcons.Pencil)); add(Choice("Delete", "delete", icon = ChittaIcons.Trash, danger = true))
         }, { v ->
             acting = null
             when (v) { "pay" -> vm.pay(t); "different" -> different = t; "amount" -> amountFor = t; "skip" -> vm.skip(t); "edit" -> onSheet("edit-bill:${t.id}"); "delete" -> deleting = t }

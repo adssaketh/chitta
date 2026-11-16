@@ -1,5 +1,19 @@
 # Changelog
 
+## Phase 11e: start and setup screens, motion, icons, audit (16 Nov 2026) - on branch `phase-11e-start-setup`
+- Look only. Screens 01 to 04 and 27 to 35 of the v8 design: Lock, First run, Bring over your book (and its preview), More, Settings, Customise, Categories, Rules, Household (with Invite and the share choice), Who spent how much, Google Drive backup.
+- Lock and First run: the app icon above the name; First run's two ways in are plain rows with a caret.
+- Bring over: figures under headings, a green tick on balances that add up, the compare text in a note, "Choose another file" / "Import this book" as a pair at the bottom.
+- More: two headed groups (Money, App) with leading icons. Settings: App lock and Hide in recent apps are switches; "Delete everything" is in warning text.
+- Categories: each row has its glyph in its colour; subcategories have a colour dot and indent by the glyph's width. Spending / Income is a small switch.
+- Rules and Drive backup: two-button rows. Household: headed Members, switch row for balances, rows with their explanation under them, Link buttons for Leave and Stop people joining.
+- Messages at the top of Settings, Household, Drive backup and Categories use the one message bar (closes with the x).
+- Sheet actions (bill, account, category, Gold/EPF/PPF, rules, household member, backups, restore points) have a leading icon; Delete and Remove are in warning text; "Counts as a transfer" is a switch.
+- Opening a detail screen slides it in from the end and fades; back reverses it. Off with the Animations switch or the phone's "Remove animations".
+- Audit: no `DatePickerDialog`, no `SectionHeader("")`, no `ValueRow(..., "")`, no full-width buttons inside rows, no 8 dp hand-built rows, no text-glyph icons; chart sizes moved to tokens.
+- New: `ValueRow(matched = true)`, `NavRow(danger = true)`, `Choice(icon, danger, switch)`, `NoticeBar`, icons Archive / Merge / Skip / Sliders, `Dimens.SubcategoryDot`, `SubcategoryIndent`, `ChartBarsHeight`, `ChartLineHeight`, `ChartDonutSize`.
+- Not compiled locally (no Android SDK here); GitHub Actions is the first build.
+
 ## Phase 11d: plan and review screens (16 Nov 2026) - on branch `phase-11d-plan-review`
 - Look only. Screens 16 to 26 of the v8 design: Budgets, Budget detail, Goals, Loans, Bills, Bill calendar, Pay a bill, Insights, Accounts, Mutual funds import.
 - Plan rows with a gauge: name and stamp, the gauge, then the figure with its small print under it (also used on Home).

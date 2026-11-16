@@ -269,3 +269,26 @@ Left as is
 - Sinking funds tab and the other detail screens' stacked buttons (not in the 11d list), except Delete, which is the Danger button.
 - Stale `DatePickerDialog` imports remain in `EntryDetailScreen` and `QuickAddSheet`; the 11e audit removes them.
 Not verified on a phone: everything. Not compiled locally.
+
+## Phase 11e: start and setup screens (16 Nov 2026, branch `phase-11e-start-setup`)
+Matched to the PDF: Lock p.9, First run p.10, Bring over p.11, Dry run p.12, More p.35, Settings p.36, Customise p.37, Categories p.38, Rules p.39, Household p.40, Invite p.41, Who spent p.42, Drive backup p.43.
+Not built (not in app)
+- Lock p.9: PIN dots, keypad, "Enter your PIN", the wrong-PIN line and "Forgot PIN?" (the phone's own prompt checks you). First run p.10: the "From a Paddhu backup file" / "An empty book..." sub lines and "Everything stays on this phone."
+- Bring over p.11: the "Step 1 of 3 · nothing saved yet" line, the figure grid, "Needs your decision". Dry run p.12: "Every total matches", the check list for entries, spending and categories, and the restore-point note. The app has one preview screen; its balance rows carry the tick and its compare text is the note.
+- More p.35: counts beside Accounts and Categories, and "Your book since ... entries". Settings p.36: sub lines such as "Fingerprint or PIN on open". Customise p.37: none.
+- Categories p.38: the entry count at the end of the row (the app puts it in the line under the name) and the long-press hint line. Rules p.39: the order numbers 1 to 4 and the caret (each rule keeps its on/off switch).
+- Household p.40: "Can delete others' entries" under You and the sub line wording on the rows (the app's own wording is kept). Invite p.41: the code in a mono face (the app keeps its Fraunces figures). Who spent p.42: none.
+- Drive backup p.43: the large "Last backup, checked" figure, the "keeps the latest 20" line as a sub line, the restore-point list with Restore links (restore points have their own screen under Settings), "Restore from Drive" (the app's "Backups in Drive" opens the list to restore from).
+Copy kept
+- Every title and label as the app words it: "Unlock", "Bring over my book", "Start fresh", "Choose another file", "Import this book", "Spending / Income", "Backups in Drive", "Show account balances to members". The App lock row has no "Fingerprint or PIN on open" sub line; its existing footnote stays under the group.
+Judgment calls (say if you want them the other way)
+- Categories: Spending / Income is `Segmented` (kit 4.14 and the PDF), though the 11e table does not list it.
+- Customise: the Home sections and More shortcuts keep their leading icon (the icon map); the PDF draws none.
+- Drive backup: both buttons Secondary as drawn; the "Backups in Drive" row with its count became the left button.
+- Messages: every top-of-screen notice is the error-style bar (warning icon, stays until closed), even a plain information line.
+- More: the saved More order only decides order inside each of the two groups.
+Audit result (Phase 11 prompt, section 5, final audit)
+- `fillMaxWidth()` buttons in rows: none. `DatePickerDialog`: none (two stale imports removed). `SectionHeader("")`: none. `ValueRow(..., "")`: none (Bank messages and UPI is a NavRow). Text-glyph icons: none ("₹ ••••" is a masked amount, not an icon). Hand-built rows with 8 dp padding: eight fixed (Assets, Fund, Account, Deposit, Icon picker, Intake, Insights, fund price list); Ledger and Entry rows were already on the kit.
+- Literal `.dp` left on purpose: Canvas pixel constants in `InsightsCharts` (strokes, bar gaps, dashes), gesture distances in `TabSwipe`, the Glance widgets (`SpendWidget`, `QuickAddWidget`).
+Not verified on a phone: everything. Not compiled locally. Screenshot tests: screens live in `:app`, which has no screenshot setup (11c and 11d had none either); the new kit parts (matched tick, danger row) are in the kit gallery snapshots, and the Icons snapshot gains the four new icons. Both are re-recorded by the `[record snapshots]` commit.
+

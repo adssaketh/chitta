@@ -1,6 +1,8 @@
 package com.mansaketh.chitta.ui
 
 import com.mansaketh.chitta.core.design.kit.SheetHeader
+import com.mansaketh.chitta.core.design.kit.TickRow
+import com.mansaketh.chitta.core.design.kit.SwitchRow
 import androidx.compose.foundation.background
 import com.mansaketh.chitta.core.design.kit.ButtonKind
 import com.mansaketh.chitta.core.design.kit.ChittaButton
@@ -99,9 +101,30 @@ fun BottomOverlay(onDismiss: () -> Unit, modifier: Modifier = Modifier, handle: 
     }
 }
 
-data class Choice<T>(val label: String, val value: T, val detail: String? = null, val selected: Boolean = false)
+/**
+ * One choice in a [ChoiceSheet]. [icon] makes it an action row (leading icon, no tick); [danger] writes it in warning text (Delete, never filled).
+ * Without an [icon] it is a pick-one row and [selected] shows the ink tick.
+ */
+data class Choice<T>(
+    val label: String,
+    val value: T,
+    val detail: String? = null,
+    val selected: Boolean = false,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    val danger: Boolean = false,
+    /** Non-null makes it a [SwitchRow] (an on/off choice that used to flip its own title); tapping calls onPick. */
+    val switch: Boolean? = null,
+)
 
-/** A short list to pick one thing from, in a sheet. */
+/** A result or problem at the top of a screen, as the one message bar (v8 §4.17): it stays until closed (D282). Put it in the screen's root Box. */
+@Composable
+fun BoxScope.NoticeBar(text: String, onClose: () -> Unit) {
+    com.mansaketh.chitta.core.design.kit.MessageBarSlot {
+        com.mansaketh.chitta.core.design.kit.MessageBar(text, kind = com.mansaketh.chitta.core.design.kit.MessageKind.Error, onClose = onClose)
+    }
+}
+
+/** A short list to pick one thing from, in a sheet: pick-one rows are [TickRow]s, action rows have a leading icon (v8 §4.8, Phase 11e). */
 @Composable
 fun <T> ChoiceSheet(title: String, choices: List<Choice<T>>, onPick: (T) -> Unit, onDismiss: () -> Unit, emptyText: String = "Nothing to pick.") {
     BottomOverlay(onDismiss, handle = false) {
@@ -112,20 +135,37 @@ fun <T> ChoiceSheet(title: String, choices: List<Choice<T>>, onPick: (T) -> Unit
         } else {
             LazyColumn(Modifier.heightIn(max = sheetMax(0.5f))) {
                 items(choices) { c ->
-                    Row(
-                        Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = Role.Button) { onPick(c.value) }.padding(vertical = Dimens.Gap2),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text(c.label, style = if (c.selected) ChittaTheme.type.bodyMedium else ChittaTheme.type.body, color = ChittaTheme.colors.ink)
-                            if (c.detail != null) Text(c.detail, style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted)
-                        }
-                        if (c.selected) Icon(ChittaIcons.Check, contentDescription = "Selected", tint = ChittaTheme.colors.ink, modifier = Modifier.size(Dimens.IconSize))
-                    }
-                    HairlineRule()
+                    if (c.switch != null) SwitchRow(c.label, c.switch, { onPick(c.value) }, sub = c.detail)
+                    else if (c.icon != null) ActionChoiceRow(c) { onPick(c.value) }
+                    else TickRow(c.label, c.selected, { onPick(c.value) }, sub = c.detail)
                 }
             }
         }
+    }
+}
+
+/** An action in a sheet: leading icon (22), the title, an optional muted line. A danger action is written in warning text. */
+@Composable
+private fun <T> ActionChoiceRow(choice: Choice<T>, onClick: () -> Unit) {
+    val c = ChittaTheme.colors
+    val tint = if (choice.danger) c.warningText else c.ink
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = if (choice.detail == null) Dimens.RowMinOneLine else Dimens.RowMinTwoLine)
+                .pressClickable(role = Role.Button, onClick = onClick)
+                .padding(vertical = Dimens.RowPadV),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(choice.icon!!, contentDescription = null, tint = tint, modifier = Modifier.size(Dimens.IconRowLeading))
+            Spacer(Modifier.width(Dimens.Space3))
+            Column(Modifier.weight(1f)) {
+                Text(choice.label.rupeeAware(), style = ChittaTheme.type.body, color = tint)
+                if (choice.detail != null) Text(choice.detail.rupeeAware(), style = ChittaTheme.type.rowMeta14, color = c.inkMuted)
+            }
+        }
+        HairlineRule()
     }
 }
 

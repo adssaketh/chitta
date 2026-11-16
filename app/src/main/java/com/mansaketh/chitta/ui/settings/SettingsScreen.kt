@@ -11,6 +11,7 @@ import android.os.Process
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -47,6 +48,7 @@ import com.mansaketh.chitta.core.domain.RestorePoint
 import com.mansaketh.chitta.core.domain.RestorePoints
 import com.mansaketh.chitta.ui.Choice
 import com.mansaketh.chitta.ui.ChoiceSheet
+import com.mansaketh.chitta.ui.NoticeBar
 import com.mansaketh.chitta.ui.ConfirmSheet
 import com.mansaketh.chitta.ui.dayAndTime
 import com.mansaketh.chitta.ui.lock.BiometricGate
@@ -95,14 +97,10 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
         BiometricGate.prompt(activity, if (turningOn) "Turn on app lock" else "Turn off app lock", null, { vm.setLockEnabled(turningOn) })
     }
 
+    Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize()) {
         TopBarDetail("Settings", onBack = onBack)
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
-            if (ui.notice != null) {
-                Text(ui.notice!!, style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(vertical = Dimens.Gap2))
-                ChittaButton("Dismiss", { vm.dismissNotice() }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
-                Spacer(Modifier.height(Dimens.Gap4))
-            }
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.FabInset)) {
             if (ui.busy) Text("Working. Keep this screen open.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2))
 
             ExpandGroup("Look and feel", summary = "Theme, vibration, animations", icon = ChittaIcons.Gear, initiallyExpanded = true) {
@@ -112,9 +110,9 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
             }
 
             ExpandGroup("Security", summary = "App lock ${onOff(ui.lockEnabled).lowercase()}", icon = ChittaIcons.Lock) {
-                ValueRow("App lock", onOff(ui.lockEnabled), onClick = ::toggleLock)
+                SwitchRow("App lock", ui.lockEnabled, { toggleLock() })
                 if (ui.lockEnabled) ValueRow("Lock after leaving", ui.timeout.label, onClick = { sheet = "timeout" })
-                ValueRow("Hide in recent apps", onOff(ui.hideInRecents), onClick = { vm.setHideInRecents(!ui.hideInRecents) })
+                SwitchRow("Hide in recent apps", ui.hideInRecents, { vm.setHideInRecents(it) })
                 FootNote("The lock uses your fingerprint or face, or your phone's PIN, pattern or password. Hiding in recent apps also stops screenshots.")
             }
 
@@ -139,7 +137,7 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
             ExpandGroup("Import and export", summary = if (waiting > 0) "$waiting bank messages waiting" else "Rules, automation, CSV, your Paddhu book", icon = ChittaIcons.Transfer) {
                 NavRow("Rules", { onOpen("rules") })
                 NavRow("Automation", { onOpen("automation") })
-                ValueRow("Bank messages and UPI", if (waiting > 0) "$waiting waiting" else "", onClick = { onOpen("intake") })
+                NavRow("Bank messages and UPI", { onOpen("intake") }, value = if (waiting > 0) "$waiting waiting" else null)
                 NavRow("Import entries from CSV", { onOpen("csv-import") })
                 NavRow("Export entries to CSV", { sheet = "csv-account" })
                 NavRow("Bring over your Paddhu book", { onOpen("import") })
@@ -151,10 +149,12 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
             }
 
             ExpandGroup("Data", summary = "Delete everything", icon = ChittaIcons.Trash) {
-                NavRow("Delete everything", { sheet = "delete" })
+                NavRow("Delete everything", { sheet = "delete" }, danger = true)
                 FootNote("This empties the book on this phone. A restore point is made first, so you can bring it back from Restore points.")
             }
         }
+    }
+    ui.notice?.let { NoticeBar(it) { vm.dismissNotice() } }
     }
 
     when (sheet) {
@@ -247,7 +247,7 @@ fun RestorePointsScreen(vm: SettingsViewModel, onBack: () -> Unit) {
 
     picked?.let { p ->
         ChoiceSheet(
-            dayAndTime(p.createdAtMs, zone), listOf(Choice("Restore this point", "restore", p.kind.label), Choice("Delete this point", "delete")),
+            dayAndTime(p.createdAtMs, zone), listOf(Choice("Restore this point", "restore", p.kind.label, icon = ChittaIcons.Undo), Choice("Delete this point", "delete", icon = ChittaIcons.Trash, danger = true)),
             { act -> picked = null; if (act == "restore") confirm = p else vm.deletePoint(p) }, { picked = null },
         )
     }

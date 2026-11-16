@@ -54,47 +54,51 @@ fun CustomiseScreen(vm: HomeViewModel, onBack: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         TopBarDetail("Customise", onBack = onBack)
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
-            Section("Home sections", first = true)
-            Text("Budgets and Recent entries are on to start. Add what you want to see.", style = ChittaTheme.type.label, color = c.inkMuted)
-            HairlineRule()
-            layout.sections.forEachIndexed { i, cfg ->
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    androidx.compose.material3.Icon(
-                        FeatureIcons.homeSection(cfg.section), contentDescription = null, tint = if (cfg.visible) c.ink else c.inkMuted,
-                        modifier = Modifier.padding(end = Dimens.Gap3).size(Dimens.GlyphIcon),
-                    )
-                    SwitchRow(cfg.section.title, cfg.visible, { prefs.setHomeLayout(layout.toggle(cfg.section)) }, Modifier.weight(1f), rule = false)
-                    if (cfg.visible) {
-                        if (cfg.section.usesAccounts) SmallAction("Accounts") { sheet = "acc:" + cfg.section.key }
-                        if (cfg.section.usesRange) SmallAction("${cfg.rangeDays ?: 30} days") { sheet = "range:" + cfg.section.key }
+            Section("Home sections", first = true) {
+                Text("Budgets and Recent entries are on to start. Add what you want to see.", style = ChittaTheme.type.rowMeta14, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Space2))
+                layout.sections.forEachIndexed { i, cfg ->
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        androidx.compose.material3.Icon(
+                            FeatureIcons.homeSection(cfg.section), contentDescription = null, tint = if (cfg.visible) c.ink else c.inkMuted,
+                            modifier = Modifier.padding(end = Dimens.Gap3).size(Dimens.IconRowLeading),
+                        )
+                        SwitchRow(cfg.section.title, cfg.visible, { prefs.setHomeLayout(layout.toggle(cfg.section)) }, Modifier.weight(1f), rule = false)
+                        if (cfg.visible) {
+                            if (cfg.section.usesAccounts) SmallAction("Accounts") { sheet = "acc:" + cfg.section.key }
+                            if (cfg.section.usesRange) SmallAction("${cfg.rangeDays ?: 30} days") { sheet = "range:" + cfg.section.key }
+                        }
+                        MoveButtons(i > 0, i < layout.sections.lastIndex, { prefs.setHomeLayout(layout.move(cfg.section, -1)) }, { prefs.setHomeLayout(layout.move(cfg.section, 1)) })
                     }
-                    MoveButtons(i > 0, i < layout.sections.lastIndex, { prefs.setHomeLayout(layout.move(cfg.section, -1)) }, { prefs.setHomeLayout(layout.move(cfg.section, 1)) })
+                    HairlineRule()
                 }
-                HairlineRule()
             }
 
-            Section("Bottom tabs")
-            Text("Four tabs you can swap. More is always the fifth. Press and hold the tab bar anywhere to come back here.", style = ChittaTheme.type.label, color = c.inkMuted)
-            tabs.slots.forEachIndexed { i, key -> ValueRow("Tab ${i + 1}", key.label, onClick = { sheet = "slot:$i" }) }
-            ValueRow("Opens first", tabs.first.label, onClick = { sheet = "first" })
-
-            Section("More shortcuts")
-            more.forEachIndexed { i, item ->
-                Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin), verticalAlignment = Alignment.CenterVertically) {
-                    Text(item.label, style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.weight(1f))
-                    MoveButtons(i > 0, i < more.lastIndex, { prefs.setMoreOrder(MoreOrder.move(more, item, -1)) }, { prefs.setMoreOrder(MoreOrder.move(more, item, 1)) })
-                }
-                HairlineRule()
+            Section("Bottom tabs") {
+                Text("Four tabs you can swap. More is always the fifth. Press and hold the tab bar anywhere to come back here.", style = ChittaTheme.type.rowMeta14, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Space2))
+                tabs.slots.forEachIndexed { i, key -> ValueRow("Tab ${i + 1}", key.label, onClick = { sheet = "slot:$i" }) }
+                ValueRow("Opens first", tabs.first.label, onClick = { sheet = "first" })
             }
 
-            Section("Cash check")
-            Text("Pick the accounts that hold money you spend from. Savings and investment accounts stay out.", style = ChittaTheme.type.label, color = c.inkMuted)
-            ValueRow("Accounts for spending", if (cash.isEmpty()) "None picked" else "${cash.size} picked", onClick = { sheet = "cash" })
-            SwitchRow("Always show the cash check", preferCash, { prefs.setPreferCash(it) })
-            Text("Off means Home shows the cash check only when it is lower than Safe to spend.", style = ChittaTheme.type.label, color = c.inkMuted)
+            Section("More shortcuts") {
+                more.forEachIndexed { i, item ->
+                    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMinOneLine), verticalAlignment = Alignment.CenterVertically) {
+                        androidx.compose.material3.Icon(FeatureIcons.more(item), contentDescription = null, tint = c.ink, modifier = Modifier.padding(end = Dimens.Gap3).size(Dimens.IconRowLeading))
+                        Text(item.label, style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.weight(1f))
+                        MoveButtons(i > 0, i < more.lastIndex, { prefs.setMoreOrder(MoreOrder.move(more, item, -1)) }, { prefs.setMoreOrder(MoreOrder.move(more, item, 1)) })
+                    }
+                    HairlineRule()
+                }
+            }
 
-            Section("Week")
-            ValueRow("First day of the week", firstDay.getDisplayName(TextStyle.FULL, Locale.ENGLISH), onClick = { sheet = "weekday" })
+            Section("Cash check") {
+                Text("Pick the accounts that hold money you spend from. Savings and investment accounts stay out.", style = ChittaTheme.type.rowMeta14, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Space2))
+                ValueRow("Accounts for spending", if (cash.isEmpty()) "None picked" else "${cash.size} picked", onClick = { sheet = "cash" })
+                SwitchRow("Always show the cash check", preferCash, { prefs.setPreferCash(it) }, sub = "Off means Home shows the cash check only when it is lower than Safe to spend.")
+            }
+
+            Section("Week") {
+                ValueRow("First day of the week", firstDay.getDisplayName(TextStyle.FULL, Locale.ENGLISH), onClick = { sheet = "weekday" })
+            }
         }
     }
 

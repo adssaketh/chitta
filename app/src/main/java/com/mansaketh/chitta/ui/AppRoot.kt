@@ -7,6 +7,7 @@ import androidx.activity.compose.BackHandler
 import com.mansaketh.chitta.core.design.kit.ButtonKind
 import com.mansaketh.chitta.core.design.kit.ChittaButton
 import com.mansaketh.chitta.core.design.kit.NavRow
+import com.mansaketh.chitta.core.design.kit.Section
 import com.mansaketh.chitta.core.design.kit.TopBarMain
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -112,15 +113,17 @@ private fun FirstRun(vms: AppViewModels) {
         BackHandler { importing = false; vms.imports.reset() }
         return
     }
-    Column(Modifier.fillMaxSize().padding(Dimens.Margin).navigationBarsPadding(), verticalArrangement = Arrangement.Center) {
+    // PDF p.10, screen 02: the icon above the name, the two ways in as plain rows with a caret. "Everything stays on this phone" is not in the app, so it is not built.
+    Column(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin).navigationBarsPadding(), verticalArrangement = Arrangement.Center) {
+        com.mansaketh.chitta.ui.lock.AppIcon(Dimens.LogoLarge)
+        Spacer(Modifier.height(Dimens.Gap4))
         Text("Paddhu Pusthakam", style = ChittaTheme.type.headline, color = c.ink)
         Spacer(Modifier.height(Dimens.Gap3))
-        Text("Start with an empty book, or bring over your book from Paddhu Pusthakam.", style = ChittaTheme.type.body, color = c.ink)
+        Text("Start with an empty book, or bring over your book from Paddhu Pusthakam.", style = ChittaTheme.type.body, color = c.inkMuted)
         Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton("Bring over my book", { importing = true }, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(Dimens.Gap2))
-        ChittaButton("Start fresh", { vms.imports.startFresh {} }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
-        Text("Start fresh makes a Cash account and a few categories you can rename.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
+        HairlineRule()
+        NavRow("Bring over my book", { importing = true }, icon = ChittaIcons.Download)
+        NavRow("Start fresh", { vms.imports.startFresh {} }, icon = ChittaIcons.Ledger, sub = "Start fresh makes a Cash account and a few categories you can rename.")
     }
 }
 
@@ -195,8 +198,26 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                     }
                 },
             ) {
-                when {
-                    top == null -> AnimatedContent(
+                // Opening a detail screen slides it in from the end and fades (0.25 s); going back reverses that. Off when the app's Animations
+                // switch is off or the phone's "Remove animations" is on (the same flag the tabs use). The pair carries the depth so back is told from forward.
+                AnimatedContent(
+                    targetState = top to stack.size,
+                    modifier = Modifier.fillMaxSize(),
+                    transitionSpec = {
+                        if (!motion) {
+                            androidx.compose.animation.EnterTransition.None togetherWith androidx.compose.animation.ExitTransition.None
+                        } else if (targetState.second > initialState.second) {
+                            (slideInHorizontally(com.mansaketh.chitta.core.design.theme.Motion.expandTween()) { it / 3 } + fadeIn(com.mansaketh.chitta.core.design.theme.Motion.expandTween())) togetherWith
+                                fadeOut(com.mansaketh.chitta.core.design.theme.Motion.expandTween())
+                        } else {
+                            fadeIn(com.mansaketh.chitta.core.design.theme.Motion.expandTween()) togetherWith
+                                (slideOutHorizontally(com.mansaketh.chitta.core.design.theme.Motion.expandTween()) { it / 3 } + fadeOut(com.mansaketh.chitta.core.design.theme.Motion.expandTween()))
+                        }
+                    },
+                    label = "screens",
+                ) { (shown, _) ->
+                    when {
+                    shown == null -> AnimatedContent(
                         targetState = tab,
                         transitionSpec = {
                             if (!motion) {
@@ -229,33 +250,35 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                             onGallery = if (extra != null) ({ push("gallery") }) else null,
                         )
                     } }
-                    top.startsWith("detail:") -> EntryDetailScreen(vms.detail, top.removePrefix("detail:"), onBack = ::pop, onHistory = { push("history:" + top.removePrefix("detail:")) }, plan = vms.plan)
-                    top.startsWith("budget:") -> BudgetDetailScreen(vms.plan, top.removePrefix("budget:"), ::pop, { planSheet = "edit-budget:" + top.removePrefix("budget:") })
-                    top.startsWith("goal:") -> GoalDetailScreen(vms.plan, top.removePrefix("goal:"), ::pop, { planSheet = "edit-goal:" + top.removePrefix("goal:") }, { push("detail:$it") })
-                    top.startsWith("loan:") -> LoanDetailScreen(vms.plan, top.removePrefix("loan:"), ::pop, { planSheet = "edit-loan:" + top.removePrefix("loan:") }, { push("detail:$it") })
-                    top.startsWith("history:") -> EntryHistoryScreen(vms.detail, top.removePrefix("history:"), onBack = ::pop)
-                    top == "customise" -> CustomiseScreen(vms.home, onBack = ::pop)
-                    top == "month-review" -> com.mansaketh.chitta.ui.insights.MonthReviewScreen(vms.insights, onBack = ::pop)
-                    top == "accounts" -> AccountsScreen(vms.manage, onBack = ::pop, onTransfer = { openAdd(EntryType.Transfer) }, onOpenFunds = { push("mutual-funds") }, onOpenAssets = { push("assets") })
-                    top == "assets" -> com.mansaketh.chitta.ui.assets.AssetsScreen(vms.assets, onBack = ::pop)
-                    top == "mutual-funds" -> com.mansaketh.chitta.ui.manage.MutualFundsScreen(vms.manage, onBack = ::pop)
-                    top == "categories" -> CategoriesScreen(vms.manage, onBack = ::pop)
-                    top == "import" -> ImportScreen(vms.imports, onBack = { vms.imports.reset(); pop() }, onFinished = { vms.imports.reset(); stack = emptyList() })
-                    top == "settings" -> com.mansaketh.chitta.ui.settings.SettingsScreen(vms.settings, onBack = ::pop, onOpen = { push(it) })
-                    top == "cloud-backup" -> com.mansaketh.chitta.ui.cloud.CloudBackupScreen(
+                    shown.startsWith("detail:") -> EntryDetailScreen(vms.detail, shown.removePrefix("detail:"), onBack = ::pop, onHistory = { push("history:" + shown.removePrefix("detail:")) }, plan = vms.plan)
+                    shown.startsWith("budget:") -> BudgetDetailScreen(vms.plan, shown.removePrefix("budget:"), ::pop, { planSheet = "edit-budget:" + shown.removePrefix("budget:") })
+                    shown.startsWith("goal:") -> GoalDetailScreen(vms.plan, shown.removePrefix("goal:"), ::pop, { planSheet = "edit-goal:" + shown.removePrefix("goal:") }, { push("detail:$it") })
+                    shown.startsWith("loan:") -> LoanDetailScreen(vms.plan, shown.removePrefix("loan:"), ::pop, { planSheet = "edit-loan:" + shown.removePrefix("loan:") }, { push("detail:$it") })
+                    shown.startsWith("history:") -> EntryHistoryScreen(vms.detail, shown.removePrefix("history:"), onBack = ::pop)
+                    shown == "customise" -> CustomiseScreen(vms.home, onBack = ::pop)
+                    shown == "month-review" -> com.mansaketh.chitta.ui.insights.MonthReviewScreen(vms.insights, onBack = ::pop)
+                    shown == "accounts" -> AccountsScreen(vms.manage, onBack = ::pop, onTransfer = { openAdd(EntryType.Transfer) }, onOpenFunds = { push("mutual-funds") }, onOpenAssets = { push("assets") })
+                    shown == "assets" -> com.mansaketh.chitta.ui.assets.AssetsScreen(vms.assets, onBack = ::pop)
+                    shown == "mutual-funds" -> com.mansaketh.chitta.ui.manage.MutualFundsScreen(vms.manage, onBack = ::pop)
+                    shown == "categories" -> CategoriesScreen(vms.manage, onBack = ::pop)
+                    shown == "import" -> ImportScreen(vms.imports, onBack = { vms.imports.reset(); pop() }, onFinished = { vms.imports.reset(); stack = emptyList() })
+                    shown == "settings" -> com.mansaketh.chitta.ui.settings.SettingsScreen(vms.settings, onBack = ::pop, onOpen = { push(it) })
+                    shown == "cloud-backup" -> com.mansaketh.chitta.ui.cloud.CloudBackupScreen(
                         vms.cloud, onBack = ::pop,
                         // A file from Drive that may be a Paddhu backup goes through the same preview and approval as a file you pick.
                         onPaddhuFile = { f -> vms.imports.pick(android.net.Uri.fromFile(f)); push("import") },
                     )
-                    top == "sync" -> com.mansaketh.chitta.ui.sync.SyncScreen(vms.sync, onBack = ::pop)
-                    top == "household" -> com.mansaketh.chitta.ui.household.HouseholdScreen(vms.household, onBack = ::pop, onOpen = { push(it) })
-                    top == "household-spent" -> com.mansaketh.chitta.ui.household.WhoSpentScreen(vms.household, onBack = ::pop)
-                    top == "restore-points" -> com.mansaketh.chitta.ui.settings.RestorePointsScreen(vms.settings, onBack = ::pop)
-                    top == "automation" -> com.mansaketh.chitta.ui.automation.AutomationScreen(vms.automation, onBack = ::pop)
-                    top == "rules" -> com.mansaketh.chitta.ui.rules.RulesScreen(vms.rules, onBack = ::pop)
-                    top == "intake" -> com.mansaketh.chitta.ui.intake.IntakeScreen(vms.intake, onBack = ::pop)
-                    top == "csv-import" -> com.mansaketh.chitta.ui.imports.CsvImportScreen(vms.csvImport, onBack = ::pop)
-                    top == "gallery" -> extra?.invoke(::pop)
+                    shown == "sync" -> com.mansaketh.chitta.ui.sync.SyncScreen(vms.sync, onBack = ::pop)
+                    shown == "household" -> com.mansaketh.chitta.ui.household.HouseholdScreen(vms.household, onBack = ::pop, onOpen = { push(it) })
+                    shown == "household-spent" -> com.mansaketh.chitta.ui.household.WhoSpentScreen(vms.household, onBack = ::pop)
+                    shown == "restore-points" -> com.mansaketh.chitta.ui.settings.RestorePointsScreen(vms.settings, onBack = ::pop)
+                    shown == "automation" -> com.mansaketh.chitta.ui.automation.AutomationScreen(vms.automation, onBack = ::pop)
+                    shown == "rules" -> com.mansaketh.chitta.ui.rules.RulesScreen(vms.rules, onBack = ::pop)
+                    shown == "intake" -> com.mansaketh.chitta.ui.intake.IntakeScreen(vms.intake, onBack = ::pop)
+                    shown == "csv-import" -> com.mansaketh.chitta.ui.imports.CsvImportScreen(vms.csvImport, onBack = ::pop)
+                    shown == "gallery" -> extra?.invoke(::pop)
+                    else -> Unit
+                }
                 }
                 if (top == null && tab != MORE && tab != TabKey.Accounts.key) {
                     val fabP by animateFloatAsState(if (fabShown.value) 1f else 0f, animationSpec = if (motion) androidx.compose.animation.core.spring() else androidx.compose.animation.core.snap(), label = "addButton")
@@ -311,11 +334,18 @@ private const val MORE = "more"
 
 @Composable
 private fun MoreScreen(order: List<MoreItem>, open: (MoreItem) -> Unit, onGallery: (() -> Unit)?) {
+    // PDF p.35, screen 27: two headed groups. The saved order still decides the order inside each group. The counts (6, 41) and the
+    // "book since" line of the drawing are not in the app, so they are not built.
+    val money = order.filter { it == MoreItem.Accounts || it == MoreItem.Categories }
+    val app = order.filter { it !in money }
     Column(Modifier.fillMaxSize()) {
         TopBarMain("More", ChittaIcons.More)
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
-            order.forEach { NavRow(it.label, { open(it) }) }
-            if (onGallery != null) NavRow("Design gallery", onGallery, sub = "Debug builds only")
+            Section("Money", first = true) { money.forEach { NavRow(it.label, { open(it) }, icon = FeatureIcons.more(it)) } }
+            Section("App") {
+                app.forEach { NavRow(it.label, { open(it) }, icon = FeatureIcons.more(it)) }
+                if (onGallery != null) NavRow("Design gallery", onGallery, sub = "Debug builds only", icon = ChittaIcons.CatPalette)
+            }
         }
         AppMark(Modifier.align(Alignment.CenterHorizontally).padding(bottom = Dimens.Gap6))
     }

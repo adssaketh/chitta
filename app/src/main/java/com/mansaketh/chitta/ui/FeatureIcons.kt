@@ -3,6 +3,7 @@ package com.mansaketh.chitta.ui
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
 import com.mansaketh.chitta.core.domain.HomeSection
+import com.mansaketh.chitta.core.domain.MoreItem
 import com.mansaketh.chitta.core.domain.TabKey
 
 /**
@@ -32,5 +33,14 @@ object FeatureIcons {
         HomeSection.NetWorth -> ChittaIcons.CatChartLineUp
         HomeSection.Spending -> ChittaIcons.Tag
         HomeSection.Heatmap -> ChittaIcons.Calendar
+    }
+
+    /** The More shortcuts. Accounts shares the tab icon; the others have none elsewhere. */
+    fun more(i: MoreItem): ImageVector = when (i) {
+        MoreItem.Accounts -> tab(TabKey.Accounts)
+        MoreItem.Categories -> ChittaIcons.Tag
+        MoreItem.Customise -> ChittaIcons.Sliders
+        MoreItem.Import -> ChittaIcons.Download
+        MoreItem.Settings -> ChittaIcons.Gear
     }
 }

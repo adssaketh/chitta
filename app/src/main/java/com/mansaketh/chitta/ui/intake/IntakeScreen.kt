@@ -190,7 +190,7 @@ private fun ReviewStep(vm: IntakeViewModel, s: IntakeStage.Review) {
             itemsIndexed(s.choices) { i, ch ->
                 val r = ch.candidate.row
                 Row(
-                    Modifier.fillMaxWidth().heightIn(min = Dimens.RowTall).pressClickable(role = Role.Button) { rowSheet = i to "row" }.padding(vertical = Dimens.Gap2),
+                    Modifier.fillMaxWidth().heightIn(min = Dimens.RowTall).pressClickable(role = Role.Button) { rowSheet = i to "row" }.padding(vertical = Dimens.RowPadV),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     TickBox(ch.ticked, Modifier.semantics { if (ch.ticked) contentDescription = "Will be saved" })

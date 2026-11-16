@@ -141,9 +141,9 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
             is AccSheet.Actions -> ChoiceSheet(
                 s.a.name,
                 buildList {
-                    add(Choice("Rename", "rename")); add(Choice("Correct balance", "correct", "Adds an entry that is not spending or income"))
-                    add(Choice("Credit card details", "card", "Limit, statement and due days, minimum due"))
-                    add(Choice(if (s.a.archived) "Bring back" else "Archive", "archive", if (s.a.archived) null else "Hidden from pickers. Entries stay."))
+                    add(Choice("Rename", "rename", icon = ChittaIcons.Pencil)); add(Choice("Correct balance", "correct", "Adds an entry that is not spending or income", icon = ChittaIcons.CatCalculator))
+                    add(Choice("Credit card details", "card", "Limit, statement and due days, minimum due", icon = ChittaIcons.CreditCard))
+                    add(Choice(if (s.a.archived) "Bring back" else "Archive", "archive", if (s.a.archived) null else "Hidden from pickers. Entries stay.", icon = if (s.a.archived) ChittaIcons.Undo else ChittaIcons.Archive))
                 },
                 { v ->
                     when (v) {
@@ -192,7 +192,7 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
 @Composable
 private fun AccountRow(a: Account, balance: Paise, card: com.mansaketh.chitta.core.domain.CardFigures?, onClick: () -> Unit) {
     val c = ChittaTheme.colors
-    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick).padding(vertical = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick).padding(vertical = Dimens.RowPadV), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(a.name, style = ChittaTheme.type.title, color = c.ink)
             if (!(a.currency ?: "INR").equals("INR", ignoreCase = true)) Text((a.currency ?: "").uppercase(), style = ChittaTheme.type.label, color = c.inkMuted)
@@ -206,7 +206,7 @@ private fun AccountRow(a: Account, balance: Paise, card: com.mansaketh.chitta.co
 @Composable
 private fun DepositRow(d: FixedDeposit, nowMs: Long, zone: java.time.ZoneId, onClick: () -> Unit) {
     val c = ChittaTheme.colors
-    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick).padding(vertical = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick).padding(vertical = Dimens.RowPadV), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(d.bank + (if (d.fdNumber.isNotEmpty()) " \u00B7 ${d.fdNumber.takeLast(4)}" else ""), style = ChittaTheme.type.title, color = if (d.closed) c.inkMuted else c.ink)
             Text(depositLine(d, nowMs, zone), style = ChittaTheme.type.label, color = c.inkMuted)

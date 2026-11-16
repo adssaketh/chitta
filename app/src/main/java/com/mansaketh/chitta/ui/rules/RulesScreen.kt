@@ -1,5 +1,6 @@
 package com.mansaketh.chitta.ui.rules
 
+import com.mansaketh.chitta.core.design.icons.ChittaIcons
 import com.mansaketh.chitta.core.design.kit.SheetHeader
 import androidx.compose.foundation.clickable
 import com.mansaketh.chitta.core.design.kit.EmptyState
@@ -32,6 +33,9 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.unit.dp
 import com.mansaketh.chitta.core.design.kit.ButtonKind
 import com.mansaketh.chitta.core.design.kit.ChittaButton
+import com.mansaketh.chitta.core.design.kit.ButtonPair
+import com.mansaketh.chitta.core.design.kit.Note
+import com.mansaketh.chitta.core.design.components.pressClickable
 import com.mansaketh.chitta.core.design.components.ChittaField
 import com.mansaketh.chitta.core.design.kit.TopBarDetail
 import com.mansaketh.chitta.core.design.components.HairlineRule
@@ -69,20 +73,16 @@ fun RulesScreen(vm: RulesViewModel, onBack: () -> Unit) {
         TopBarDetail("Rules", onBack = onBack)
         LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
             item {
-                Text("If a new entry matches, a rule fills in the category or account. The first rule that sets something wins. Transfers are never changed.", style = ChittaTheme.type.label, color = c.inkMuted)
-                Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2), modifier = Modifier.padding(vertical = Dimens.Gap3)) {
-                    ChittaButton("New rule", { sheet = RuleSheet.Edit(RuleDraft()) }, modifier = Modifier.fillMaxWidth())
-                    ChittaButton("Apply to my history", { vm.buildPreview() }, kind = ButtonKind.Secondary, enabled = ui.rules.any { it.enabled }, modifier = Modifier.fillMaxWidth())
-                }
+                Note("If a new entry matches, a rule fills in the category or account. The first rule that sets something wins. Transfers are never changed.", Modifier.padding(top = Dimens.Gap3, bottom = Dimens.Gap3))
                 HairlineRule()
             }
             if (ui.loading) item { LoadingPlaceholder() }
             if (!ui.loading && ui.rules.isEmpty()) item { EmptyState(null, null, "No rules yet. Add one.", "New rule", { sheet = RuleSheet.Edit(RuleDraft()) }) }
             items(ui.rules, key = { it.id }) { r ->
-                Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f).clickable { sheet = RuleSheet.Actions(r) }.padding(vertical = Dimens.Gap2)) {
-                        Text(r.name, style = ChittaTheme.type.title, color = if (r.enabled) c.ink else c.inkMuted)
-                        Text(sentence(r, ui), style = ChittaTheme.type.label, color = c.inkMuted)
+                Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMinTwoLine), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f).pressClickable(role = Role.Button) { sheet = RuleSheet.Actions(r) }.padding(vertical = Dimens.RowPadV)) {
+                        Text(r.name, style = ChittaTheme.type.bodyMedium, color = if (r.enabled) c.ink else c.inkMuted)
+                        Text(sentence(r, ui), style = ChittaTheme.type.rowMeta14, color = c.inkMuted)
                     }
                     Box(
                         Modifier.heightIn(min = Dimens.TouchTarget).padding(start = Dimens.Gap3)
@@ -92,13 +92,21 @@ fun RulesScreen(vm: RulesViewModel, onBack: () -> Unit) {
                 }
                 HairlineRule()
             }
+            // The two actions share one row (PDF p.39, screen 31).
+            item {
+                ButtonPair(
+                    first = { m -> ChittaButton("New rule", { sheet = RuleSheet.Edit(RuleDraft()) }, kind = ButtonKind.Secondary, modifier = m) },
+                    second = { m -> ChittaButton("Apply to my history", { vm.buildPreview() }, kind = ButtonKind.Secondary, enabled = ui.rules.any { it.enabled }, modifier = m) },
+                    modifier = Modifier.padding(top = Dimens.Gap4),
+                )
+            }
         }
     }
 
     when (val s = sheet) {
         is RuleSheet.Actions -> ChoiceSheet(
             s.r.name,
-            listOf(Choice("Edit", "edit"), Choice(if (s.r.enabled) "Turn off" else "Turn on", "toggle"), Choice("Delete", "delete", "Undo is offered for 10 seconds")),
+            listOf(Choice("Edit", "edit", icon = ChittaIcons.Pencil), Choice(if (s.r.enabled) "Turn off" else "Turn on", "toggle", icon = if (s.r.enabled) ChittaIcons.EyeSlash else ChittaIcons.Eye), Choice("Delete", "delete", "Undo is offered for 10 seconds", icon = ChittaIcons.Trash, danger = true)),
             { v ->
                 when (v) {
                     "edit" -> sheet = RuleSheet.Edit(draftOf(s.r))

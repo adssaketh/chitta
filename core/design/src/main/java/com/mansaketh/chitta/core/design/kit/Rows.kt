@@ -41,6 +41,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -133,8 +134,11 @@ fun NavRow(
     sub: String? = null,
     value: String? = null,
     rule: Boolean = true,
+    /** A destructive choice (Delete everything): title and icon in warning text, never filled. */
+    danger: Boolean = false,
 ) {
     val c = ChittaTheme.colors
+    val tint = if (danger) c.warningText else c.ink
     Column(modifier.fillMaxWidth()) {
         Row(
             Modifier
@@ -145,11 +149,11 @@ fun NavRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (icon != null) {
-                Icon(icon, contentDescription = null, tint = c.ink, modifier = Modifier.size(Dimens.IconRowLeading))
+                Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(Dimens.IconRowLeading))
                 Spacer(Modifier.width(Dimens.Space3))
             }
             Column(Modifier.weight(1f)) {
-                Text(title.rupeeAware(), style = ChittaTheme.type.bodyMedium, color = c.ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(title.rupeeAware(), style = ChittaTheme.type.bodyMedium, color = tint, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (sub != null) Text(sub.rupeeAware(), style = ChittaTheme.type.rowMeta14, color = c.inkMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
             if (value != null) {
@@ -182,6 +186,9 @@ fun ValueRow(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     rule: Boolean = true,
+    /** A green tick after the value, for a check that passed (the Bring over dry run). TalkBack hears [matchLabel] as the state. */
+    matched: Boolean = false,
+    matchLabel: String = "Matches",
 ) {
     val c = ChittaTheme.colors
     Column(modifier.fillMaxWidth()) {
@@ -190,6 +197,7 @@ fun ValueRow(
                 .fillMaxWidth()
                 .heightIn(min = Dimens.RowMinOneLine)
                 .then(if (onClick != null) Modifier.pressClickable(role = Role.Button, onClick = onClick) else Modifier)
+                .then(if (matched) Modifier.semantics(mergeDescendants = true) { stateDescription = matchLabel } else Modifier)
                 .padding(vertical = Dimens.RowPadV),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -203,6 +211,10 @@ fun ValueRow(
                 textAlign = TextAlign.End,
                 modifier = Modifier.weight(1f).padding(start = Dimens.TitleAmountGap),
             )
+            if (matched) {
+                Spacer(Modifier.width(Dimens.Space2))
+                Icon(ChittaIcons.Check, contentDescription = null, tint = c.green, modifier = Modifier.size(Dimens.IconTick))
+            }
             if (onClick != null) {
                 Spacer(Modifier.width(Dimens.Space2))
                 Icon(ChittaIcons.CaretRight, contentDescription = null, tint = c.inkMuted, modifier = Modifier.size(Dimens.IconCaret))

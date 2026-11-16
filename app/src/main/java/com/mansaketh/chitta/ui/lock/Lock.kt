@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextAlign
+import com.mansaketh.chitta.core.design.icons.ChittaIcons
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -55,7 +57,11 @@ object BiometricGate {
     }
 }
 
-/** Shown instead of the app while locked. Nothing from the book is drawn here, and the app behind it is not composed. */
+/**
+ * Shown instead of the app while locked (PDF p.9, screen 01). The icon above the name, centred; the message under it; the way in at the bottom.
+ * The phone's own prompt does the checking, so the PIN dots, keypad and "Forgot PIN?" of the drawing are not built (Phase 11e report).
+ * Nothing from the book is drawn here, and the app behind it is not composed.
+ */
 @Composable
 fun LockScreen(onUnlock: () -> Unit, message: String? = null) {
     val c = ChittaTheme.colors
@@ -63,15 +69,16 @@ fun LockScreen(onUnlock: () -> Unit, message: String? = null) {
     LaunchedEffect(Unit) { onUnlock() }
     Column(
         Modifier.fillMaxSize().background(c.background).statusBarsPadding().navigationBarsPadding().padding(Dimens.Margin),
-        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        AppIcon(Dimens.LogoLarge)
-        Spacer(Modifier.height(Dimens.Gap4))
-        Text("Paddhu Pusthakam", style = ChittaTheme.type.headline, color = c.ink)
-        Spacer(Modifier.height(Dimens.Gap3))
-        Text(message ?: "Your book is locked.", style = ChittaTheme.type.body, color = c.inkMuted)
-        Spacer(Modifier.height(Dimens.Gap6))
-        ChittaButton("Unlock", onUnlock, modifier = Modifier.fillMaxWidth())
+        Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            AppIcon(Dimens.LogoLarge)
+            Spacer(Modifier.height(Dimens.Gap4))
+            Text("Paddhu Pusthakam", style = ChittaTheme.type.headline, color = c.ink, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(Dimens.Gap3))
+            Text(message ?: "Your book is locked.", style = ChittaTheme.type.body, color = c.inkMuted, textAlign = TextAlign.Center)
+        }
+        ChittaButton("Unlock", onUnlock, kind = ButtonKind.Secondary, icon = ChittaIcons.Fingerprint, modifier = Modifier.align(Alignment.End))
     }
 }
 

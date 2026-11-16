@@ -54,7 +54,7 @@ fun IconPickerSheet(category: Category, onPick: (String?) -> Unit, onDismiss: ()
             LazyColumn(Modifier.heightIn(max = sheetMax(0.42f))) {
                 items(found, key = { it.key }) { ch ->
                     Row(
-                        Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = Role.Button, onClickLabel = "Use ${ch.label}") { onPick(ch.key) }.padding(vertical = Dimens.Gap2),
+                        Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = Role.Button, onClickLabel = "Use ${ch.label}") { onPick(ch.key) }.padding(vertical = Dimens.RowPadV),
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.Gap3),
                     ) {
                         Icon(ChittaIcons.byPhosphorName[ch.key] ?: ChittaIcons.Tag, contentDescription = null, tint = c.ink, modifier = Modifier.size(Dimens.IconSize))

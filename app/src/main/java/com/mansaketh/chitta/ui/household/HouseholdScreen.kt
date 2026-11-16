@@ -52,6 +52,11 @@ import com.mansaketh.chitta.cloud.HouseholdSnapshot
 import com.mansaketh.chitta.core.design.kit.ButtonKind
 import com.mansaketh.chitta.core.design.kit.ChittaButton
 import com.mansaketh.chitta.core.design.kit.TopBarDetail
+import com.mansaketh.chitta.core.design.kit.ButtonPair
+import com.mansaketh.chitta.core.design.kit.NavRow
+import com.mansaketh.chitta.core.design.kit.Section
+import com.mansaketh.chitta.core.design.kit.TickRow
+import com.mansaketh.chitta.ui.NoticeBar
 import com.mansaketh.chitta.core.design.components.HairlineRule
 import com.mansaketh.chitta.core.design.components.Stamp
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
@@ -86,15 +91,10 @@ fun HouseholdScreen(vm: HouseholdViewModel, onBack: () -> Unit, onOpen: (String)
     // Right after creating or joining, ask once what to do with the entries already on the phone (PDF p.33).
     LaunchedEffect(ui.askToShare) { if (ui.askToShare) { sheet = "share-choice"; vm.askHandled() } }
 
+    Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize()) {
-        TopBarDetail("Household", onBack = onBack)
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
-            if (ui.email != null && ui.connected) Text("Signed in with Google", style = ChittaTheme.type.label, color = c.inkMuted)
-            if (ui.notice != null) {
-                Text(ui.notice!!, style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(vertical = Dimens.Gap2))
-                ChittaButton("Dismiss", { vm.dismissNotice() }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
-                Spacer(Modifier.height(Dimens.Gap4))
-            }
+        TopBarDetail("Household", onBack = onBack, subtitle = if (ui.email != null && ui.connected) "Signed in with Google" else null)
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.FabInset)) {
             if (ui.busy) Text("Working. Keep this screen open.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap2))
 
             val snap = ui.snapshot
@@ -114,6 +114,8 @@ fun HouseholdScreen(vm: HouseholdViewModel, onBack: () -> Unit, onOpen: (String)
                 )
             }
         }
+    }
+    ui.notice?.let { NoticeBar(it) { vm.dismissNotice() } }
     }
 
     val snap = ui.snapshot
@@ -204,19 +206,14 @@ private fun HouseholdPart(
         snap.name, style = ChittaTheme.type.headline, color = c.ink,
         modifier = Modifier.fillMaxWidth().then(if (iAmOwner) Modifier.pressClickable(role = Role.Button, onClickLabel = "Rename", onClick = onRename) else Modifier),
     )
-    Spacer(Modifier.height(Dimens.SectionGap))
 
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-        Text("Members", style = ChittaTheme.type.title, color = c.ink)
-        Text("${snap.members.size} of ${Households.MAX_MEMBERS}", style = ChittaTheme.type.label, color = c.inkMuted)
-    }
-    Spacer(Modifier.height(Dimens.HeadingGap))
-    HairlineRule()
-    snap.members.forEach { m ->
-        val mine = m.uid == ui.myUid
-        // Everyone can tap their own row to change their name; the owner can tap the others for hand-over, delete permission and remove.
-        val tappable = mine || iAmOwner
-        MemberRow(m, mine, tappable) { onMember(m) }
+    Section("Members", note = "${snap.members.size} of ${Households.MAX_MEMBERS}") {
+        snap.members.forEach { m ->
+            val mine = m.uid == ui.myUid
+            // Everyone can tap their own row to change their name; the owner can tap the others for hand-over, delete permission and remove.
+            val tappable = mine || iAmOwner
+            MemberRow(m, mine, tappable) { onMember(m) }
+        }
     }
     Spacer(Modifier.height(Dimens.Gap6))
 
@@ -225,40 +222,26 @@ private fun HouseholdPart(
         Spacer(Modifier.height(Dimens.Gap6))
     }
 
-    // The design draws a switch; the app has no switch yet, so this is a row that says On or Off, like the other Settings rows.
-    Column {
-        if (iAmOwner) SwitchRow("Show account balances to members", snap.showBalances, { onToggleBalances() })
-        else ValueRow("Show account balances to members", if (snap.showBalances) "On" else "Off")
-        Text(
-            "Members always see their own. Accounts stay private to their owner." + if (iAmOwner) "" else " Only the owner can change this.",
-            style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2),
-        )
-    }
+    val balancesNote = "Members always see their own. Accounts stay private to their owner." + if (iAmOwner) "" else " Only the owner can change this."
+    if (iAmOwner) SwitchRow("Show account balances to members", snap.showBalances, { onToggleBalances() }, sub = balancesNote)
+    else ValueRow("Show account balances to members", if (snap.showBalances) "On" else "Off")
+    if (!iAmOwner) Text(balancesNote, style = ChittaTheme.type.rowMeta14, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2))
 
-    // PDF p.31 draws "Your sharing" with a line under it; built as a value row like the others (D202).
-    ValueRow("Your sharing", sharingValue(ui), onClick = onSharing)
-    Text(
-        if (ui.sharing.ready) "New entries are shared with the household unless you mark them Mine only."
+    NavRow(
+        "Your sharing", onSharing, value = sharingValue(ui),
+        sub = if (ui.sharing.ready) "New entries are shared with the household unless you mark them Mine only."
         else "Nothing is shared yet. Tap to choose what happens to the entries already on this phone.",
-        style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2),
     )
-    if (ui.sharing.problem.isNotBlank()) Text(ui.sharing.problem, style = ChittaTheme.type.label, color = c.ink, modifier = Modifier.padding(bottom = Dimens.Gap2))
+    if (ui.sharing.problem.isNotBlank()) Text(ui.sharing.problem, style = ChittaTheme.type.rowMeta14, color = c.ink, modifier = Modifier.padding(bottom = Dimens.Gap2))
 
-    // PDF p.34 is reached from here. Diagnostics (master section 7) has no PDF page: a value row opening a sheet, built from existing parts.
-    ValueRow("Who spent how much", "This month", onClick = onWhoSpent)
-    ValueRow("Diagnostics", "Phone and server", onClick = onDiagnostics)
+    NavRow("Who spent how much", onWhoSpent, value = "This month")
+    NavRow("Diagnostics", onDiagnostics, value = "Phone and server")
 
     Spacer(Modifier.height(Dimens.SectionGap))
     if (iAmOwner) {
-        Text(
-            "To leave, make another member the owner first.",
-            style = ChittaTheme.type.label, color = c.inkMuted,
-        )
+        Text("To leave, make another member the owner first.", style = ChittaTheme.type.rowMeta14, color = c.inkMuted)
     } else {
-        Text(
-            "Leave this household", style = ChittaTheme.type.body, color = c.ink, textDecoration = TextDecoration.Underline,
-            modifier = Modifier.heightIn(min = Dimens.TouchTarget).pressClickable(role = Role.Button, onClick = onLeave).padding(vertical = Dimens.Gap3),
-        )
+        ChittaButton("Leave this household", onLeave, kind = ButtonKind.Link)
     }
 }
 
@@ -281,12 +264,12 @@ private fun MemberRow(m: HouseholdMember, mine: Boolean, tappable: Boolean, onCl
         ) {
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(if (mine) "You" else Households.displayName(m), style = ChittaTheme.type.body, color = c.ink)
+                    Text(if (mine) "You" else Households.displayName(m), style = ChittaTheme.type.bodyMedium, color = c.ink)
                     if (m.isOwner) { Spacer(Modifier.width(Dimens.Gap2)); Stamp("Owner") }
                 }
-                Text(Households.memberLine(m), style = ChittaTheme.type.label, color = c.inkMuted)
+                Text(Households.memberLine(m), style = ChittaTheme.type.rowMeta14, color = c.inkMuted)
             }
-            if (tappable) Icon(ChittaIcons.CaretRight, contentDescription = null, tint = c.inkMuted, modifier = Modifier.size(Dimens.IconSmall))
+            if (tappable) Icon(ChittaIcons.CaretRight, contentDescription = null, tint = c.inkMuted, modifier = Modifier.size(Dimens.IconCaret))
         }
         HairlineRule()
     }
@@ -299,9 +282,9 @@ private fun MemberSheet(m: HouseholdMember, vm: HouseholdViewModel, onDismiss: (
     ChoiceSheet(
         name,
         listOf(
-            Choice("Make owner", "owner", "You become a normal member"),
-            Choice(if (m.canDelete) "Stop them deleting others' entries" else "Let them delete others' entries", "delete", Households.memberLine(m)),
-            Choice("Remove from household", "remove", "Their entries stay on their phone"),
+            Choice("Make owner", "owner", "You become a normal member", icon = ChittaIcons.Users),
+            Choice(if (m.canDelete) "Stop them deleting others' entries" else "Let them delete others' entries", "delete", Households.memberLine(m), icon = ChittaIcons.Lock),
+            Choice("Remove from household", "remove", "Their entries stay on their phone", icon = ChittaIcons.Close, danger = true),
         ),
         { pick ->
             when (pick) {
@@ -332,13 +315,7 @@ private fun InviteSheet(code: String?, placesLeft: Int, vm: HouseholdViewModel, 
         } else {
             val shown = Households.formatCode(code)
             Box(
-                Modifier.fillMaxWidth().clip(Shapes.Control).background(c.background)
-                    .drawBehind {
-                        drawRoundRect(
-                            color = c.mark, cornerRadius = CornerRadius(12.dp.toPx()),
-                            style = Stroke(width = 1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f))),
-                        )
-                    }
+                Modifier.fillMaxWidth().clip(Shapes.Control).background(c.surface).border(Dimens.Hairline, c.rule, Shapes.Control)
                     .pressClickable(role = Role.Button, onClickLabel = "Copy the code") {
                         val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                         cm.setPrimaryClip(ClipData.newPlainText("Invite code", shown))
@@ -361,7 +338,7 @@ private fun InviteSheet(code: String?, placesLeft: Int, vm: HouseholdViewModel, 
                     putExtra(Intent.EXTRA_TEXT, "Join my household in Paddhu Pusthakam. Sign in with Google, open More > Settings > Household > Join with a code, and enter: $shown")
                 }
                 context.startActivity(Intent.createChooser(send, "Share code").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            }, modifier = Modifier.fillMaxWidth())
+            }, icon = ChittaIcons.Share, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(Dimens.Gap2))
             ChittaButton("Make a new code", { copied = false; vm.newCode() }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(Dimens.Gap3))
@@ -369,10 +346,7 @@ private fun InviteSheet(code: String?, placesLeft: Int, vm: HouseholdViewModel, 
                 "A new code cancels the old one. " + when (placesLeft) { 0 -> "The household is full."; 1 -> "1 place is left in the household."; else -> "$placesLeft places are left in the household." },
                 style = ChittaTheme.type.label, color = c.inkMuted,
             )
-            Text(
-                "Stop people joining with this code", style = ChittaTheme.type.body, color = c.ink, textDecoration = TextDecoration.Underline,
-                modifier = Modifier.heightIn(min = Dimens.TouchTarget).pressClickable(role = Role.Button) { copied = false; vm.stopJoining() }.padding(vertical = Dimens.Gap3),
-            )
+            ChittaButton("Stop people joining with this code", { copied = false; vm.stopJoining() }, kind = ButtonKind.Link)
         }
     }
 }
@@ -390,45 +364,24 @@ private fun ShareChoiceSheet(householdName: String, onContinue: (HouseholdSharin
             style = ChittaTheme.type.label, color = c.inkMuted,
         )
         Spacer(Modifier.height(Dimens.Gap4))
-        ShareOption(
-            "Share my earlier entries", "Add the entries you kept private on this phone to the household.",
-            selected = choice == HouseholdSharing.ShareChoice.SHARE_EXISTING,
-        ) { choice = HouseholdSharing.ShareChoice.SHARE_EXISTING }
-        HairlineRule()
-        ShareOption(
-            "Only new entries", "What you add from now on is shared. Earlier ones stay on this phone.",
-            selected = choice == HouseholdSharing.ShareChoice.ONLY_NEW,
-        ) { choice = HouseholdSharing.ShareChoice.ONLY_NEW }
-        HairlineRule()
+        TickRow(
+            "Share my earlier entries", choice == HouseholdSharing.ShareChoice.SHARE_EXISTING,
+            { choice = HouseholdSharing.ShareChoice.SHARE_EXISTING }, sub = "Add the entries you kept private on this phone to the household.",
+        )
+        TickRow(
+            "Only new entries", choice == HouseholdSharing.ShareChoice.ONLY_NEW,
+            { choice = HouseholdSharing.ShareChoice.ONLY_NEW }, sub = "What you add from now on is shared. Earlier ones stay on this phone.",
+        )
         Spacer(Modifier.height(Dimens.Gap3))
         Text(
             "Everyone can always edit and delete their own entries. You can share earlier entries later from the Household page.",
             style = ChittaTheme.type.label, color = c.inkMuted,
         )
         Spacer(Modifier.height(Dimens.Gap4))
-        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
-            ChittaButton("Not now", onNotNow, kind = ButtonKind.Secondary, modifier = Modifier.weight(1f))
-            ChittaButton("Continue", { onContinue(choice) }, modifier = Modifier.weight(1f), confirmHaptic = true)
-        }
-    }
-}
-
-/** A radio row: the app has no radio component, so this draws the ring and the dot. */
-@Composable
-private fun ShareOption(title: String, detail: String, selected: Boolean, onClick: () -> Unit) {
-    val c = ChittaTheme.colors
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = Role.RadioButton, onClick = onClick).padding(vertical = Dimens.Gap3),
-        verticalAlignment = Alignment.Top,
-    ) {
-        Box(Modifier.padding(top = 2.dp).size(20.dp).border(1.5.dp, c.ink, CircleShape), contentAlignment = Alignment.Center) {
-            if (selected) Box(Modifier.size(10.dp).clip(CircleShape).background(c.ink))
-        }
-        Spacer(Modifier.width(Dimens.Gap3))
-        Column(Modifier.weight(1f)) {
-            Text(title, style = if (selected) ChittaTheme.type.bodyMedium else ChittaTheme.type.body, color = c.ink)
-            Text(detail, style = ChittaTheme.type.label, color = c.inkMuted)
-        }
+        ButtonPair(
+            first = { m -> ChittaButton("Not now", onNotNow, kind = ButtonKind.Secondary, modifier = m) },
+            second = { m -> ChittaButton("Continue", { onContinue(choice) }, confirmHaptic = true, modifier = m) },
+        )
     }
 }
 
