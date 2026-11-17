@@ -4,6 +4,7 @@ import com.mansaketh.chitta.core.design.kit.DateSheet
 import com.mansaketh.chitta.ui.LocalFirstDay
 import android.app.DatePickerDialog
 import com.mansaketh.chitta.core.design.kit.NavRow
+import com.mansaketh.chitta.core.design.kit.GlyphTile
 import com.mansaketh.chitta.core.design.kit.ValueRow
 import com.mansaketh.chitta.core.design.kit.TopBarDetail
 import com.mansaketh.chitta.core.design.kit.ButtonKind
@@ -44,7 +45,7 @@ private enum class Edit { None, Title, Amount, Category, Account, Note, Date, De
 
 /** Entry detail (PDF p.15): stamps, editable rows, History, and Duplicate / Pin / Delete. */
 @Composable
-fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> Unit, onHistory: () -> Unit, plan: com.mansaketh.chitta.ui.plan.PlanViewModel? = null) {
+fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> Unit, onHistory: () -> Unit = {}, plan: com.mansaketh.chitta.ui.plan.PlanViewModel? = null) {
     LaunchedEffect(entryId) { vm.load(entryId) }
     val ui by vm.ui.collectAsState()
     val e = ui.entry
@@ -64,7 +65,7 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
                 if (ent != null && ui.canEdit && !Totals.isNeutral(ent)) {
                     IconAction(ChittaIcons.Copy, "Duplicate", { vm.duplicate(onBack) })
                     IconAction(KitIcons.Pin, "Pin", vm::pin)
-                    if (ent.kind == null && ent.splitGroupId == null) IconAction(KitIcons.Split, "Split", { edit = Edit.Split })
+                    if (ent.kind == null) IconAction(KitIcons.Split, "Split", { edit = Edit.Split })
                 }
             })
             when {
@@ -76,63 +77,120 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
                     val neutral = Totals.isNeutral(e)
                     val locked = neutral || !canEdit
                     val transfer = Totals.isTransfer(e)
-                    Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.FabInset)) {
-                        // The top block is the editor (v8 §5, screen 12): glyph, title and amount each open their own sheet; nothing is shown twice below.
+                    // One split payment is several entries with one group id; the page shows them as the one payment it was (PDF p.20).
+                    val isSplit = e.splitGroupId != null && ui.siblings.isNotEmpty()
+                    val lineCount = ui.siblings.size + 1
+                    val total = Paise(Math.abs(e.amount) + ui.siblings.sumOf { Math.abs(it.amount) })
+                    val bank = com.mansaketh.chitta.core.intake.PingExport.refOfNote(e.note) != null || com.mansaketh.chitta.core.intake.hasCheckMark(e.note)
+                    val kindWord = when {
+                        transfer -> "Transfer"
+                        Totals.isBalanceCorrection(e) -> "Correction"
+                        e.kind == TransactionKind.LENT -> "Lent"
+                        e.kind == TransactionKind.BORROWED -> "Borrowed"
+                        e.amount > 0 -> "Income"
+                        else -> "Expense"
+                    }
+                    val caption = if (neutral) kindWord else kindWord + " \u00B7 " + (if (bank) "from a bank message" else "added by you")
+                    val inset = Dimens.Margin
+                    Column(Modifier.verticalScroll(rememberScrollState()).padding(bottom = Dimens.FabInset)) {
+                        // The top block is the editor (v8 §5, screen 12): tile, title and amount each open their own sheet; nothing is shown twice below.
                         val cat = ui.categories.firstOrNull { it.id == e.categoryId }
-                        Row(Modifier.padding(top = Dimens.Gap4), verticalAlignment = Alignment.Top) {
-                            Glyph(
+                        Row(Modifier.padding(horizontal = inset).padding(top = Dimens.Gap4), verticalAlignment = Alignment.Top) {
+                            GlyphTile(
                                 if (neutral) ChittaIcons.Transfer else (com.mansaketh.chitta.ui.manage.CategoryIconCatalog.imageFor(cat?.iconName, cat?.name) ?: ChittaIcons.Tag),
                                 if (neutral) c.inkMuted else c.categoryTint(e.categoryId),
                             )
-                            Spacer(Modifier.width(Dimens.Space3))
+                            Spacer(Modifier.width(Dimens.Space4))
                             Column(Modifier.weight(1f)) {
+                                Text(caption, style = ChittaTheme.type.mono, color = c.inkMuted)
                                 Text(
-                                    e.name.ifBlank { if (locked) categoryName(e.categoryId, ui.categories) else "No title" }, style = ChittaTheme.type.headline, color = c.ink,
+                                    e.name.ifBlank { if (locked) categoryName(e.categoryId, ui.categories) else "No title" }, style = ChittaTheme.type.title, color = c.ink,
                                     modifier = Modifier.then(if (locked) Modifier else Modifier.pressClickable(role = Role.Button, onClickLabel = "Change title") { edit = Edit.Title }),
                                 )
                                 Spacer(Modifier.height(Dimens.Gap2))
                                 AmountText(
-                                    Paise(Math.abs(e.amount)), style = ChittaTheme.type.amountHero,
-                                    tone = if (neutral) AmountTone.Neutral else if (e.amount > 0) AmountTone.Income else AmountTone.Expense, alwaysShowPaise = true,
-                                    modifier = Modifier.then(if (locked) Modifier else Modifier.pressClickable(role = Role.Button, onClickLabel = "Change amount") { edit = Edit.Amount }),
+                                    if (isSplit) total else Paise(Math.abs(e.amount)), style = ChittaTheme.type.amountLarge,
+                                    tone = if (neutral) AmountTone.Neutral else if (e.amount > 0) AmountTone.Income else AmountTone.Expense,
+                                    modifier = Modifier.then(if (locked || isSplit) Modifier else Modifier.pressClickable(role = Role.Button, onClickLabel = "Change amount") { edit = Edit.Amount }),
                                 )
+                                if (e.originalAmount != null && e.originalCurrency != null) {
+                                    Text("Typed as ${e.originalCurrency} ${IndianFormat.rupees(Paise(Math.abs(e.originalAmount!!)), symbol = "")} at ${e.exchangeRate ?: "a stored rate"}", style = ChittaTheme.type.label, color = c.inkMuted)
+                                }
+                                val hasChips = LedgerSearch.isUpcoming(e) || (e.kind != null && e.paid) || transfer || Totals.isBalanceCorrection(e) || com.mansaketh.chitta.core.intake.hasCheckMark(e.note) || e.splitGroupId != null
+                                if (hasChips) Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2), modifier = Modifier.padding(top = Dimens.Gap2)) {
+                                    if (e.splitGroupId != null) TagChip("Split")
+                                    if (LedgerSearch.isUpcoming(e)) Stamp("Upcoming")
+                                    else if (e.kind != null && e.paid) Stamp("Paid")
+                                    if (transfer) Stamp("Transfer")
+                                    if (Totals.isBalanceCorrection(e)) Stamp("Correction")
+                                    if (com.mansaketh.chitta.core.intake.hasCheckMark(e.note)) Stamp("Check", tone = StampTone.Attention)
+                                }
                             }
                         }
-                        if (e.originalAmount != null && e.originalCurrency != null) {
-                            Text("Typed as ${e.originalCurrency} ${IndianFormat.rupees(Paise(Math.abs(e.originalAmount!!)), symbol = "")} at ${e.exchangeRate ?: "a stored rate"}", style = ChittaTheme.type.label, color = c.inkMuted)
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2), modifier = Modifier.padding(vertical = Dimens.Gap3)) {
-                            if (LedgerSearch.isUpcoming(e)) Stamp("Upcoming")
-                            else if (e.kind != null && e.paid) Stamp("Paid")
-                            if (transfer) Stamp("Transfer")
-                            if (Totals.isBalanceCorrection(e)) Stamp("Correction")
-                            if (com.mansaketh.chitta.core.intake.hasCheckMark(e.note)) Stamp("Check", tone = StampTone.Attention)
-                            if (e.splitGroupId != null) TagChip("Split")
-                        }
                         if (canEdit && com.mansaketh.chitta.core.intake.hasCheckMark(e.note)) {
-                            Text("Added automatically from a bank message on a best guess. Change what is wrong, or confirm it.", style = ChittaTheme.type.label, color = c.inkMuted)
-                            ChittaButton("Looks right", vm::confirmCheck, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
+                            Column(Modifier.padding(horizontal = inset)) {
+                                Text("Added automatically from a bank message on a best guess. Change what is wrong, or confirm it.", style = ChittaTheme.type.label, color = c.inkMuted)
+                                ChittaButton("Looks right", vm::confirmCheck, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
+                            }
                         }
+                        Spacer(Modifier.height(Dimens.Gap4))
                         HairlineRule()
-                        ValueRow("Category", if (neutral) "Not counted as spending" else categoryName(e.categoryId, ui.categories), onClick = if (locked) null else ({ edit = Edit.Category }))
-                        ValueRow("Account", accountName(e.accountId, ui.accounts), onClick = if (locked) null else ({ edit = Edit.Account }))
-                        if (transfer) ui.twin?.let { ValueRow("Other half", accountName(it.accountId, ui.accounts)) }
-                        ValueRow("Date", dayAndTime(e.dateMs, zone), onClick = if (canEdit) ({ edit = Edit.Date }) else null)
-                        ValueRow("Note", e.note.ifBlank { "No note" }, onClick = if (canEdit) ({ edit = Edit.Note }) else null)
-                        if (remember(e.note) { com.mansaketh.chitta.intake.PingBridge.viewIntent(context, e.note) != null }) NavRow("View SMS in Ping", { com.mansaketh.chitta.intake.PingBridge.open(context, e.note) })
-                        if (plan != null && canEdit && !neutral && e.kind != TransactionKind.LENT && e.kind != TransactionKind.BORROWED) ValueRow("Repeat", e.repeat?.let { com.mansaketh.chitta.ui.plan.repeatLabel(it, e.periodLength ?: 1) } ?: "Does not repeat", onClick = { edit = Edit.Repeat })
-                        if (ui.siblings.isNotEmpty()) {
-                            Text("Part of a split of ${IndianFormat.rupees(Paise(Math.abs(e.amount) + ui.siblings.sumOf { Math.abs(it.amount) }), alwaysShowPaise = true)}. Other lines:", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
-                            ui.siblings.forEach { s -> ValueRow(categoryName(s.categoryId, ui.categories), IndianFormat.rupees(Paise(Math.abs(s.amount)), alwaysShowPaise = true)) }
+                        // Rows in the order of the page; the rules run edge to edge, the words keep the margin.
+                        val categoryClick: (() -> Unit)? = when {
+                            isSplit -> if (canEdit && !neutral) ({ edit = Edit.Split }) else null
+                            locked -> null
+                            else -> ({ edit = Edit.Category })
                         }
-                        // Who sees it (PDF p.31): only for entries that are mine and can be shared. Personal ones never leave this phone.
-                        if (ui.sharing && canEdit && e.ownerUid != "") ValueRow("Who sees it", if (e.isPrivate) "Mine only" else "Everyone in the household", onClick = { vm.setMineOnly(!e.isPrivate) })
-                        else if (ui.sharing && !canEdit) ValueRow("Added by", accountName(e.accountId, ui.accounts))
-                        if (canEdit) ValueRow("Receipt", when { receipt.busy -> "Reading the photo…"; receipt.has -> "Photo attached"; else -> "None" }, onClick = { edit = Edit.Receipt })
-                        ValueRow("History", "${ui.history.size} ${if (ui.history.size == 1) "version" else "versions"}", onClick = onHistory)
-                        if (ui.canDelete) {
-                            Spacer(Modifier.height(Dimens.Gap4))
-                            ChittaButton("Delete", { impact = vm.deleteImpact(); edit = Edit.Delete }, kind = ButtonKind.Danger)
+                        ValueRow(
+                            "Category",
+                            when { isSplit -> "Split \u00B7 $lineCount lines"; neutral -> "Not counted as spending"; else -> categoryName(e.categoryId, ui.categories) },
+                            onClick = categoryClick, inset = inset,
+                        )
+                        ValueRow("Account", accountName(e.accountId, ui.accounts), onClick = if (locked) null else ({ edit = Edit.Account }), inset = inset)
+                        ValueRow("Date", dayAndTime(e.dateMs, zone), onClick = if (canEdit) ({ edit = Edit.Date }) else null, inset = inset)
+                        // Who sees it (PDF p.20, p.31): always drawn. Only entries of mine in a household can be switched; without sharing it is only me.
+                        ValueRow(
+                            "Who sees it", if (!ui.sharing) "Only me" else if (e.isPrivate) "Mine only" else "Everyone",
+                            onClick = if (ui.sharing && canEdit && e.ownerUid != "") ({ vm.setMineOnly(!e.isPrivate) }) else null, inset = inset,
+                        )
+                        ValueRow("Note", e.note.ifBlank { if (canEdit) "Add a note" else "No note" }, onClick = if (canEdit) ({ edit = Edit.Note }) else null, inset = inset)
+                        if (canEdit) ValueRow("Receipt", when { receipt.busy -> "Reading the photo\u2026"; receipt.has -> "Photo attached"; else -> "Add a photo" }, onClick = { edit = Edit.Receipt }, inset = inset)
+                        // Not drawn on the page, kept in the same style below the drawn rows (Screen 12, answer 7).
+                        if (transfer) ui.twin?.let { ValueRow("Other half", accountName(it.accountId, ui.accounts), inset = inset) }
+                        if (ui.sharing && !canEdit) ValueRow("Added by", accountName(e.accountId, ui.accounts), inset = inset)
+                        if (remember(e.note) { com.mansaketh.chitta.intake.PingBridge.viewIntent(context, e.note) != null }) {
+                            Column(Modifier.padding(horizontal = inset)) { NavRow("View SMS in Ping", { com.mansaketh.chitta.intake.PingBridge.open(context, e.note) }) }
+                        }
+                        if (plan != null && canEdit && !neutral && e.kind != TransactionKind.LENT && e.kind != TransactionKind.BORROWED) ValueRow("Repeat", e.repeat?.let { com.mansaketh.chitta.ui.plan.repeatLabel(it, e.periodLength ?: 1) } ?: "Does not repeat", onClick = { edit = Edit.Repeat }, inset = inset)
+                        if (ui.siblings.isNotEmpty()) {
+                            Text("Lines of this split:", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(horizontal = inset).padding(top = Dimens.Gap2))
+                            (listOf(e) + ui.siblings).forEach { s -> ValueRow(categoryName(s.categoryId, ui.categories), IndianFormat.rupees(Paise(Math.abs(s.amount)), alwaysShowPaise = true), inset = inset) }
+                        }
+                        // History reads as a timeline, newest first (PDF p.20). The words keep the margin, and so does the rule under the heading.
+                        if (ui.history.isNotEmpty()) Column(Modifier.padding(horizontal = inset)) {
+                            Text("History", style = ChittaTheme.type.bodyMedium, color = c.ink, modifier = Modifier.padding(top = Dimens.Space5, bottom = Dimens.Gap2))
+                            HairlineRule()
+                            val versions = ui.history.sortedByDescending { it.id }
+                            versions.forEachIndexed { i, v ->
+                                val older = versions.getOrNull(i + 1)
+                                val label = when (v.action) {
+                                    HistoryAction.CREATED -> if (isSplit) "Split into $lineCount lines" else if (bank) "Saved from a bank message" else "Added"
+                                    HistoryAction.EDITED -> "Edited"
+                                    HistoryAction.DELETED -> "Deleted"
+                                    HistoryAction.RESTORED -> "Restored"
+                                }
+                                val restorable = canEdit && (i > 0 || v.action == HistoryAction.DELETED)
+                                TimelineItem(
+                                    label, dayAndTime(v.atMs, zone), first = i == 0, last = i == versions.lastIndex,
+                                    action = if (restorable) "Restore" else null, onAction = if (restorable) ({ vm.restore(v) }) else null,
+                                ) {
+                                    val changed = if (older != null) com.mansaketh.chitta.core.domain.EditDiff.between(older.snapshot, v.snapshot).joinToString(", ") { it.field } else ""
+                                    if (changed.isNotEmpty()) Text("Changed: $changed", style = ChittaTheme.type.label, color = c.inkMuted)
+                                }
+                            }
+                            if (ui.canDelete) ChittaButton("Delete entry", { impact = vm.deleteImpact(); edit = Edit.Delete }, kind = ButtonKind.Danger, modifier = Modifier.padding(top = Dimens.Gap2).offset(x = -Dimens.Space2))
+                        } else if (ui.canDelete) {
+                            ChittaButton("Delete entry", { impact = vm.deleteImpact(); edit = Edit.Delete }, kind = ButtonKind.Danger, modifier = Modifier.padding(horizontal = inset).offset(x = -Dimens.Space2))
                         }
                     }
                 }
@@ -166,10 +224,17 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
                 }
                 ConfirmSheet("Delete?", lines, "Delete", { vm.confirmDelete(im, onBack); edit = Edit.None }, { edit = Edit.None })
             }
-            Edit.Split -> SplitSheet(
-                Paise(Math.abs(e.amount)), ui.categories.filter { it.mainCategoryId == null && !it.archived && it.income == e.income }, e.categoryId,
-                { lines -> vm.split(lines) { edit = Edit.None; onBack() } }, { edit = Edit.None },
-            )
+            Edit.Split -> {
+                val group = if (ui.siblings.isNotEmpty()) listOf(e) + ui.siblings else emptyList()
+                val groupTotal = Paise(group.sumOf { Math.abs(it.amount) })
+                SplitSheet(
+                    if (group.isEmpty()) Paise(Math.abs(e.amount)) else groupTotal,
+                    ui.categories.filter { it.mainCategoryId == null && !it.archived && it.income == e.income }, e.categoryId,
+                    { lines -> if (group.isEmpty()) vm.split(lines) { edit = Edit.None; onBack() } else vm.resplit(lines) { edit = Edit.None; onBack() } },
+                    { edit = Edit.None },
+                    initial = group.map { com.mansaketh.chitta.core.domain.SplitLine(it.categoryId, it.subCategoryId, Paise(Math.abs(it.amount))) },
+                )
+            }
             Edit.Repeat -> if (plan != null) com.mansaketh.chitta.ui.plan.RepeatSheet(e, zone, { r, len, end -> plan.repeatEntry(e, r, len, end); edit = Edit.None }, { edit = Edit.None })
             Edit.Receipt -> ReceiptSheet(
                 has = receipt.has,

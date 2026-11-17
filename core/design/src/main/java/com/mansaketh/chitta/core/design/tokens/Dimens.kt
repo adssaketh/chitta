@@ -100,6 +100,10 @@ object Dimens {
     val GlyphCircle = 40.dp
     val GlyphIcon = 20.dp
 
+    /** The Entry detail header tile (PDF p.20): a rounded square in the category colour at 16%, icon inside. */
+    val EntryTile = 44.dp
+    val EntryTileIcon = 24.dp
+
     /** Line weight of a drawn status mark (calendar marks). */
     val MarkStroke = 1.5.dp
 

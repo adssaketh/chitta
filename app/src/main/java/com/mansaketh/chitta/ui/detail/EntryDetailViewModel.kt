@@ -184,6 +184,30 @@ class EntryDetailViewModel @Inject constructor(
         return true
     }
 
+    /**
+     * Changes a payment that is already split (PDF p.20 keeps Split in the top bar): every line of its group is replaced by the new lines,
+     * which must add up to the same total. The photo moves to the first new line, and everything comes back on Undo.
+     */
+    fun resplit(lines: List<SplitLine>, onDone: () -> Unit): Boolean {
+        val u = ui.value
+        val e = u.entry ?: return false
+        val group = listOf(e) + u.siblings
+        val total = Paise(group.sumOf { Math.abs(it.amount) })
+        val built = Splits.build(e.copy(modifiedAtMs = clock.nowMs()), total, lines, ids::newId) ?: return false
+        viewModelScope.launch {
+            val holder = withContext(Dispatchers.IO) { group.firstOrNull { receipts.has(it.id) } }
+            val removed = ledger.delete(group.map { it.id })
+            ledger.add(built)
+            if (holder != null) receipts.move(holder.id, built[0].id)
+            undo.post("Split changed to ${built.size} lines") {
+                ledger.delete(built.map { it.id }); ledger.restoreDeleted(removed)
+                if (holder != null) receipts.move(built[0].id, holder.id)
+            }
+            onDone()
+        }
+        return true
+    }
+
     val isTransfer get() = ui.value.entry?.let(Totals::isNeutral) == true
 
     fun setTitle(s: String) = edit { it.copy(name = s.trim()) }

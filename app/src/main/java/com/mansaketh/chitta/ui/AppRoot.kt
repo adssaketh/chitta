@@ -228,7 +228,7 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                             onOpenPlan = { tabChoice = TabKey.Plan.key; planTab = 3 }, onOpenLedger = { tabChoice = TabKey.Ledger.key }, onCustomise = { push("customise") },
                             onOpenReview = { push("month-review") }, onOpenBell = { push("intake") },
                         )
-                        TabKey.Ledger.key -> LedgerScreen(vms.ledger, onOpen = { push("detail:$it") }, onAdd = { openAdd() })
+                        TabKey.Ledger.key -> LedgerScreen(vms.ledger, onOpen = { push("detail:$it") }, onAdd = { openAdd() }, onBringIn = { push("intake") })
                         TabKey.Insights.key -> InsightsScreen(vms.insights, onOpenEntry = { push("detail:$it") })
                         TabKey.Accounts.key -> AccountsScreen(vms.manage, onBack = { tabChoice = "" }, onTransfer = { openAdd(EntryType.Transfer) }, onOpenFunds = { push("mutual-funds") }, onOpenAssets = { push("assets") })
                         TabKey.Plan.key -> PlanScreen(vms.plan, planTab, { planTab = it }, { push(it) }, { planSheet = it })
@@ -242,7 +242,7 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                             onGallery = if (extra != null) ({ push("gallery") }) else null,
                         )
                     } }
-                    top.startsWith("detail:") -> EntryDetailScreen(vms.detail, top.removePrefix("detail:"), onBack = ::pop, onHistory = { push("history:" + top.removePrefix("detail:")) }, plan = vms.plan)
+                    top.startsWith("detail:") -> EntryDetailScreen(vms.detail, top.removePrefix("detail:"), onBack = ::pop, plan = vms.plan)
                     top.startsWith("budget:") -> BudgetDetailScreen(vms.plan, top.removePrefix("budget:"), ::pop, { planSheet = "edit-budget:" + top.removePrefix("budget:") })
                     top.startsWith("goal:") -> GoalDetailScreen(vms.plan, top.removePrefix("goal:"), ::pop, { planSheet = "edit-goal:" + top.removePrefix("goal:") }, { push("detail:$it") })
                     top.startsWith("loan:") -> LoanDetailScreen(vms.plan, top.removePrefix("loan:"), ::pop, { planSheet = "edit-loan:" + top.removePrefix("loan:") }, { push("detail:$it") })

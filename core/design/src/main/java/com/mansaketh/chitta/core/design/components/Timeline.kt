@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -31,6 +33,9 @@ fun TimelineItem(
     modifier: Modifier = Modifier,
     first: Boolean = false,
     last: Boolean = false,
+    /** A quiet word after the time on the same line ("12 Nov, 7:05 pm · Restore", PDF p.20). */
+    action: String? = null,
+    onAction: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit = {},
 ) {
     val c = ChittaTheme.colors
@@ -46,7 +51,15 @@ fun TimelineItem(
         }
         Column(Modifier.weight(1f).padding(start = Dimens.InlineGap, top = Dimens.RowPadV, bottom = Dimens.RowPadV)) {
             Text(title, style = ChittaTheme.type.bodyMedium, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(meta, style = ChittaTheme.type.rowMeta, color = c.inkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (action != null && onAction != null) {
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Text("$meta · ", style = ChittaTheme.type.rowMeta, color = c.inkMuted, maxLines = 1)
+                    Text(
+                        action, style = ChittaTheme.type.rowMeta.copy(textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline), color = c.inkMuted,
+                        modifier = Modifier.heightIn(min = Dimens.TouchTarget).pressClickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onAction).wrapContentHeight(androidx.compose.ui.Alignment.CenterVertically),
+                    )
+                }
+            } else Text(meta, style = ChittaTheme.type.rowMeta, color = c.inkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             content()
         }
     }

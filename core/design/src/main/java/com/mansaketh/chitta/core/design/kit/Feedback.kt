@@ -187,6 +187,35 @@ fun EmptyState(
     }
 }
 
+/**
+ * First use of a main page (PDF p.19, "A blank page"): a muted stroke icon (40), the fact in Fraunces 22, a muted 15 sp line, one Primary button
+ * and, under it, one underlined link. Centred in the room it is given. The Secondary-button [EmptyState] stays for the quieter empty places.
+ */
+@Composable
+fun BlankPage(
+    icon: ImageVector,
+    title: String,
+    body: String,
+    actionLabel: String,
+    onAction: () -> Unit,
+    linkLabel: String,
+    onLink: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val c = ChittaTheme.colors
+    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(icon, contentDescription = null, tint = c.inkMuted, modifier = Modifier.size(Dimens.IconEmpty))
+        Spacer(Modifier.height(Dimens.Space4))
+        Text(title.rupeeAware(), style = ChittaTheme.type.sheetTitle, color = c.ink, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(Dimens.Space2))
+        Text(body.rupeeAware(), style = ChittaTheme.type.emptyBody, color = c.inkMuted, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(Dimens.Space6))
+        ChittaButton(actionLabel, onAction, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(Dimens.Space2))
+        ChittaButton(linkLabel, onLink, kind = ButtonKind.Link)
+    }
+}
+
 /** For sheets and "Nothing matches": one muted sentence and one underlined link after it ("Nothing matches “zomato”." + "Clear search"). */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
