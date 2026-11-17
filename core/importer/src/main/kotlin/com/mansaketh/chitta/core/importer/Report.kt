@@ -24,6 +24,11 @@ data class AccountCheck(
     val matches get() = sourceSumPaise == importedSumPaise
 }
 
+/** One month's spending as the backup states it and as it would be saved. Used by the dry run. */
+data class MonthSpend(val yearMonth: java.time.YearMonth, val sourcePaise: Long, val importedPaise: Long) {
+    val matches get() = sourcePaise == importedPaise
+}
+
 data class Report(
     val schemaVersion: Int,
     val counts: List<TableCount>,
@@ -35,6 +40,10 @@ data class Report(
     val notCarriedOver: Map<String, Int>,
     val accountChecks: List<AccountCheck>,
     val issues: List<Issue>,
+    /** Spending in the month of the newest normal entry, computed from the raw rows and from the imported entries. Null with no entries. */
+    val monthSpend: MonthSpend? = null,
+    /** Main categories that look alike; only a suggestion (D294). */
+    val similarCategories: List<SimilarPair> = emptyList(),
 ) {
     val errors get() = issues.count { it.severity == Severity.ERROR }
     val warnings get() = issues.count { it.severity == Severity.WARNING }

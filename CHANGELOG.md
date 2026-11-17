@@ -1,5 +1,14 @@
 # Changelog
 
+## Screens 03 Bring over your book and 04 Dry run to PDF p.11 and p.12 (17 Nov 2026) - on branch `ui-03-04-bring-over-dry-run`
+- Bring over your book is now three steps under one top bar with a subtitle ("Step 1 of 3 · nothing saved yet"). Step 1 shows the file name (mono), its size and entry range, a grid of six figures (accounts, categories, entries, budgets, goals, loans), a "Needs your decision" list, and "Start fresh" and "Run dry run" side by side at the bottom.
+- New: Dry run (step 2). "Every total matches" with the time, then Account balances, Entries, the newest month's spending and Categories, each with a tick, a note about the restore point, and "Cancel" and "Import N entries" at the bottom. If a total does not match, the headline says so, the row shows a cross and what differs, and Import is disabled (it only warned before).
+- New: similar categories are found in the backup ("Food" and "Food & dining"). Tap the row to Merge or Keep both; nothing merges unless you choose it, and the merge shows on the dry run.
+- Removed from this screen: the raw table counts, the "Balances to compare" list, "Conversion check" and the stacked "Import this book" and "Choose another file" buttons. The page draws none of them. Rows left out, notes, rounded amounts and what is not carried over now sit under "Needs your decision" and open a short explanation.
+- Not on the pages and left as before in wording: pick a file, reading, refused, failed, blocked, importing, done ("Step 3 of 3").
+- Not built: the page's "2 receipt photos" and old "AI add" rows, because the importer cannot detect either.
+- Unit tests: `SimilarCategoriesTest`, `DryRunTest` (comparison, a failing account, merges). The importer tests ran here and passed (34 in the importer module, 8 of them new). The screens, the kit parts and the view model were not compiled; the build is the first check.
+
 ## Screens 01 Lock and 02 First run to PDF p.9 and p.10 (17 Nov 2026) - on branch `ui-01-02-lock-firstrun`
 - Lock is now an in-app PIN screen: round logo, name, "Enter your PIN", four dots, a red "Wrong PIN. 2 tries left before a 30-second wait." line, the number pad (Fraunces digits, no tiles, delete key), "Forgot PIN?" at the bottom left and "Use fingerprint" at the bottom right.
 - New behaviour: a four-digit PIN kept as a salted hash; three tries then a 30-second wait that survives closing the app; "Forgot PIN?" uses the phone's own lock to choose a new PIN. A phone with the lock already on asks for the phone's lock once, then for a new PIN.

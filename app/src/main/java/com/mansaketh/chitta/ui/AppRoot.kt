@@ -108,8 +108,9 @@ private fun FirstRun(vms: AppViewModels) {
     val c = ChittaTheme.colors
     var importing by rememberSaveable { mutableStateOf(false) }
     if (importing) {
-        ImportScreen(vms.imports, onBack = { importing = false; vms.imports.reset() }, onFinished = { importing = false }, firstRun = true)
+        // Registered first, so the import screen's own Back (step 2 to step 1) takes priority over leaving the import.
         BackHandler { importing = false; vms.imports.reset() }
+        ImportScreen(vms.imports, onBack = { importing = false; vms.imports.reset() }, onFinished = { importing = false }, firstRun = true)
         return
     }
     // First run (PDF p.10): round logo, name, one line, then two plain rows with full-width hairlines, and a quiet line at the bottom.

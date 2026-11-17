@@ -348,3 +348,18 @@ Checklist (Paper and Ink). "Built" means written to the page; nothing is marked 
 | 7 | Two rows with icon, title, second line, caret, full-width hairlines | Built (were two buttons) |
 | 8 | "Everything stays on this phone." | Built (replaces the Start fresh note) |
 Known leftovers: logo sizes, title size, row spacing and the pad's row height are measured off the page images, not stated by it; the page draws no disabled-key look, wait countdown, choose-a-PIN or mismatch state, which follow the same styles by judgement.
+
+## Screens 03 Bring over your book and 04 Dry run (PDF p.11 and p.12), 17 Nov 2026, branch `ui-03-04-bring-over-dry-run`, exact match rule
+Checklist (Paper and Ink). "Built" means written to the page; nothing is marked "matches" because nothing was compiled or checked on a phone.
+| # | Element | State |
+| --- | --- | --- |
+| 1 | Top bar: back, title, subtitle "Step N of 3 · nothing saved yet", hairline | Built (subtitle new) |
+| 2 | File block: "From your Paddhu backup", file name in mono, "2.4 MB · Jan 2024 to Nov 2026" | Built (new) |
+| 3 | Grid of six figures, hairline on top of each, Fraunces 24 and muted label | Built (new `StatGrid`) |
+| 4 | "Needs your decision" with count, inset rule, rows with sub-line and caret, edge-to-edge rules | Built (new); only real findings, no receipt or "AI add" rows |
+| 5 | "Start fresh" and "Run dry run" pinned, equal width | Built (were stacked in the scroll); Cancel instead of Start fresh outside First run |
+| 6 | Dry run: headline, "Compared with Paddhu at 8:51 pm", full-width rule | Built (new) |
+| 7 | Four result rows with a green tick, edge-to-edge rules | Built (new `ResultRow`); cross and warning colour when a total differs (not drawn) |
+| 8 | Note box about the restore point | Built (existing `Note`) |
+| 9 | "Cancel" and "Import N entries" pinned | Built (new); Import disabled on a mismatch |
+Known leftovers: row height (page about 62 dp, kit 68), button height (page about 50 dp, kit 56), the label-to-file-name gap and the gaps around the grid are read off zoomed page images, not stated by it; Cancel on p.12 is drawn narrower than Import but kept equal; the Ink page was only looked at as an image.

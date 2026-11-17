@@ -242,6 +242,14 @@ object Dimens {
     val PinKeyHeight = 62.dp
     val PinLinkRule = 2.dp
 
+    // Bring over your book and Dry run (PDF p.11 and p.12)
+    /** A figure in the import preview's grid: a hairline above, [StatPadTop] to the figure, [StatPadBottom] under its label. */
+    val StatPadTop = Space3
+    val StatPadBottom = Space2
+    val StatColumnGap = Space4
+    /** Air between a hairline and the block under it, e.g. the file block under the top bar (p.11). */
+    val BlockGap = Space5
+
     /** A pressed entry row or chip keeps its hit area at least this tall even when it draws smaller. */
     val HitMin = TouchTarget
 }

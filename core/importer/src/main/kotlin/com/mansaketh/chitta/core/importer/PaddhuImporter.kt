@@ -115,6 +115,8 @@ class PaddhuImporter(private val zone: ZoneId = ZoneId.of("Asia/Kolkata")) {
             notCarriedOver = ctx.notCarried.filterValues { it > 0 } + (if (parsed.skippedDeviceKeys > 0) mapOf("settings: device-only keys" to parsed.skippedDeviceKeys) else emptyMap()),
             accountChecks = ctx.accountChecks(accounts, txRows, transactions),
             issues = ctx.issues,
+            monthSpend = ctx.monthSpend(txRows, transactions),
+            similarCategories = SimilarCategories.find(categories),
         )
         return ImportOutcome.Ready(book, report)
     }
@@ -312,6 +314,25 @@ class PaddhuImporter(private val zone: ZoneId = ZoneId.of("Asia/Kolkata")) {
             titles.forEach { t -> if (t.categoryId !in categoryIds) warn("associated_titles", t.id, "Title points at category '${t.categoryId}', which is not in the file.") }
             loans.forEach { l -> if (l.objectiveId !in objectiveIds) warn("settings.loanTerms", l.objectiveId, "Loan terms point at a loan that is not in the file.") }
             deposits.forEach { d -> d.accountId?.let { if (it !in accountIds) warn("settings.fixedDeposits", d.id, "Deposit points at account '$it', which is not in the file.") } }
+        }
+
+        /**
+         * Spending in the month of the newest normal entry: plain expense rows (negative, not half of a transfer), summed exactly from the
+         * backup's own numbers and again from the imported paise. It checks the conversion; it does not apply the app's spending rules.
+         */
+        fun monthSpend(rows: List<Row>, imported: List<Transaction>): MonthSpend? {
+            val latest = imported.filter { it.kind == null }.maxOfOrNull { it.dateMs } ?: return null
+            fun monthOf(ms: Long) = java.time.YearMonth.from(java.time.Instant.ofEpochMilli(ms).atZone(zone))
+            val month = monthOf(latest)
+            val importedIds = imported.map { it.id }.toSet()
+            val src = rows.filter { r ->
+                r.str("transaction_pk") in importedIds && r.int("type") == null && r.str("paired_transaction_fk") == null &&
+                    (r.double("amount") ?: 0.0) < 0.0 && (ms(r, "date_created")?.let { monthOf(it) == month } == true)
+            }
+            val exact = src.fold(BigDecimal.ZERO) { acc, r -> acc + BigDecimal.valueOf(r.double("amount") ?: 0.0) }
+            val sourcePaise = -exact.movePointRight(2).setScale(0, java.math.RoundingMode.HALF_EVEN).longValueExact()
+            val importedPaise = -imported.filter { it.kind == null && it.pairedTransactionId == null && it.amount < 0 && monthOf(it.dateMs) == month }.sumOf { it.amount }
+            return MonthSpend(month, sourcePaise, importedPaise)
         }
 
         fun accountChecks(accounts: List<Account>, rows: List<Row>, imported: List<Transaction>): List<AccountCheck> {
