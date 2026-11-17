@@ -182,6 +182,8 @@ fun ValueRow(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     rule: Boolean = true,
+    /** Side room for the words only; the rule still runs edge to edge (Entry detail, PDF p.20). */
+    inset: Dp = 0.dp,
 ) {
     val c = ChittaTheme.colors
     Column(modifier.fillMaxWidth()) {
@@ -190,7 +192,7 @@ fun ValueRow(
                 .fillMaxWidth()
                 .heightIn(min = Dimens.RowMinOneLine)
                 .then(if (onClick != null) Modifier.pressClickable(role = Role.Button, onClick = onClick) else Modifier)
-                .padding(vertical = Dimens.RowPadV),
+                .padding(horizontal = inset, vertical = Dimens.RowPadV),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(label.rupeeAware(), style = ChittaTheme.type.body, color = c.inkMuted, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = Dimens.LabelMaxWidth))
@@ -471,5 +473,17 @@ fun EntryRow(
             }
         }
         if (rule) HairlineRule()
+    }
+}
+
+
+/** The Entry detail header tile (PDF p.20): a rounded square in the category colour at 16%, the icon in the full colour. Decoration only. */
+@Composable
+fun GlyphTile(icon: ImageVector, color: Color, modifier: Modifier = Modifier) {
+    Box(
+        modifier.size(Dimens.EntryTile).clip(Shapes.Control).background(color.copy(alpha = 0.16f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(Dimens.EntryTileIcon))
     }
 }

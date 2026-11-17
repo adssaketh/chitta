@@ -34,22 +34,23 @@ import com.mansaketh.chitta.ui.Choice
 import com.mansaketh.chitta.ui.ChoiceSheet
 import com.mansaketh.chitta.ui.categoryName
 
-private class LineDraft(var categoryId: String? = null, var amountText: String = "")
+private class LineDraft(var categoryId: String? = null, var amountText: String = "", var subCategoryId: String? = null)
 
 /**
  * Split one payment across categories (master section 8; section 12: paise, leftover paise to the first line, Save blocked
  * until the lines equal the total). Shows what is left to place while you type. Screen: PDF p.16 "Split, not balanced".
  */
 @Composable
-fun SplitSheet(total: Paise, categories: List<Category>, firstCategoryId: String, onSave: (List<SplitLine>) -> Unit, onClose: () -> Unit) {
+fun SplitSheet(total: Paise, categories: List<Category>, firstCategoryId: String, onSave: (List<SplitLine>) -> Unit, onClose: () -> Unit, initial: List<SplitLine> = emptyList()) {
     val c = ChittaTheme.colors
-    val lines = remember { listOf(LineDraft(firstCategoryId), LineDraft()).toMutableStateList() }
+    // An already split payment opens with its current lines; a new split starts with two.
+    val lines = remember { (if (initial.size >= 2) initial.map { LineDraft(it.categoryId, plain(it.amount.value), it.subCategoryId) } else listOf(LineDraft(firstCategoryId), LineDraft())).toMutableStateList() }
     var tick by remember { mutableStateOf(0) }          // forces a recompute when a LineDraft field changes
     var pickFor by remember { mutableStateOf<Int?>(null) }
 
     fun parsed(): List<SplitLine?> = lines.map { l ->
         val amount = AmountExpression.evaluate(l.amountText)
-        if (l.categoryId == null || amount == null) null else SplitLine(l.categoryId!!, null, amount)
+        if (l.categoryId == null || amount == null) null else SplitLine(l.categoryId!!, l.subCategoryId, amount)
     }
     @Suppress("UNUSED_EXPRESSION") tick
     val ready = parsed()
@@ -96,7 +97,7 @@ fun SplitSheet(total: Paise, categories: List<Category>, firstCategoryId: String
     }
     pickFor?.let { i ->
         ChoiceSheet("Category for line ${i + 1}", categories.map { Choice(it.name, it.id, selected = it.id == lines[i].categoryId) },
-            { id -> lines[i].categoryId = id; tick++; pickFor = null }, { pickFor = null })
+            { id -> if (lines[i].categoryId != id) lines[i].subCategoryId = null; lines[i].categoryId = id; tick++; pickFor = null }, { pickFor = null })
     }
 }
 

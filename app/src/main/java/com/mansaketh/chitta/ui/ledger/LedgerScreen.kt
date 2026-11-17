@@ -1,9 +1,7 @@
 package com.mansaketh.chitta.ui.ledger
 
 import android.content.ClipData
-import com.mansaketh.chitta.ui.FeatureIcons
-import com.mansaketh.chitta.core.domain.TabKey
-import com.mansaketh.chitta.core.design.kit.EmptyState
+import com.mansaketh.chitta.core.design.kit.BlankPage
 import com.mansaketh.chitta.core.design.kit.TopBarMain
 import com.mansaketh.chitta.core.design.kit.FilterChip
 import com.mansaketh.chitta.core.design.kit.SheetHeader
@@ -75,7 +73,7 @@ private const val OptionsMillis = 220
 /** Where did it go? Day-grouped rows, sticky month header, tabs, search and filters, multi-select with bulk edit (PDF p.12). */
 @OptIn(ExperimentalFoundationApi::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Unit, modifier: Modifier = Modifier) {
+fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Unit, onBringIn: () -> Unit, modifier: Modifier = Modifier) {
     val ui by vm.ui.collectAsState()
     val pending by vm.pendingDelete.collectAsState()
     val context = LocalContext.current
@@ -115,7 +113,6 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
                 }
             } else {
                 TopBarMain("Ledger", ChittaIcons.Ledger, actions = {
-                    IconAction(ChittaIcons.Filter, "Filter by account or category", onClick = { picker = "menu"  })
                     IconAction(ChittaIcons.Search, if (searching) "Close search" else "Search", onClick = { searching = !searching; if (!searching) vm.setText("")  })
                 })
             }
@@ -197,7 +194,15 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
 
             when {
                 ui.loading -> LoadingPlaceholder(Modifier.padding(Dimens.Margin))
-                ui.totalEntries == 0 -> EmptyState(FeatureIcons.tab(TabKey.Ledger), null, "No transactions yet. Add one.", "Add a transaction", onAdd, Modifier.padding(horizontal = Dimens.Margin))
+                // First use (PDF p.19): the page is blank until something is added or brought in. Ping missing says so instead of doing nothing.
+                ui.totalEntries == 0 -> Box(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin).padding(bottom = Dimens.SectionGap), contentAlignment = Alignment.Center) {
+                    BlankPage(
+                        ChittaIcons.Ledger, "A blank page", "What you add, or bring in from Ping, will show here day by day.",
+                        "Add your first entry", onAdd, "Bring in messages from Ping",
+                        { if (com.mansaketh.chitta.intake.PingBridge.isRealPing(context)) onBringIn() else notice = "Ping is not installed on this phone." },
+                        Modifier.padding(horizontal = Dimens.Margin),
+                    )
+                }
                 ui.matching == 0 -> Text("Nothing matches. Clear the search or filters.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(Dimens.Margin))
                 else -> LazyColumn(Modifier.fillMaxSize().nestedScroll(hideKeyboardOnScroll).padding(horizontal = Dimens.Margin), state = listState, contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
                     if (narrowed) item(key = "filtered-total") {
@@ -269,17 +274,6 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
                     style = ChittaTheme.type.body, color = c.inkMuted,
                 )
             }
-            "menu" -> ChoiceSheet("Filter", listOf(Choice("By account", "account"), Choice("By category", "category")), onPick = { picker = it }, onDismiss = { picker = null })
-            "account" -> ChoiceSheet(
-                "Show one account",
-                ui.accounts.filter { !it.archived }.map { Choice(it.name, it.id, selected = it.id in ui.filter.accountIds) },
-                onPick = { id -> vm.setAccounts(setOf(id)); picker = null }, onDismiss = { picker = null },
-            )
-            "category" -> ChoiceSheet(
-                "Show one category",
-                ui.categories.filter { it.mainCategoryId == null }.map { Choice(it.name, it.id, selected = it.id in ui.filter.categoryIds) },
-                onPick = { id -> vm.setCategories(setOf(id)); picker = null }, onDismiss = { picker = null },
-            )
         }
     }
 }

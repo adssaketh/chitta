@@ -363,3 +363,7 @@ Checklist (Paper and Ink). "Built" means written to the page; nothing is marked 
 | 8 | Note box about the restore point | Built (existing `Note`) |
 | 9 | "Cancel" and "Import N entries" pinned | Built (new); Import disabled on a mismatch |
 Known leftovers: row height (page about 62 dp, kit 68), button height (page about 50 dp, kit 56), the label-to-file-name gap and the gaps around the grid are read off zoomed page images, not stated by it; Cancel on p.12 is drawn narrower than Import but kept equal; the Ink page was only looked at as an image.
+
+## Screens 11 Ledger first use (PDF p.19) and 12 Entry detail (PDF p.20), 17 Nov 2026, branch `ui-11-12-ledger-first-use-entry-detail`, exact match rule
+- 11: top bar (title and Search only) / tabs / book glyph / "A blank page" / line / Primary "Add your first entry" / underlined "Bring in messages from Ping": matched in code. Paper and Ink use tokens only. Not seen on a phone.
+- 12: top bar (back, Entry, Duplicate, Pin, Split) / tile / mono line / title / amount / Split tag / six rows with full-width rules / History timeline / Delete entry: matched in code. Differences left: row height (kit 56 dp against about 50 dp on the page), and the second history line of a split (see CHANGELOG).
