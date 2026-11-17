@@ -1,5 +1,12 @@
 # Changelog
 
+## Customise to PDF p.37 (17 Nov 2026) - on branch `phase-ui-customise-pdf-37`
+- Home sections: switch at the start, title, then the two arrows at the end, as on the page (Paper and Ink). Leading icons removed; titles no longer wrap ("Balances", "Recent entries").
+- "Accounts" and "N days" choices now sit on a muted line under the title, only while the section is on, so the main row stays as drawn.
+- Removed the note under "Home sections" and under "Bottom tabs" (the page draws none).
+- Cash check: switch row first with "Even when a budget is set" under it, then "Accounts for spending" with the count only ("2"), as on the page.
+- Not changed: what any switch, arrow or picker does. Tab 1 to 4, More shortcuts and First day of the week are not drawn on p.37 and are left as they were.
+
 ## Screen 10 Ledger filtered to PDF p.18 (16 Nov 2026) - on branch `ui-10-ledger-filtered`
 - Typed filters now show as chips under the search box, as on the page: `cat:food` shows "Food & dining", `amt>200` shows "Over ₹200", and `from:` plus `to:` over one calendar month show "November". The query stays in the box; tapping x on a chip removes those words from it.
 - A line under the chips shows "N entries" and the total of what matches (money out in ink, money in in green, or In and Out together when both are present).

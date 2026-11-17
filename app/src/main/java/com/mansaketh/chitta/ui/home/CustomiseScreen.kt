@@ -1,6 +1,11 @@
 package com.mansaketh.chitta.ui.home
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.text.style.TextOverflow
+import com.mansaketh.chitta.core.design.kit.ChittaSwitch
+import com.mansaketh.chitta.core.domain.HomeLayout
+import com.mansaketh.chitta.data.UiPrefs
 import com.mansaketh.chitta.core.design.kit.SwitchRow
 import com.mansaketh.chitta.core.design.kit.Section
 import com.mansaketh.chitta.core.design.kit.ValueRow
@@ -26,7 +31,6 @@ import com.mansaketh.chitta.core.domain.MoreOrder
 import com.mansaketh.chitta.core.domain.TabKey
 import com.mansaketh.chitta.ui.Choice
 import com.mansaketh.chitta.ui.ChoiceSheet
-import com.mansaketh.chitta.ui.FeatureIcons
 import com.mansaketh.chitta.ui.plan.MultiPickSheet
 import java.time.DayOfWeek
 import java.time.format.TextStyle
@@ -55,26 +59,9 @@ fun CustomiseScreen(vm: HomeViewModel, onBack: () -> Unit) {
         TopBarDetail("Customise", onBack = onBack)
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
             Section("Home sections", first = true)
-            Text("Budgets and Recent entries are on to start. Add what you want to see.", style = ChittaTheme.type.label, color = c.inkMuted)
-            HairlineRule()
-            layout.sections.forEachIndexed { i, cfg ->
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    androidx.compose.material3.Icon(
-                        FeatureIcons.homeSection(cfg.section), contentDescription = null, tint = if (cfg.visible) c.ink else c.inkMuted,
-                        modifier = Modifier.padding(end = Dimens.Gap3).size(Dimens.GlyphIcon),
-                    )
-                    SwitchRow(cfg.section.title, cfg.visible, { prefs.setHomeLayout(layout.toggle(cfg.section)) }, Modifier.weight(1f), rule = false)
-                    if (cfg.visible) {
-                        if (cfg.section.usesAccounts) SmallAction("Accounts") { sheet = "acc:" + cfg.section.key }
-                        if (cfg.section.usesRange) SmallAction("${cfg.rangeDays ?: 30} days") { sheet = "range:" + cfg.section.key }
-                    }
-                    MoveButtons(i > 0, i < layout.sections.lastIndex, { prefs.setHomeLayout(layout.move(cfg.section, -1)) }, { prefs.setHomeLayout(layout.move(cfg.section, 1)) })
-                }
-                HairlineRule()
-            }
+            HomeSectionRows(layout, prefs, onAccounts = { sheet = "acc:$it" }, onRange = { sheet = "range:$it" })
 
             Section("Bottom tabs")
-            Text("Four tabs you can swap. More is always the fifth. Press and hold the tab bar anywhere to come back here.", style = ChittaTheme.type.label, color = c.inkMuted)
             tabs.slots.forEachIndexed { i, key -> ValueRow("Tab ${i + 1}", key.label, onClick = { sheet = "slot:$i" }) }
             ValueRow("Opens first", tabs.first.label, onClick = { sheet = "first" })
 
@@ -88,10 +75,8 @@ fun CustomiseScreen(vm: HomeViewModel, onBack: () -> Unit) {
             }
 
             Section("Cash check")
-            Text("Pick the accounts that hold money you spend from. Savings and investment accounts stay out.", style = ChittaTheme.type.label, color = c.inkMuted)
-            ValueRow("Accounts for spending", if (cash.isEmpty()) "None picked" else "${cash.size} picked", onClick = { sheet = "cash" })
-            SwitchRow("Always show the cash check", preferCash, { prefs.setPreferCash(it) })
-            Text("Off means Home shows the cash check only when it is lower than Safe to spend.", style = ChittaTheme.type.label, color = c.inkMuted)
+            SwitchRow("Always show the cash check", preferCash, { prefs.setPreferCash(it) }, sub = "Even when a budget is set")
+            ValueRow("Accounts for spending", if (cash.isEmpty()) "None" else "${cash.size}", onClick = { sheet = "cash" })
 
             Section("Week")
             ValueRow("First day of the week", firstDay.getDisplayName(TextStyle.FULL, Locale.ENGLISH), onClick = { sheet = "weekday" })
@@ -123,6 +108,43 @@ fun CustomiseScreen(vm: HomeViewModel, onBack: () -> Unit) {
             onDone = { prefs.setCashAccounts(it); sheet = null }, onDismiss = { sheet = null })
         s == "weekday" -> ChoiceSheet("First day of the week", listOf(DayOfWeek.MONDAY, DayOfWeek.SUNDAY, DayOfWeek.SATURDAY).map { Choice(it.getDisplayName(TextStyle.FULL, Locale.ENGLISH), it, selected = it == firstDay) },
             onPick = { prefs.setFirstDay(it); sheet = null }, onDismiss = { sheet = null })
+    }
+}
+
+/**
+ * Home sections as drawn on PDF p.37 (both Paper and Ink): switch at the start, title, then the two arrows at the end, one hairline between rows.
+ * No leading icon. Sections that take accounts or a range show those two choices as a muted line under the title, only while the section is on.
+ */
+@Composable
+private fun HomeSectionRows(layout: HomeLayout, prefs: UiPrefs, onAccounts: (String) -> Unit, onRange: (String) -> Unit) {
+    val c = ChittaTheme.colors
+    layout.sections.forEachIndexed { i, cfg ->
+        val source = remember { MutableInteractionSource() }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = Dimens.RowMinOneLine)
+                        .pressFeedback(source)
+                        .toggleable(value = cfg.visible, interactionSource = source, indication = null, role = Role.Switch, onValueChange = { prefs.setHomeLayout(layout.toggle(cfg.section)) })
+                        .padding(vertical = Dimens.RowPadV),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    ChittaSwitch(cfg.visible)
+                    Spacer(Modifier.width(Dimens.TitleAmountGap))
+                    Text(cfg.section.title, style = ChittaTheme.type.body, color = c.ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
+                if (cfg.visible && (cfg.section.usesAccounts || cfg.section.usesRange)) {
+                    Row(Modifier.padding(start = Dimens.SwitchWidth + Dimens.TitleAmountGap)) {
+                        if (cfg.section.usesAccounts) SmallAction("Accounts") { onAccounts(cfg.section.key) }
+                        if (cfg.section.usesRange) SmallAction("${cfg.rangeDays ?: 30} days") { onRange(cfg.section.key) }
+                    }
+                }
+            }
+            MoveButtons(i > 0, i < layout.sections.lastIndex, { prefs.setHomeLayout(layout.move(cfg.section, -1)) }, { prefs.setHomeLayout(layout.move(cfg.section, 1)) })
+        }
+        HairlineRule()
     }
 }
 
