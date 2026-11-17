@@ -50,6 +50,24 @@ android {
         }
     }
 
+    packaging {
+        resources {
+            excludes += setOf(
+                // Bouncy Castle (pulled in by pdfbox-android) ships tables for post-quantum ciphers the app never uses: about 4 MB packed.
+                "org/bouncycastle/pqc/**",
+                // Proto definitions that Firebase libraries copy in as plain files; nothing reads them at run time.
+                "google/**/*.proto",
+                "META-INF/*.version",
+                "META-INF/AL2.0",
+                "META-INF/LGPL2.1",
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE*",
+                "META-INF/NOTICE*",
+                "DebugProbesKt.bin",
+            )
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
