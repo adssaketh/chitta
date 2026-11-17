@@ -64,6 +64,8 @@ class ChittaType internal constructor() {
     /** The two figures under Safe to spend on Home (Budget left, Range): same face as the hero, about 24 sp, regular weight (PDF p.13). */
     val amountTile = amountStyle(24.sp, 28.sp, 400)
     val headline = amountStyle(28.sp, 32.sp, 500)
+    /** First run title (PDF p.10): larger than the Lock name, measured off the page. */
+    val displayTitle = amountStyle(36.sp, 40.sp, 500)
     val dayNumber = amountStyle(24.sp, 28.sp, 500)
 
     // Interface text (Hanken Grotesk)

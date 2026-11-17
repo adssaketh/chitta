@@ -33,4 +33,20 @@ class SecurityPrefs @Inject constructor(@ApplicationContext context: Context) {
     private val _hideAmounts = MutableStateFlow(p.getBoolean("hideAmounts", false))
     val hideAmounts: StateFlow<Boolean> = _hideAmounts
     fun setHideAmounts(v: Boolean) { _hideAmounts.value = v; p.edit().putBoolean("hideAmounts", v).apply() }
+
+    /** The in-app PIN: a salt and a hash, never the digits (DECISIONS D293). Kept on this phone only. */
+    private val _hasPin = MutableStateFlow(p.getString("pinHash", null) != null)
+    val hasPin: StateFlow<Boolean> = _hasPin
+    fun pinSalt(): String? = p.getString("pinSalt", null)
+    fun pinHash(): String? = p.getString("pinHash", null)
+    fun savePin(saltHex: String, hashHex: String) {
+        p.edit().putString("pinSalt", saltHex).putString("pinHash", hashHex).putInt("pinWrong", 0).putLong("pinWaitUntil", 0L).apply()
+        _hasPin.value = true
+    }
+    fun clearPin() {
+        p.edit().remove("pinSalt").remove("pinHash").putInt("pinWrong", 0).putLong("pinWaitUntil", 0L).apply()
+        _hasPin.value = false
+    }
+    fun pinAttempts() = PinRules.Attempts(p.getInt("pinWrong", 0), p.getLong("pinWaitUntil", 0L))
+    fun setPinAttempts(a: PinRules.Attempts) { p.edit().putInt("pinWrong", a.wrong).putLong("pinWaitUntil", a.waitUntilMs).apply() }
 }

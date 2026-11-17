@@ -32,6 +32,7 @@ import com.mansaketh.chitta.core.design.tokens.Dimens
 @dagger.hilt.android.AndroidEntryPoint
 class MainActivity : FragmentActivity() {
     @Inject lateinit var appLock: AppLock
+    @Inject lateinit var pinGate: com.mansaketh.chitta.data.PinGate
     @Inject lateinit var security: SecurityPrefs
     @Inject lateinit var clock: Clock
     @Inject lateinit var uiPrefs: com.mansaketh.chitta.data.UiPrefs
@@ -65,10 +66,6 @@ class MainActivity : FragmentActivity() {
     override fun onStart() {
         super.onStart()
         appLock.onReturned(clock.nowMs())
-    }
-
-    private fun askToUnlock() {
-        BiometricGate.prompt(this, "Unlock Paddhu Pusthakam", null, onSuccess = { appLock.unlocked() })
     }
 
     /** The share receiver opens this screen with a note of what arrived (bank messages, or a payment screenshot, PDF or CSV). */
@@ -140,7 +137,7 @@ class MainActivity : FragmentActivity() {
                 val vms = com.mansaketh.chitta.ui.AppViewModels(root, ledger, quickAdd, detail, manage, imports, plan, home, insights, settings, csvImport, intake, rules, automation, assets, cloud, sync, household)
                 if (locked) {
                     // While locked nothing from the book is composed, so nothing can be read or heard from behind the lock.
-                    LockScreen(onUnlock = ::askToUnlock)
+                    LockScreen(pinGate, onUnlocked = { appLock.unlocked() })
                 } else if (BuildConfig.DEBUG) {
                     // Component gallery stays reachable from More in debug builds only (Phase 2 decision).
                     com.mansaketh.chitta.ui.AppRoot(vms, hide, toggleHide) { onBack -> ComponentGallery(mode, { uiPrefs.setThemeMode(it.name.lowercase()) }, hide, { hide = it }) ; androidx.activity.compose.BackHandler(onBack = onBack) }

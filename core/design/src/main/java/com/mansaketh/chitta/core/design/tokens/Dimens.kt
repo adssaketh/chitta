@@ -232,6 +232,16 @@ object Dimens {
     val KeypadBleed = Space3
     val TopActionsBleed = Space6
 
+    /** Lock and First run (PDF p.9 and p.10), measured off the page at 390 dp wide. */
+    val LogoLock = 76.dp
+    val LogoFirstRun = 84.dp
+    val LockTop = 64.dp
+    val PinDot = 12.dp
+    val PinDotGap = 16.dp
+    val PinDotStroke = 1.5.dp
+    val PinKeyHeight = 62.dp
+    val PinLinkRule = 2.dp
+
     /** A pressed entry row or chip keeps its hit area at least this tall even when it draws smaller. */
     val HitMin = TouchTarget
 }

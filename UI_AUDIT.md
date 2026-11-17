@@ -334,3 +334,17 @@ Checklist (Paper and Ink). "Built" means written to the page; nothing is marked 
 | 7 | No day totals, hairline under every row | Built |
 | 8 | Add button, bottom bar | Unchanged |
 Known leftovers: "Search tips" and "Clear all" keep a 48 dp tap area, so the gap above the chips may be a little taller than the page; the rule border on the field has less contrast than the old mark border; multi-month results and the empty state are not drawn on the page and follow the same styles by judgement.
+
+## Screens 01 Lock and 02 First run (PDF p.9 and p.10), 17 Nov 2026, branch `ui-01-02-lock-firstrun`, exact match rule
+Checklist (Paper and Ink). "Built" means written to the page; nothing is marked "matches" because nothing was compiled or checked on a phone.
+| # | Element | State |
+| --- | --- | --- |
+| 1 | Lock: round logo, "Paddhu Pusthakam", "Enter your PIN" | Built (logo was a rounded square, text was "Your book is locked.") |
+| 2 | Four dots, two filled | Built (new) |
+| 3 | Red wrong-PIN line with tries left | Built (new) |
+| 4 | Pad 1-9, 0, delete, no tiles | Built (new) |
+| 5 | "Forgot PIN?" underlined, "Use fingerprint" button | Built (new); fingerprint hidden when none is enrolled |
+| 6 | First run: round logo, large name, one line | Built |
+| 7 | Two rows with icon, title, second line, caret, full-width hairlines | Built (were two buttons) |
+| 8 | "Everything stays on this phone." | Built (replaces the Start fresh note) |
+Known leftovers: logo sizes, title size, row spacing and the pad's row height are measured off the page images, not stated by it; the page draws no disabled-key look, wait countdown, choose-a-PIN or mismatch state, which follow the same styles by judgement.

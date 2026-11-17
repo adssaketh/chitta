@@ -66,6 +66,7 @@ class SettingsViewModel @Inject constructor(
     private val receipts: com.mansaketh.chitta.receipts.ReceiptStore,
     private val uiPrefs: com.mansaketh.chitta.data.UiPrefs,
     private val syncPrefs: com.mansaketh.chitta.cloud.SyncPrefs,
+    val pinGate: com.mansaketh.chitta.data.PinGate,
 ) : ViewModel() {
     val themeMode: StateFlow<String> = uiPrefs.themeMode
     fun setThemeMode(v: String) = uiPrefs.setThemeMode(v)

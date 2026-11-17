@@ -29,6 +29,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -50,6 +51,8 @@ import com.mansaketh.chitta.ui.ChoiceSheet
 import com.mansaketh.chitta.ui.ConfirmSheet
 import com.mansaketh.chitta.ui.dayAndTime
 import com.mansaketh.chitta.ui.lock.BiometricGate
+import com.mansaketh.chitta.ui.lock.PinFlow
+import com.mansaketh.chitta.ui.lock.PinMode
 import java.time.ZoneId
 
 /** Closes the app so the staged restore is applied the next time it opens (the swap happens before the book is opened; see ChittaApp). */
@@ -85,14 +88,30 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
     val openBackup = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) vm.pickBackup(uri) }
     val saveCsv = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri -> if (uri != null) vm.exportCsv(uri, csvAccount, csvRange) }
 
+    // "set" while a new PIN is chosen for a lock being turned on, "change" while the current PIN is asked and then a new one.
+    var pinFlow by rememberSaveable { mutableStateOf<String?>(null) }
+
     fun toggleLock() {
         val turningOn = !ui.lockEnabled
         if (activity == null) return
         if (turningOn && !BiometricGate.canAuthenticate(context)) {
-            vm.tell("Set a screen lock or fingerprint in Android settings first, then turn this on.")
+            vm.tell("Set a screen lock in Android settings first. It is how you choose a new PIN if you forget this one.")
             return
         }
-        BiometricGate.prompt(activity, if (turningOn) "Turn on app lock" else "Turn off app lock", null, { vm.setLockEnabled(turningOn) })
+        BiometricGate.prompt(activity, if (turningOn) "Turn on app lock" else "Turn off app lock", null, {
+            if (turningOn) pinFlow = "set" else { vm.pinGate.clear(); vm.setLockEnabled(false) }
+        })
+    }
+
+    pinFlow?.let { flow ->
+        PinFlow(
+            vm.pinGate, if (flow == "set") PinMode.Choose else PinMode.Enter,
+            onDone = { if (flow == "set") vm.setLockEnabled(true); pinFlow = null },
+            thenChoose = flow == "change",
+            onCancel = { pinFlow = null },
+        )
+        androidx.activity.compose.BackHandler { pinFlow = null }
+        return
     }
 
     Column(Modifier.fillMaxSize()) {
@@ -113,9 +132,10 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
 
             ExpandGroup("Security", summary = "App lock ${onOff(ui.lockEnabled).lowercase()}", icon = ChittaIcons.Lock) {
                 ValueRow("App lock", onOff(ui.lockEnabled), onClick = ::toggleLock)
+                if (ui.lockEnabled) ValueRow("PIN", "Change", onClick = { pinFlow = "change" })
                 if (ui.lockEnabled) ValueRow("Lock after leaving", ui.timeout.label, onClick = { sheet = "timeout" })
                 ValueRow("Hide in recent apps", onOff(ui.hideInRecents), onClick = { vm.setHideInRecents(!ui.hideInRecents) })
-                FootNote("The lock uses your fingerprint or face, or your phone's PIN, pattern or password. Hiding in recent apps also stops screenshots.")
+                FootNote("The lock uses your PIN, or your fingerprint or face. If you forget the PIN, your phone's own lock lets you choose a new one. Hiding in recent apps also stops screenshots.")
             }
 
             ExpandGroup("Household", summary = "Share chosen entries with others", icon = ChittaIcons.Users) {

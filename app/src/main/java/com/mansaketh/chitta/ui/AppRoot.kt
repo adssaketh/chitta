@@ -112,15 +112,27 @@ private fun FirstRun(vms: AppViewModels) {
         BackHandler { importing = false; vms.imports.reset() }
         return
     }
-    Column(Modifier.fillMaxSize().padding(Dimens.Margin).navigationBarsPadding(), verticalArrangement = Arrangement.Center) {
-        Text("Paddhu Pusthakam", style = ChittaTheme.type.headline, color = c.ink)
-        Spacer(Modifier.height(Dimens.Gap3))
-        Text("Start with an empty book, or bring over your book from Paddhu Pusthakam.", style = ChittaTheme.type.body, color = c.ink)
-        Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton("Bring over my book", { importing = true }, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(Dimens.Gap2))
-        ChittaButton("Start fresh", { vms.imports.startFresh {} }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
-        Text("Start fresh makes a Cash account and a few categories you can rename.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
+    // First run (PDF p.10): round logo, name, one line, then two plain rows with full-width hairlines, and a quiet line at the bottom.
+    Column(Modifier.fillMaxSize().navigationBarsPadding()) {
+        Column(Modifier.padding(horizontal = Dimens.Margin)) {
+            Spacer(Modifier.height(Dimens.LockTop))
+            com.mansaketh.chitta.ui.lock.AppIcon(Dimens.LogoFirstRun, shape = androidx.compose.foundation.shape.CircleShape)
+            Spacer(Modifier.height(Dimens.Space8))
+            Text("Paddhu Pusthakam", style = ChittaTheme.type.displayTitle, color = c.ink)
+            Spacer(Modifier.height(Dimens.Gap3))
+            Text("A calm account book with honest numbers.", style = ChittaTheme.type.body, color = c.inkMuted)
+            Spacer(Modifier.height(Dimens.Gap9 + Dimens.Gap1))
+        }
+        HairlineRule()
+        NavRow("Bring over your book", { importing = true }, Modifier.padding(horizontal = Dimens.Margin), icon = ChittaIcons.Download, sub = "From a Paddhu backup file", rule = false)
+        HairlineRule()
+        NavRow("Start fresh", { vms.imports.startFresh {} }, Modifier.padding(horizontal = Dimens.Margin), icon = ChittaIcons.Ledger, sub = "An empty book with the usual categories", rule = false)
+        HairlineRule()
+        Spacer(Modifier.weight(1f))
+        Text(
+            "Everything stays on this phone.", style = ChittaTheme.type.label, color = c.inkMuted, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(bottom = Dimens.Margin),
+        )
     }
 }
 

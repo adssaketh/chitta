@@ -1,5 +1,12 @@
 # Changelog
 
+## Screens 01 Lock and 02 First run to PDF p.9 and p.10 (17 Nov 2026) - on branch `ui-01-02-lock-firstrun`
+- Lock is now an in-app PIN screen: round logo, name, "Enter your PIN", four dots, a red "Wrong PIN. 2 tries left before a 30-second wait." line, the number pad (Fraunces digits, no tiles, delete key), "Forgot PIN?" at the bottom left and "Use fingerprint" at the bottom right.
+- New behaviour: a four-digit PIN kept as a salted hash; three tries then a 30-second wait that survives closing the app; "Forgot PIN?" uses the phone's own lock to choose a new PIN. A phone with the lock already on asks for the phone's lock once, then for a new PIN.
+- Settings, Security: turning the lock on now chooses a PIN; a new "PIN / Change" row; turning it off deletes the PIN.
+- First run: round logo, large name, one line, then two rows with icons and a second line ("Bring over your book", "Start fresh") between full-width hairlines, and "Everything stays on this phone." at the bottom. The two buttons and the note are gone.
+- Unit tests for the tries, the wait and the hash (`PinRulesTest`). Nothing was compiled or run here; the build is the first check.
+
 ## Screen 10 Ledger filtered to PDF p.18 (16 Nov 2026) - on branch `ui-10-ledger-filtered`
 - Typed filters now show as chips under the search box, as on the page: `cat:food` shows "Food & dining", `amt>200` shows "Over ₹200", and `from:` plus `to:` over one calendar month show "November". The query stays in the box; tapping x on a chip removes those words from it.
 - A line under the chips shows "N entries" and the total of what matches (money out in ink, money in in green, or In and Out together when both are present).
