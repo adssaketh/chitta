@@ -65,7 +65,9 @@ fun BudgetDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit
     var deleting by remember { mutableStateOf(false) }
     val c = ChittaTheme.colors
     Column(Modifier.fillMaxSize()) {
-        TopBarDetail("Budget", onBack = onBack, actions = { IconAction(com.mansaketh.chitta.core.design.icons.ChittaIcons.Pencil, "Edit budget", onEdit) })
+        val nameForBar = ui.budgets.firstOrNull { it.id == id }
+        val dayLine = nameForBar?.let { nb -> val pd = Budgets.periodAt(nb, ui.nowMs, ui.zone); val sm = Budgets.summarize(nb, pd, ui.entries, ui.categories, ui.nowMs, ui.zone); if (sm.started && !sm.ended) "Day ${sm.dayOfPeriod} of ${sm.daysInPeriod}" else periodText(pd, ui.zone) }
+        TopBarDetail(nameForBar?.name ?: "Budget", subtitle = dayLine, onBack = onBack, actions = { IconAction(com.mansaketh.chitta.core.design.icons.ChittaIcons.Pencil, "Edit budget", onEdit) })
         if (b == null) { if (!ui.loading) Gone("budget"); return@Column }
         val period = remember(b, ui.nowMs) { Budgets.periodAt(b, ui.nowMs, ui.zone) }
         val s = remember(b, ui.entries, ui.categories, ui.nowMs) { Budgets.summarize(b, period, ui.entries, ui.categories, ui.nowMs, ui.zone) }
@@ -73,25 +75,44 @@ fun BudgetDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit
         val history = remember(b, ui.entries, ui.categories, ui.nowMs) { Budgets.history(b, ui.entries, ui.categories, ui.nowMs, ui.zone) }
         val verb = if (b.income) "saved" else "spent"
         Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.FabInset)) {
-            Text(b.name, style = ChittaTheme.type.headline, color = c.ink)
-            Text(periodText(period, ui.zone), style = ChittaTheme.type.label, color = c.inkMuted)
-            Spacer(Modifier.height(Dimens.Gap3))
-            AmountText(if (s.left.isNegative) -s.left else s.left, style = ChittaTheme.type.amountHero)
-            Text(if (s.left.isNegative) "over the budget of ${rupees(s.limit)}" else "left of ${rupees(s.limit)}", style = ChittaTheme.type.body, color = c.inkMuted)
-            if (!s.carry.isZero) Text(if (s.carry.isNegative) "Includes ${rupees(-s.carry)} overspent in earlier periods, taken off." else "Includes ${rupees(s.carry)} carried in from earlier periods.", style = ChittaTheme.type.label, color = c.inkMuted)
-            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2), modifier = Modifier.padding(vertical = Dimens.Gap3)) {
+            // PDF p.25: the pace stamp with its short verdict, then the figure with "left" on the same line.
+            Row(Modifier.padding(top = Dimens.Gap3), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
                 if (!b.income && s.pace == PaceStatus.OverLimit) Stamp("Over limit", tone = StampTone.Attention)
-                else if (!b.income && s.pace == PaceStatus.OverPace) Stamp("Over pace", tone = StampTone.Attention)
+                else if (!b.income && s.pace == PaceStatus.OverPace) { Stamp("Over pace", tone = StampTone.Attention); Text("not over the limit", style = ChittaTheme.type.label, color = c.inkMuted) }
                 if (!s.started) Stamp("Not started") else if (s.ended) Stamp("Ended")
             }
+            Row(Modifier.padding(top = Dimens.Gap3), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
+                AmountText(if (s.left.isNegative) -s.left else s.left, style = ChittaTheme.type.amountLarge)
+                Text(if (s.left.isNegative) "over" else "left", style = ChittaTheme.type.amountLarge, color = c.ink)
+            }
+            Text(if (s.left.isNegative) "over the budget of ${rupees(s.limit)}" else "of ${rupees(s.limit)}", style = ChittaTheme.type.label, color = c.inkMuted)
+            if (!s.carry.isZero) Text(if (s.carry.isNegative) "Includes ${rupees(-s.carry)} overspent in earlier periods, taken off." else "Includes ${rupees(s.carry)} carried in from earlier periods.", style = ChittaTheme.type.label, color = c.inkMuted)
             if (s.started) {
-                Text(if (s.ended) "The whole period." else "Day ${s.dayOfPeriod} of ${s.daysInPeriod}, ${s.daysLeft} left.", style = ChittaTheme.type.label, color = c.inkMuted)
+                // Spent and Forecast side by side, each under an ink rule (PDF p.25).
+                Row(Modifier.fillMaxWidth().padding(top = Dimens.Gap3), horizontalArrangement = Arrangement.spacedBy(Dimens.Gap6)) {
+                    Column(Modifier.weight(1f)) {
+                        HairlineRule(Modifier.padding(bottom = Dimens.Gap2))
+                        Text(verb.replaceFirstChar { it.uppercase() }, style = ChittaTheme.type.label, color = c.inkMuted)
+                        AmountText(s.spent, style = ChittaTheme.type.amountTile)
+                        s.ideal?.let { Text("ideal by now ${rupees(it)}", style = ChittaTheme.type.label, color = c.inkMuted) }
+                    }
+                    Column(Modifier.weight(1f)) {
+                        HairlineRule(Modifier.padding(bottom = Dimens.Gap2))
+                        Text("Forecast", style = ChittaTheme.type.label, color = c.inkMuted)
+                        if (!s.ended && s.dayOfPeriod >= 7 && s.forecast != null) {
+                            AmountText(s.forecast!!, style = ChittaTheme.type.amountTile)
+                            s.limitDay?.let { d ->
+                                val on = Periods.date(period.startMs, ui.zone).plusDays((d - 1).toLong())
+                                Text("reaches the limit ~${on.dayOfMonth} ${on.month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.ENGLISH)}", style = ChittaTheme.type.label, color = c.warningText)
+                            }
+                        } else Text("from day 7", style = ChittaTheme.type.label, color = c.inkMuted)
+                    }
+                }
                 MonthRule(s.daysInPeriod, s.cumulative, s.limit, Modifier.padding(vertical = Dimens.Gap3))
-                Figure("$verb so far".replaceFirstChar { it.uppercase() }, s.spent)
-                s.ideal?.let { Figure("On an even pace by today", it) }
-                if (!s.ended && s.dayOfPeriod >= 7) s.forecast?.let { Figure("At this pace you will have $verb", it) }
-                else if (!s.ended) FootNote("The forecast shows from day 7, when there is enough to go on.")
-                if (!s.ended) s.limitDay?.let { Text("At this pace the limit is reached on day $it.", style = ChittaTheme.type.label, color = c.inkMuted) }
+                Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap4)) {
+                    listOf("Actual", "Ideal", "Forecast").forEach { Text(it, style = ChittaTheme.type.label, color = c.inkMuted) }
+                }
+                if (!s.ended && s.dayOfPeriod >= 1) FootNote("Forecast = ${rupees(Paise(s.spent.value / s.dayOfPeriod))} a day so far × ${s.daysInPeriod} days. Shown from day 7.")
             }
             Section("Where it went")
             Text(if (b.absoluteSpendingLimit) "Press and hold a category to set its goal as an amount." else "Press and hold a category to set its goal as a percentage of the budget.", style = ChittaTheme.type.label, color = c.inkMuted)
