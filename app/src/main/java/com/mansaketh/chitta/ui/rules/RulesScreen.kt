@@ -16,6 +16,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -69,28 +72,29 @@ fun RulesScreen(vm: RulesViewModel, onBack: () -> Unit) {
         TopBarDetail("Rules", onBack = onBack)
         LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
             item {
-                Text("If a new entry matches, a rule fills in the category or account. The first rule that sets something wins. Transfers are never changed.", style = ChittaTheme.type.label, color = c.inkMuted)
-                Row(horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2), modifier = Modifier.padding(vertical = Dimens.Gap3)) {
-                    ChittaButton("New rule", { sheet = RuleSheet.Edit(RuleDraft()) }, modifier = Modifier.fillMaxWidth())
-                    ChittaButton("Apply to my history", { vm.buildPreview() }, kind = ButtonKind.Secondary, enabled = ui.rules.any { it.enabled }, modifier = Modifier.fillMaxWidth())
-                }
+                Text("Rules run in order. Every condition must match, and the first rule to set a field wins. Transfers are never changed.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap3))
                 HairlineRule()
             }
             if (ui.loading) item { LoadingPlaceholder() }
             if (!ui.loading && ui.rules.isEmpty()) item { EmptyState(null, null, "No rules yet. Add one.", "New rule", { sheet = RuleSheet.Edit(RuleDraft()) }) }
-            items(ui.rules, key = { it.id }) { r ->
-                Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f).clickable { sheet = RuleSheet.Actions(r) }.padding(vertical = Dimens.Gap2)) {
-                        Text(r.name, style = ChittaTheme.type.title, color = if (r.enabled) c.ink else c.inkMuted)
-                        Text(sentence(r, ui), style = ChittaTheme.type.label, color = c.inkMuted)
+            // PDF p.39: numbered rows, the sentence under the name, a chevron. A rule that is off says so and reads muted.
+            itemsIndexed(ui.rules, key = { _, r -> r.id }) { i, r ->
+                Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).clickable { sheet = RuleSheet.Actions(r) }.padding(vertical = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
+                    Text("${i + 1}", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.width(Dimens.Gap6))
+                    Column(Modifier.weight(1f)) {
+                        Text(ifPart(r, ui), style = ChittaTheme.type.title, color = if (r.enabled) c.ink else c.inkMuted)
+                        Text(thenPart(r, ui) + if (r.enabled) "" else " · off", style = ChittaTheme.type.label, color = c.inkMuted)
                     }
-                    Box(
-                        Modifier.heightIn(min = Dimens.TouchTarget).padding(start = Dimens.Gap3)
-                            .toggleable(value = r.enabled, role = Role.Switch, onValueChange = { vm.setEnabled(r, it) }),
-                        contentAlignment = Alignment.Center,
-                    ) { ChittaSwitch(r.enabled) }
+                    androidx.compose.material3.Icon(com.mansaketh.chitta.core.design.icons.ChittaIcons.CaretRight, contentDescription = null, tint = c.inkMuted, modifier = Modifier.padding(start = Dimens.Gap3).size(Dimens.IconSmall))
                 }
                 HairlineRule()
+            }
+            item {
+                com.mansaketh.chitta.core.design.kit.ButtonPair(
+                    first = { m -> ChittaButton("New rule", { sheet = RuleSheet.Edit(RuleDraft()) }, m, kind = ButtonKind.Secondary) },
+                    second = { m -> ChittaButton("Apply to history", { vm.buildPreview() }, m, kind = ButtonKind.Secondary, enabled = ui.rules.any { it.enabled }) },
+                    modifier = Modifier.padding(vertical = Dimens.Gap4),
+                )
             }
         }
     }
@@ -134,11 +138,21 @@ fun RulesScreen(vm: RulesViewModel, onBack: () -> Unit) {
     }
 }
 
+/** The row's title (PDF p.39): the conditions as a sentence, like Title has "swiggy". */
+private fun ifPart(r: Rule, ui: RulesUi): String = sentence(r, ui).removePrefix("If ").substringBefore(", set ").replaceFirstChar { it.uppercase() }
+
+/** The row's second line: what the rule sets, like Set category: Food & dining. */
+private fun thenPart(r: Rule, ui: RulesUi): String = listOfNotNull(
+    r.actions.categoryId?.let { "Set category: ${categoryName(it, ui.categories)}" },
+    r.actions.accountId?.let { "Move to account: ${accountName(it, ui.accounts)}" },
+    r.actions.excludeFromBudgetIds?.let { "Kept out of ${it.size} budgets" },
+).joinToString(" · ").ifBlank { r.name }
+
 private fun sentence(r: Rule, ui: RulesUi): String {
     val ifs = r.conditions.joinToString(" and ") {
         when (it.field) {
-            RuleField.Title -> "title has \"${it.text}\""
-            RuleField.Note -> "note has \"${it.text}\""
+            RuleField.Title -> "title has “${it.text}”"
+            RuleField.Note -> "note has “${it.text}”"
             RuleField.Amount -> "amount is ${IndianFormat.rupees(it.amount ?: com.mansaketh.chitta.core.money.Paise.ZERO)} or more"
             RuleField.Account -> "account is ${accountName(it.accountId ?: "", ui.accounts)}"
         }

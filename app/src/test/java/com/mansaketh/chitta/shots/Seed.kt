@@ -65,5 +65,14 @@ object Seed {
             tx(-4, "Netflix", 649, "cat-out-7", "a-card").copy(kind = com.mansaketh.chitta.core.model.TransactionKind.SUBSCRIPTION, paid = false, originalDueMs = now + 4 * DAY, periodLength = 1, repeat = com.mansaketh.chitta.core.model.Repeat.MONTHLY),
             tx(2, "Electricity", 1_240, "cat-out-3").copy(kind = com.mansaketh.chitta.core.model.TransactionKind.UPCOMING, paid = false, originalDueMs = now - 2 * DAY),
         ))
+        // Rules and mutual funds, so those screens can be set beside the PDF.
+        val rs = { id: String, n: String, c: List<com.mansaketh.chitta.core.domain.RuleCondition>, a: com.mansaketh.chitta.core.domain.RuleActions, o: Int ->
+            com.mansaketh.chitta.core.domain.Rule(id, n, c, a, o).toEntity() }
+        db.rules().upsert(rs("r1", "Swiggy or Zomato", listOf(com.mansaketh.chitta.core.domain.RuleCondition(com.mansaketh.chitta.core.domain.RuleField.Title, com.mansaketh.chitta.core.domain.RuleOp.Contains, "swiggy")), com.mansaketh.chitta.core.domain.RuleActions(categoryId = "cat-out-0"), 0))
+        db.rules().upsert(rs("r2", "Uber", listOf(com.mansaketh.chitta.core.domain.RuleCondition(com.mansaketh.chitta.core.domain.RuleField.Title, com.mansaketh.chitta.core.domain.RuleOp.Contains, "uber")), com.mansaketh.chitta.core.domain.RuleActions(categoryId = "cat-out-2"), 1))
+        fun fund(id: String, n: String, units: String, inv: Long, nav: String, src: String) = com.mansaketh.chitta.core.model.MutualFund(id, n, "", "", units, inv, src, now, nav, "2026-11-11", "", now)
+        db.misc().upsertFund(fund("f1", "Parag Parikh Flexi Cap", "842.610", 5_900_000, "93.0", "Zerodha").toEntity())
+        db.misc().upsertFund(fund("f2", "UTI Nifty 50 Index", "3120.450", 5_000_000, "19.6", "Zerodha").toEntity())
+        db.misc().upsertFund(fund("f3", "Axis Bluechip", "368.900", 2_000_000, "66.5", "Excel report").toEntity())
     }
 }
