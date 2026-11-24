@@ -18,7 +18,7 @@ ICONS = [
     ("Copy", "copy"), ("Lock", "lock"), ("Fingerprint", "fingerprint"), ("Bell", "bell"), ("Gear", "gear"),
     ("Tag", "tag"), ("Repeat", "repeat"), ("Transfer", "arrows-left-right"), ("Calendar", "calendar-blank"),
     ("Receipt", "receipt"), ("Info", "info"), ("Warning", "warning"), ("Users", "users"), ("Filter", "funnel"),
-    ("Download", "download-simple"), ("Upload", "upload-simple"), ("Undo", "arrow-counter-clockwise"),
+    ("Download", "download-simple"), ("Upload", "upload-simple"), ("Undo", "arrow-counter-clockwise"), ("Sliders", "sliders-horizontal"),
 ]
 
 # Category icons (Phase 8a icon search). Stored on a category as "ph:<phosphor name>"; see CategoryIcons in :core:design.

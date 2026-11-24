@@ -1,5 +1,11 @@
 # Changelog
 
+## Verification harness and More to PDF p.35 (24 Nov 2026) - on branch `ui-verify-all-screens`
+- New: `app/src/test/.../shots/` runs the real app (real Hilt graph, an invented seeded book) under Robolectric and Roborazzi and saves PNGs of whole screens, so screens can be compared with the PDF without a phone. Run: `gradle :app:recordRoborazziDebug -Proborazzi.test.record=true` (images go to the folder named in each test). Test-only: a WorkManager shadow, because the app turns off WorkManager's own start-up.
+- More now matches p.35: "Money" and "App" headings, a leading icon on every row (Wallet, Tag, Sliders, Download, Gear), the account and category counts, a round logo, and "Your book since <month year> - <n> entries". New icon: Sliders (Phosphor sliders-horizontal).
+- Checked by image, no change needed: First run (p.10), Home structure (p.13), Ledger, Plan Budgets.
+- All existing unit tests pass here (money, intake, domain, importer, database, design, app) and the design snapshots are unchanged. The release build was not run here.
+
 ## Screens 11 Ledger first use and 12 Entry detail to PDF p.19 and p.20 (17 Nov 2026) - on branch `ui-11-12-ledger-first-use-entry-detail`
 - Ledger, first use: with no entries the page is "A blank page" (book glyph, serif title, the line "What you add, or bring in from Ping, will show here day by day.", a Primary "Add your first entry" and an underlined "Bring in messages from Ping"). The link opens the Ping inbox screen; if Ping is not installed it says so. The Filter icon is gone from the top bar (the page has Search only); account and category filters are typed in the search box (`acc:`, `cat:`) and show as chips, as on p.18.
 - Entry detail: the top block is a rounded tile, a mono line ("Expense · from a bank message" or "added by you"), the title, the amount without ".00" and the Split tag. Rows run in the page's order (Category, Account, Date, Who sees it, Note, Receipt) with edge-to-edge rules and a caret on each row you can open; empty values read "Add a note" and "Add a photo". "Who sees it" is always shown ("Only me" when sharing is off, otherwise "Everyone" or "Mine only").

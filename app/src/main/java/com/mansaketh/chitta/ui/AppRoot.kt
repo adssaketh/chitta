@@ -37,6 +37,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import com.mansaketh.chitta.core.design.components.*
 import com.mansaketh.chitta.core.design.icons.ChittaIcons
+import com.mansaketh.chitta.core.design.kit.Section
 import com.mansaketh.chitta.core.design.theme.ChittaTheme
 import com.mansaketh.chitta.core.design.tokens.Dimens
 import com.mansaketh.chitta.core.domain.EntryType
@@ -236,11 +237,18 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                         TabKey.Goals.key -> PlanScreen(vms.plan, 1, { tabChoice = TabKey.Plan.key; planTab = it }, { push(it) }, { planSheet = it })
                         TabKey.Loans.key -> PlanScreen(vms.plan, 2, { tabChoice = TabKey.Plan.key; planTab = it }, { push(it) }, { planSheet = it })
                         TabKey.Bills.key -> PlanScreen(vms.plan, 3, { tabChoice = TabKey.Plan.key; planTab = it }, { push(it) }, { planSheet = it })
-                        else -> MoreScreen(
-                            moreOrder,
-                            open = { item -> push(item.key) },
-                            onGallery = if (extra != null) ({ push("gallery") }) else null,
-                        )
+                        else -> {
+                            val manageUi by vms.manage.ui.collectAsState()
+                            val ledgerUi by vms.ledger.ui.collectAsState()
+                            MoreScreen(
+                                moreOrder,
+                                open = { item -> push(item.key) },
+                                onGallery = if (extra != null) ({ push("gallery") }) else null,
+                                counts = mapOf(MoreItem.Accounts to manageUi.accounts.size, MoreItem.Categories to manageUi.categories.size),
+                                entryCount = ledgerUi.totalEntries,
+                                sinceMs = ledgerUi.byId.values.minOfOrNull { it.dateMs },
+                            )
+                        }
                     } }
                     top.startsWith("detail:") -> EntryDetailScreen(vms.detail, top.removePrefix("detail:"), onBack = ::pop, plan = vms.plan)
                     top.startsWith("budget:") -> BudgetDetailScreen(vms.plan, top.removePrefix("budget:"), ::pop, { planSheet = "edit-budget:" + top.removePrefix("budget:") })
@@ -326,27 +334,53 @@ private fun NotBuilt(name: String) {
 private const val MORE = "more"
 
 @Composable
-private fun MoreScreen(order: List<MoreItem>, open: (MoreItem) -> Unit, onGallery: (() -> Unit)?) {
+private fun MoreScreen(
+    order: List<MoreItem>,
+    open: (MoreItem) -> Unit,
+    onGallery: (() -> Unit)?,
+    counts: Map<MoreItem, Int>,
+    entryCount: Int,
+    sinceMs: Long?,
+) {
+    // PDF p.35: two headed groups (Money, App), a leading icon on each row, a muted count on the money rows, the logo and a line about the book.
+    fun icon(item: MoreItem) = when (item) {
+        MoreItem.Accounts -> ChittaIcons.Wallet
+        MoreItem.Categories -> ChittaIcons.Tag
+        MoreItem.Customise -> ChittaIcons.Sliders
+        MoreItem.Import -> ChittaIcons.Download
+        MoreItem.Settings -> ChittaIcons.Gear
+    }
+    val money = setOf(MoreItem.Accounts, MoreItem.Categories)
     Column(Modifier.fillMaxSize()) {
         TopBarMain("More", ChittaIcons.More)
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.EndInset)) {
-            order.forEach { NavRow(it.label, { open(it) }) }
+            listOf("Money" to order.filter { it in money }, "App" to order.filter { it !in money }).forEachIndexed { index, (title, items) ->
+                if (items.isNotEmpty()) Section(title, first = index == 0) {
+                    items.forEach { NavRow(it.label, { open(it) }, icon = icon(it), value = counts[it]?.toString()) }
+                }
+            }
             if (onGallery != null) NavRow("Design gallery", onGallery, sub = "Debug builds only")
         }
-        AppMark(Modifier.align(Alignment.CenterHorizontally).padding(bottom = Dimens.Gap6))
+        AppMark(Modifier.align(Alignment.CenterHorizontally).padding(bottom = Dimens.Gap6), entryCount, sinceMs)
     }
 }
 
 /**
- * The app's logo and name, quiet, at the bottom of More. The logo is the launcher icon drawn from its two layers (an adaptive icon
- * cannot be loaded as one image), cut to a rounded square the way a launcher shows it.
+ * The app's logo and name, quiet, at the bottom of More, with how long the book goes back and how many entries it holds (PDF p.35). The logo is
+ * the launcher icon drawn from its two layers (an adaptive icon cannot be loaded as one image), cut to a circle as on the page.
  */
 @Composable
-private fun AppMark(modifier: Modifier = Modifier) {
+private fun AppMark(modifier: Modifier = Modifier, entryCount: Int, sinceMs: Long?) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        com.mansaketh.chitta.ui.lock.AppIcon(Dimens.LogoSmall)
+        com.mansaketh.chitta.ui.lock.AppIcon(Dimens.LogoSmall, shape = androidx.compose.foundation.shape.CircleShape)
         Spacer(Modifier.height(Dimens.Gap2))
         Text("Paddhu Pusthakam", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted)
+        if (sinceMs != null && entryCount > 0) {
+            val since = java.time.Instant.ofEpochMilli(sinceMs).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+            val month = since.month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.ENGLISH)
+            val n = java.text.NumberFormat.getIntegerInstance(java.util.Locale("en", "IN")).format(entryCount)
+            Text("Your book since $month ${since.year} · $n ${if (entryCount == 1) "entry" else "entries"}", style = ChittaTheme.type.label, color = ChittaTheme.colors.inkMuted)
+        }
     }
 }
 

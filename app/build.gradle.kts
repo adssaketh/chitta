@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.roborazzi)
 }
 
 android {
@@ -23,6 +24,14 @@ android {
     }
 
     buildFeatures { buildConfig = true }
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all { it.systemProperty("robolectric.pixelCopyRenderMode", "hardware"); it.maxHeapSize = "3g"
+            // Sandbox only: use a pre-downloaded Android jar instead of fetching it from Maven Central.
+            System.getenv("ROBOLECTRIC_DEPS")?.let { dir -> it.systemProperty("robolectric.offline", "true"); it.systemProperty("robolectric.dependency.dir", dir) }
+        }
+    }
 
     signingConfigs {
         // Release signing comes from CI secrets (KEYSTORE_BASE64 decoded to a file by the workflow).
@@ -113,4 +122,11 @@ dependencies {
     implementation(libs.androidx.fragment)
     testImplementation(libs.junit)
     testImplementation(kotlin("test"))
+    testImplementation(libs.robolectric)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.work.testing)
+    debugImplementation(libs.compose.ui.test.manifest)
 }
