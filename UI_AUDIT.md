@@ -378,3 +378,7 @@ Not matched or not compared yet:
 - Home top bar has an extra eye (hide amounts) icon the PDF does not show.
 - Rules p.39, Household p.40, Who spent p.42, Drive backup p.43, Mutual funds p.33, Import p.34, Bring over p.11, Lock p.9, Dry run p.12: captured only in their empty or signed-out state, so no like-for-like comparison. Needs seeded rules, funds, a signed-in household.
 - Customise p.37: close, small tweaks not applied.
+
+## Pay a bill sheet (PDF p.30)
+- Built `PaySheet`: Full / Other tiles (Minimum only when a minimum is known; plain bills have none), Paid from picker, Paid on shown as Today, Cancel / Confirm payment. Opened from "Pay another amount or from another account".
+- Left out: tappable "Paid on" date and the "saved as a transfer" note. Payments are saved as of now and the bill flow does not pair a transfer (money rule), so showing either would be untrue.

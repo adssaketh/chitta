@@ -31,6 +31,13 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.mansaketh.chitta.ui.Choice
+import com.mansaketh.chitta.ui.ChoiceSheet
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.Alignment
 
 private val dFmt = DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH)
 private val dyFmt = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH)
@@ -127,3 +134,70 @@ fun RepeatFields(repeat: Repeat?, onRepeat: (Repeat?) -> Unit, length: String, o
 }
 
 fun repeatUnit(r: Repeat) = when (r) { Repeat.DAILY -> "day"; Repeat.WEEKLY -> "week"; Repeat.MONTHLY -> "month"; Repeat.YEARLY -> "year"; Repeat.CUSTOM -> "period" }
+
+/**
+ * Pay a bill (PDF p.30): Amount as three choices (Full, Minimum when the card has one, Other typed), a Paid from row, a Paid on row and
+ * Cancel / Confirm payment. "Paid on" is today and not tappable, because a payment is saved as of now. [onConfirm] gets the typed
+ * amount (null = the bill's usual amount) and the account (null = the bill's own), and says what is wrong through the callback.
+ */
+@Composable
+fun PaySheet(
+    title: String, full: Paise, minimum: Paise?, accounts: List<Account>, initialAccountId: String?, todayText: String, note: String?,
+    onConfirm: (amount: String?, accountId: String?, problem: (String) -> Unit) -> Unit, onDismiss: () -> Unit,
+) {
+    val c = ChittaTheme.colors
+    val active = accounts.filter { !it.archived }
+    var choice by remember { mutableStateOf(0) } // 0 Full, 1 Minimum, 2 Other
+    var other by remember { mutableStateOf("") }
+    var account by remember { mutableStateOf(initialAccountId?.takeIf { id -> active.any { it.id == id } } ?: active.firstOrNull()?.id ?: "") }
+    var picking by remember { mutableStateOf(false) }
+    var problem by remember { mutableStateOf<String?>(null) }
+    fun plain(p: Paise) = IndianFormat.rupees(p, symbol = "").replace(",", "")
+    if (picking) {
+        ChoiceSheet("Paid from", active.map { Choice(it.name, it.id, selected = it.id == account) }, { account = it; picking = false }, { picking = false })
+        return
+    }
+    BottomOverlay(onDismiss, handle = false) {
+        SheetHeader(title, onClose = onDismiss)
+        Spacer(Modifier.height(Dimens.Gap3))
+        Text("Amount", style = ChittaTheme.type.label, color = c.inkMuted)
+        Spacer(Modifier.height(Dimens.Gap2))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
+            val tiles = buildList { add(0 to "Full"); if (minimum != null) add(1 to "Minimum"); add(2 to "Other") }
+            tiles.forEach { (i, label) ->
+                val on = choice == i
+                val shape = com.mansaketh.chitta.core.design.tokens.Shapes.Control
+                Column(
+                    Modifier.weight(1f).clip(shape).background(if (on) c.ink else androidx.compose.ui.graphics.Color.Transparent)
+                        .border(Dimens.Hairline, if (on) c.ink else c.rule, shape)
+                        .pressClickable(role = androidx.compose.ui.semantics.Role.RadioButton) { choice = i; problem = null }
+                        .padding(vertical = Dimens.Gap3, horizontal = Dimens.Gap2),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(label, style = ChittaTheme.type.label, color = if (on) c.background else c.inkMuted)
+                    when (i) {
+                        0 -> AmountText(full, style = ChittaTheme.type.amountRow, color = if (on) c.background else c.ink)
+                        1 -> AmountText(minimum!!, style = ChittaTheme.type.amountRow, color = if (on) c.background else c.ink)
+                        else -> Text(if (other.isBlank()) "₹ …" else "₹$other", style = ChittaTheme.type.amountRow, color = if (on) c.background else c.ink)
+                    }
+                }
+            }
+        }
+        if (choice == 2) {
+            Spacer(Modifier.height(Dimens.Gap2))
+            ChittaField(other, { other = it; problem = null }, problem ?: "Amount paid", keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal))
+        }
+        Spacer(Modifier.height(Dimens.Gap2))
+        ValueRow("Paid from", active.firstOrNull { it.id == account }?.name ?: "", onClick = { picking = true })
+        ValueRow("Paid on", todayText)
+        if (note != null) FootNote(note)
+        Spacer(Modifier.height(Dimens.Gap3))
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(Dimens.Gap3)) {
+            ChittaButton("Cancel", onDismiss, Modifier.weight(0.8f).fillMaxHeight(), kind = ButtonKind.Secondary)
+            ChittaButton("Confirm payment", {
+                val amt = when (choice) { 1 -> plain(minimum!!); 2 -> other; else -> null }
+                if (choice == 2 && other.isBlank()) problem = "Enter an amount above zero." else onConfirm(amt, account.takeIf { it != initialAccountId }) { problem = it }
+            }, Modifier.weight(1.2f).fillMaxHeight(), confirmHaptic = true)
+        }
+    }
+}

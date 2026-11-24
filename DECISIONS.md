@@ -399,3 +399,5 @@ Master section 7 lists both. Decided with the user on 13 Nov 2026: Ping already 
 - A non-spending account is marked STALE after 35 days with no entry (same 35 days as mutual funds). The 7-day rule stays for the cash check only.
 - Back arrow on detail screens is the chevron the PDF draws.
 - Settings group summaries removed to match PDF p.36 (this reverses D271).
+
+- Pay sheet: "Paid on" is read-only Today and the transfer note is omitted, because Bills.pay saves at the current time with no transfer pairing. Minimum tile appears only when a minimum exists.

@@ -389,7 +389,7 @@ private fun BillsTab(vm: PlanViewModel, ui: PlanUi, onSheet: (String) -> Unit, o
     acting?.let { t ->
         ChoiceSheet(t.name.ifBlank { "Bill" }, buildList {
             if (Bills.needsAmount(t)) add(Choice("Set the amount", "amount")) else {
-                add(Choice("Pay ${rupees(Paise(Math.abs(t.amount)))}", "pay")); add(Choice("Pay a different amount or account", "different"))
+                add(Choice("Pay ${rupees(Paise(Math.abs(t.amount)))}", "pay")); add(Choice("Pay another amount or from another account", "different"))
             }
             add(Choice("Skip this one", "skip")); add(Choice("Edit", "edit")); add(Choice("Delete", "delete"))
         }, { v ->
@@ -398,8 +398,9 @@ private fun BillsTab(vm: PlanViewModel, ui: PlanUi, onSheet: (String) -> Unit, o
         }, { acting = null })
     }
     different?.let { t ->
-        AmountAccountSheet("Pay a bill", "Amount paid", ui.accounts, t.accountId, plainAmount(t), "Pay", note = "Only this one changes. The next one keeps the usual amount and account.",
-            onSave = { amount, account, problem -> if (vm.pay(t, amount, account, problem)) different = null }, onDismiss = { different = null })
+        PaySheet(t.name.ifBlank { "Pay a bill" }, Paise(Math.abs(t.amount)), null, ui.accounts, t.accountId,
+            friendlyDay(ui.nowMs, ui.nowMs, ui.zone), "Only this one changes. The next one keeps the usual amount and account.",
+            onConfirm = { amount, account, problem -> if (vm.pay(t, amount, account, problem)) different = null }, onDismiss = { different = null })
     }
     amountFor?.let { t ->
         TextSheet("Amount", "Amount", "", { if (vm.setAmount(t, it)) amountFor = null }, { amountFor = null }, numeric = true)

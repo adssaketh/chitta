@@ -32,6 +32,6 @@ class WalkTwoTest : ShotBase() {
 
     @Test fun billSheet() {
         prepare()
-        tap("Plan"); tap("Bills"); tap("Electricity"); shot("23_bill_sheet")
+        tap("Plan"); tap("Bills"); tap("Electricity"); shot("23_bill_sheet"); tap("Pay another amount or from another account"); shot("23b_pay_sheet")
     }
 }

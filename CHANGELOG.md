@@ -528,3 +528,5 @@
 ## Rules (PDF p.39) and Mutual funds (PDF p.33)
 - Rules: the note, numbered rows (the conditions as the title, "Set category: …" under it, chevron), then New rule and Apply to history side by side. Turning a rule on or off is in the row's sheet. This also fixes the old layout, where Apply to my history was pushed out of sight.
 - Mutual funds: Current value, Invested and Gain pair with the gain percent, "Your funds" with a count, the AMFI footnote and a red Import holdings button; price refresh and the two switches follow the list.
+
+- Bills: Pay sheet rebuilt to PDF p.30 (amount tiles, Paid from, Paid on, Cancel / Confirm payment).
