@@ -16,13 +16,22 @@ class WalkTwoTest : ShotBase() {
         tap("Plan")
         tap("Budgets"); tap("November budget"); shot("20_budget_detail"); back()
         tap("Goals"); tap("Emergency fund"); shot("21_goal_detail"); back()
-        tap("Loans"); tap("Kiran"); shot("22_loan_detail"); back()
-        tap("Bills"); tap("Electricity"); shot("23_bill_sheet"); tap("Close")
         tap("More", -1)
-        tap("Rules"); shot("24_rules"); back()
-        tap("Household"); shot("25_household"); back()
-        tap("Mutual funds"); shot("26_mutual_funds"); back()
-        tap("Settings"); tap("Backup and restore"); shot("27_settings_backup"); tap("Google Drive backup"); shot("28_drive_backup"); back()
-        tap("Delete everything"); shot("29_delete_confirm")
+        tap("Accounts"); tap("Mutual funds"); shot("26_mutual_funds"); back(); back()
+        tap("Settings")
+        tap("Import and export"); tap("Rules"); shot("24_rules"); back()
+        tap("Household", 0); tap("Household", -1); shot("25_household"); back()
+        tap("Backup and restore"); shot("27_settings_backup"); tap("Google Drive backup"); shot("28_drive_backup"); back()
+        tap("Data"); tap("Delete everything"); shot("29_delete_confirm")
+    }
+
+    @Test fun sheets() {
+        prepare()
+        tap("Plan"); tap("Loans"); tap("Kiran"); shot("22_loan_sheet")
+    }
+
+    @Test fun billSheet() {
+        prepare()
+        tap("Plan"); tap("Bills"); tap("Electricity"); shot("23_bill_sheet")
     }
 }

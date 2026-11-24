@@ -367,3 +367,14 @@ Known leftovers: row height (page about 62 dp, kit 68), button height (page abou
 ## Screens 11 Ledger first use (PDF p.19) and 12 Entry detail (PDF p.20), 17 Nov 2026, branch `ui-11-12-ledger-first-use-entry-detail`, exact match rule
 - 11: top bar (title and Search only) / tabs / book glyph / "A blank page" / line / Primary "Add your first entry" / underlined "Bring in messages from Ping": matched in code. Paper and Ink use tokens only. Not seen on a phone.
 - 12: top bar (back, Entry, Duplicate, Pin, Split) / tile / mono line / title / amount / Split tag / six rows with full-width rules / History timeline / Delete entry: matched in code. Differences left: row height (kit 56 dp against about 50 dp on the page), and the second history line of a split (see CHANGELOG).
+
+## Screen-by-screen check, 24 Nov 2026 (Paper theme; Ink compared for Home, Bills, Accounts, Categories)
+Method: Robolectric + Roborazzi captures of the real app on a seeded book (`app/src/test/.../shots`: WalkOneTest, WalkTwoTest, FlowTest), set beside the PDF page.
+Matched to the PDF: Home p.13, Ledger p.12/18, Entry detail p.20, Budgets p.24, Goals p.26, Loans p.27, Bills p.28, Calendar p.29, Insights p.31 (By category order), Accounts p.32, Categories p.38, Settings p.36, More p.35, Budget detail p.25 (head: pace stamp, "left", Spent/Forecast, chart legend).
+Works end to end (FlowTest): Quick Add, type title, pick category, enter amount, Save, "Saved · … Undo" bar, Safe to spend updates, entry shows in the Ledger.
+Not matched or not compared yet:
+- Pay a bill sheet p.30 (Full / Minimum / Other, Paid from, Paid on, transfer note): needs a money-rule decision on the card transfer, so not built.
+- Budget detail p.25 rows "Limits by category / Rollover / Alerts / History": the app's own sections remain.
+- Home top bar has an extra eye (hide amounts) icon the PDF does not show.
+- Rules p.39, Household p.40, Who spent p.42, Drive backup p.43, Mutual funds p.33, Import p.34, Bring over p.11, Lock p.9, Dry run p.12: captured only in their empty or signed-out state, so no like-for-like comparison. Needs seeded rules, funds, a signed-in household.
+- Customise p.37: close, small tweaks not applied.
