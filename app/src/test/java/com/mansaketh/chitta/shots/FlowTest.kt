@@ -25,4 +25,10 @@ class FlowTest : ShotBase() {
         tap("Ledger")
         shot("44_flow_ledger")
     }
+
+    @Test fun datePicker() {
+        prepare()
+        tap("Add", 0)
+        tap("Today"); shot("45_date_sheet")
+    }
 }

@@ -250,6 +250,7 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
                     ui.categories.filter { it.mainCategoryId == null && !it.archived && it.income == e.income }, e.categoryId,
                     { lines -> if (group.isEmpty()) vm.split(lines) { edit = Edit.None; onBack() } else vm.resplit(lines) { edit = Edit.None; onBack() } },
                     { edit = Edit.None },
+                    title = e.name,
                     initial = group.map { com.mansaketh.chitta.core.domain.SplitLine(it.categoryId, it.subCategoryId, Paise(Math.abs(it.amount))) },
                 )
             }

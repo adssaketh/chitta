@@ -387,3 +387,7 @@ Not matched or not compared yet:
 - Delete sheet rebuilt: "Delete {name}, {amount}?", "This also changes" rows (account balance before -> after), note, Keep it / Delete.
 - Left out: "card outstanding", "budget spent" and "category this month" rows. The delete-impact model only reports account balances; adding the others needs new domain code.
 - Save bar wording now "Saved Swiggy, ₹486". The PDF lands on Ledger after saving; the app stays on the screen you were on. Behaviour left to the master prompt, not changed.
+
+## Split (PDF p.21) and Date (p.16)
+- Split is now a full screen: back arrow, "Name · ₹total", red "Still to assign" amount, one row per line (dot, category, amount box), Add a line / Equal parts, "Add the ₹X to {first category}?" shortcut, dashed "Save · ₹X left" that turns solid "Save split" when the lines balance. Money rules unchanged (Splits.check / remainder).
+- Date sheet already matched p.16. The Quick Add sheet still peeks above it; the PDF hides it. Left as is.

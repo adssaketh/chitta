@@ -1,7 +1,24 @@
 package com.mansaketh.chitta.ui.detail
 
 import com.mansaketh.chitta.core.design.kit.SheetHeader
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
+import com.mansaketh.chitta.core.design.components.AmountText
+import com.mansaketh.chitta.core.design.components.pressClickable
+import com.mansaketh.chitta.core.design.kit.TopBarDetail
+import com.mansaketh.chitta.ui.OverlayState
+import com.mansaketh.chitta.ui.categoryTint
 import com.mansaketh.chitta.core.design.kit.ValueRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Row
@@ -41,7 +58,10 @@ private class LineDraft(var categoryId: String? = null, var amountText: String =
  * until the lines equal the total). Shows what is left to place while you type. Screen: PDF p.16 "Split, not balanced".
  */
 @Composable
-fun SplitSheet(total: Paise, categories: List<Category>, firstCategoryId: String, onSave: (List<SplitLine>) -> Unit, onClose: () -> Unit, initial: List<SplitLine> = emptyList()) {
+fun SplitSheet(
+    total: Paise, categories: List<Category>, firstCategoryId: String, onSave: (List<SplitLine>) -> Unit, onClose: () -> Unit,
+    initial: List<SplitLine> = emptyList(), title: String? = null,
+) {
     val c = ChittaTheme.colors
     // An already split payment opens with its current lines; a new split starts with two.
     val lines = remember { (if (initial.size >= 2) initial.map { LineDraft(it.categoryId, plain(it.amount.value), it.subCategoryId) } else listOf(LineDraft(firstCategoryId), LineDraft())).toMutableStateList() }
@@ -58,42 +78,95 @@ fun SplitSheet(total: Paise, categories: List<Category>, firstCategoryId: String
     val valid = ready.filterNotNull()
     val remainderPaise = Splits.remainder(total, valid)
     val check: SplitCheck = if (!complete) SplitCheck.ZeroLine else Splits.check(total, valid)
+    val balanced = check == SplitCheck.Balanced
+    val left = remainderPaise.value
 
-    BottomOverlay(onClose, handle = false) {
-        SheetHeader("Split ${IndianFormat.rupees(total, alwaysShowPaise = true)}")
-        Spacer(Modifier.height(Dimens.Gap2))
-        lines.forEachIndexed { i, l ->
-            ValueRow("Line ${i + 1}", l.categoryId?.let { categoryName(it, categories) } ?: "Pick a category", onClick = { pickFor = i })
-            ChittaField(
-                value = l.amountText, onValueChange = { l.amountText = it; tick++ }, label = "Amount for line ${i + 1}", singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            )
-        }
-        Spacer(Modifier.height(Dimens.Gap2))
-        Text(
-            when {
-                check == SplitCheck.Balanced -> "The lines add up to the total."
-                remainderPaise.value > 0 -> "${IndianFormat.rupees(remainderPaise, alwaysShowPaise = true)} left to place."
-                remainderPaise.value < 0 -> "${IndianFormat.rupees(Paise(-remainderPaise.value), alwaysShowPaise = true)} over the total."
-                else -> "Every line needs a category and an amount above zero."
-            },
-            style = ChittaTheme.type.body, color = if (check == SplitCheck.Balanced) c.ink else c.warningText,
-        )
-        Spacer(Modifier.height(Dimens.Gap3))
-        com.mansaketh.chitta.core.design.kit.ButtonPair(
-            first = { m -> ChittaButton("Add a line", { lines.add(LineDraft()) }, kind = ButtonKind.Secondary, modifier = m) },
-            second = { m ->
-                ChittaButton("Equal parts", {
-                    val withCat = lines.filter { it.categoryId != null }
-                    if (withCat.size >= 2) {
-                        Splits.equalLines(total, withCat.map { it.categoryId!! }).forEachIndexed { i, sl -> withCat[i].amountText = plain(sl.amount.value) }
-                        tick++
+    // Full screen (PDF p.21): this is a page with a back arrow, not a sheet.
+    androidx.activity.compose.BackHandler(onBack = onClose)
+    DisposableEffect(Unit) { OverlayState.open += 1; onDispose { OverlayState.open -= 1 } }
+    Column(
+        Modifier.fillMaxSize().background(c.background).statusBarsPadding().navigationBarsPadding().imePadding()
+            .pressClickable(role = null) { },
+    ) {
+        TopBarDetail("Split", onBack = onClose, subtitle = (title?.takeIf { it.isNotBlank() }?.let { "$it \u00B7 " } ?: "") + IndianFormat.rupees(total))
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = Dimens.Margin, vertical = Dimens.Gap4)) {
+                Text(
+                    when { balanced -> "Everything is assigned"; left < 0 -> "Over the total by"; else -> "Still to assign before you can save" },
+                    style = ChittaTheme.type.body, color = c.inkMuted,
+                )
+                Spacer(Modifier.height(Dimens.Gap1))
+                AmountText(Paise(Math.abs(left)), style = ChittaTheme.type.amountHero, color = if (balanced) c.ink else c.warningText, alwaysShowPaise = left % 100L != 0L)
+            }
+            HorizontalDivider(color = c.rule, thickness = Dimens.Hairline)
+            lines.forEachIndexed { i, l ->
+                Row(Modifier.fillMaxWidth().padding(horizontal = Dimens.Margin, vertical = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(10.dp).clip(CircleShape).background(l.categoryId?.let { c.categoryTint(it) } ?: c.rule))
+                    Spacer(Modifier.width(Dimens.Gap3))
+                    Text(
+                        l.categoryId?.let { categoryName(it, categories) } ?: "Pick a category", style = ChittaTheme.type.body,
+                        color = if (l.categoryId == null) c.inkMuted else c.ink,
+                        modifier = Modifier.weight(1f).heightIn(min = Dimens.TouchTarget).pressClickable(role = Role.Button, onClickLabel = "Change category") { pickFor = i }.wrapContentHeight(Alignment.CenterVertically),
+                    )
+                    ChittaField(
+                        value = l.amountText, onValueChange = { l.amountText = it; tick++ }, label = null, description = "Amount for line ${i + 1}",
+                        modifier = Modifier.width(150.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), minHeight = 48.dp,
+                    )
+                }
+                HorizontalDivider(color = c.rule, thickness = Dimens.Hairline)
+            }
+            Spacer(Modifier.height(Dimens.Gap3))
+            Column(Modifier.padding(horizontal = Dimens.Margin)) {
+                com.mansaketh.chitta.core.design.kit.ButtonPair(
+                    first = { m -> ChittaButton("Add a line", { lines.add(LineDraft()) }, kind = ButtonKind.Secondary, modifier = m) },
+                    second = { m ->
+                        ChittaButton("Equal parts", {
+                            val withCat = lines.filter { it.categoryId != null }
+                            if (withCat.size >= 2) {
+                                Splits.equalLines(total, withCat.map { it.categoryId!! }).forEachIndexed { i, sl -> withCat[i].amountText = plain(sl.amount.value) }
+                                tick++
+                            }
+                        }, kind = ButtonKind.Secondary, enabled = lines.count { it.categoryId != null } >= 2, modifier = m)
+                    },
+                )
+                val first = lines.firstOrNull()
+                if (!balanced && left > 0 && first?.categoryId != null) {
+                    Spacer(Modifier.height(Dimens.Gap3))
+                    val shape = com.mansaketh.chitta.core.design.tokens.Shapes.Control
+                    Row(
+                        Modifier.fillMaxWidth().clip(shape).border(Dimens.Hairline, c.rule, shape).padding(start = Dimens.Gap4, end = Dimens.Gap3, top = Dimens.Gap3, bottom = Dimens.Gap3),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("Add the ${IndianFormat.rupees(remainderPaise)} to ${categoryName(first.categoryId!!, categories)}?", style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.weight(1f))
+                        ChittaButton("Add", {
+                            val now = AmountExpression.evaluate(first.amountText)?.value ?: 0L
+                            first.amountText = plain(now + left); tick++
+                        }, kind = ButtonKind.Secondary, small = true)
                     }
-                }, kind = ButtonKind.Secondary, enabled = lines.count { it.categoryId != null } >= 2, modifier = m)
-            },
-        )
-        Spacer(Modifier.height(Dimens.Gap4))
-        ChittaButton("Save split", { onSave(valid) }, enabled = check == SplitCheck.Balanced, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
+                }
+            }
+            Spacer(Modifier.height(Dimens.Gap4))
+        }
+        Column(Modifier.padding(horizontal = Dimens.Margin).padding(bottom = Dimens.Gap3, top = Dimens.Gap2)) {
+            if (balanced) {
+                ChittaButton("Save split", { onSave(valid) }, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
+            } else {
+                // Dashed and flat until the lines add up (PDF p.21): it reads as not yet available, and says what is missing.
+                val shape = com.mansaketh.chitta.core.design.tokens.Shapes.Control
+                val dash = c.inkMuted
+                Box(
+                    Modifier.fillMaxWidth().height(Dimens.ButtonHeight).clip(shape).drawBehind {
+                        drawRoundRect(dash, cornerRadius = androidx.compose.ui.geometry.CornerRadius(12.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx(), pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(10f, 8f))))
+                    },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        if (left > 0) "Save \u00B7 ${IndianFormat.rupees(remainderPaise)} left" else if (left < 0) "Save \u00B7 ${IndianFormat.rupees(Paise(-left))} over" else "Save \u00B7 every line needs a category and amount",
+                        style = ChittaTheme.type.body, color = c.inkMuted,
+                    )
+                }
+            }
+        }
     }
     pickFor?.let { i ->
         ChoiceSheet("Category for line ${i + 1}", categories.map { Choice(it.name, it.id, selected = it.id == lines[i].categoryId) },

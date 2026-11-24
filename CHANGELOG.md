@@ -532,3 +532,5 @@
 - Bills: Pay sheet rebuilt to PDF p.30 (amount tiles, Paid from, Paid on, Cancel / Confirm payment).
 
 - Entry delete sheet follows PDF p.22; save bar reads "Saved name, amount" (p.17).
+
+- Split rebuilt as a full screen to PDF p.21 (same Split money rules).

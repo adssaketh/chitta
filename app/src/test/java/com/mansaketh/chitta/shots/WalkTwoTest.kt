@@ -39,4 +39,9 @@ class WalkTwoTest : ShotBase() {
         prepare()
         tap("Ledger"); tap("Dmart"); tap("Delete entry"); shot("30_entry_delete")
     }
+
+    @Test fun entrySplit() {
+        prepare()
+        tap("Ledger"); tap("Dmart"); tap("Split"); shot("31_entry_split")
+    }
 }
