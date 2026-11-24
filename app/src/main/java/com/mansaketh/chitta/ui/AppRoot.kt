@@ -196,7 +196,7 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
             // Tabs in bottom-bar order. Switching slides the new tab in from the side you moved towards and fades the old one out.
             val tabOrder = tabLayout.slots.map { it.key } + MORE
             Box(
-                Modifier.weight(1f).nestedScroll(fabScroll).pointerInput(tab, top, tabOrder) {
+                Modifier.weight(1f).then(if (top != null) Modifier.navigationBarsPadding() else Modifier).nestedScroll(fabScroll).pointerInput(tab, top, tabOrder) {
                     // A sideways swipe on a main tab moves to the next or previous tab (see detectTabSwipe).
                     if (top != null) return@pointerInput
                     detectTabSwipe { direction ->
@@ -290,7 +290,8 @@ private fun Main(vms: AppViewModels, hidden: Boolean, onToggleHide: () -> Unit, 
                 }
             }
             // A sheet covers the bar (design page 14): while one is open the bar steps aside.
-            if (OverlayState.open == 0) {
+            // PDF: only the five main tabs carry the bottom bar; every page opened from them (Entry, Settings, Accounts, ...) is full screen.
+            if (OverlayState.open == 0 && top == null) {
                 ChittaBottomNav(
                     items = tabLayout.slots.map { NavItem(it.key, it.label, FeatureIcons.tab(it)) } + NavItem(MORE, "More", ChittaIcons.More),
                     selectedKey = tab, onSelect = { tabChoice = it; stack = emptyList() }, modifier = Modifier.navigationBarsPadding(),

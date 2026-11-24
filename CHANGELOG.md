@@ -511,3 +511,8 @@
 - Phase 8a: rules suggest categories on Ping, UPI and CSV import review rows (suggest only). Quick Add has a Split button.
 
 - Phase 8a: Settings > Automation with a background add receiver that needs your secret and offers Undo. Unit tests. Notification scanning is not built (D99).
+
+## Plan, Bills, Calendar, nav and Ledger search to the PDF
+- Plan: budget/goal rows show "of ₹X" and a "₹Y left/over" figure, goals use "done by <month>", Loans get the two-column Owed/You owe summary and one "Lent and borrowed" section; the extra "Add a …" buttons are gone (FAB and empty states remain); no bell on Plan.
+- Bills: "Still to pay" block replaced by the "Coming up" section note, subscription stamp dropped, link row now "Reminders". Calendar: caption removed, legend is Due, Overdue, Paid, Skipped, Today.
+- Bottom bar only on the five main tabs; Ledger tabs hide during a non-empty search; pin icon is the Phosphor push-pin.

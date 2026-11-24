@@ -150,13 +150,16 @@ fun LedgerScreen(vm: LedgerViewModel, onOpen: (String) -> Unit, onAdd: () -> Uni
                             modifier = Modifier.padding(horizontal = Dimens.Margin),
                         )
                     }
-                    val tabs = LedgerTab.entries
-                    TextTabs(
-                        labels = listOf("All", "Spending", "Income", "Upcoming"), selected = tabs.indexOf(ui.filter.tab),
-                        onSelect = { vm.setTab(tabs[it]) },
-                        modifier = Modifier.ownsSideways().horizontalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin),
-                    )
-                    HairlineRule()
+                    // PDF p.18: once a search has words in it the tab row steps aside; the field, the chips and the count are all that is shown.
+                    if (!(searching && ui.filter.text.isNotBlank())) {
+                        val tabs = LedgerTab.entries
+                        TextTabs(
+                            labels = listOf("All", "Spending", "Income", "Upcoming"), selected = tabs.indexOf(ui.filter.tab),
+                            onSelect = { vm.setTab(tabs[it]) },
+                            modifier = Modifier.ownsSideways().horizontalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin),
+                        )
+                        HairlineRule()
+                    }
                 }
             }
             val filtered = ui.filter.accountIds.isNotEmpty() || ui.filter.categoryIds.isNotEmpty() || ui.typedFilters

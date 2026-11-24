@@ -47,6 +47,23 @@ object Seed {
         val start = ym.atDay(1).atStartOfDay(zone).toInstant().toEpochMilli(); val end = ym.atEndOfMonth().atTime(23, 59, 59).atZone(zone).toInstant().toEpochMilli()
         val budget = com.mansaketh.chitta.core.model.Budget("b-month", "November budget", 6_000_000, null, start, end, null, null, null, false, false, false, 1,
             com.mansaketh.chitta.core.model.Repeat.MONTHLY, now, null, true, 0, "a-hdfc", listOf(com.mansaketh.chitta.core.model.BudgetFilter.DEFAULT_FILTERS), null, false)
-        db.budgets().insertAll(listOf(budget.toEntity()))
+        val weekly = budget.copy(id = "b-food", name = "Food & dining", amount = 180_000, repeat = com.mansaketh.chitta.core.model.Repeat.WEEKLY, periodLength = 1, categoryIds = listOf("cat-out-0"), sortOrder = 1)
+        db.budgets().insertAll(listOf(budget.toEntity(), weekly.toEntity()))
+        // Goals: money moved into a goal is an entry linked to it.
+        val endGoal = now + 330 * DAY
+        db.objectives().insertAll(listOf(
+            com.mansaketh.chitta.core.model.Objective("g1", com.mansaketh.chitta.core.model.ObjectiveKind.GOAL, "Emergency fund", 30_000_000, 0, null, now, endGoal, null, null, null, false, false, false, "a-hdfc").toEntity(),
+            com.mansaketh.chitta.core.model.Objective("g2", com.mansaketh.chitta.core.model.ObjectiveKind.GOAL, "Goa trip", 4_000_000, 1, null, now, now + 40 * DAY, null, null, null, false, false, false, "a-hdfc").toEntity(),
+        ))
+        app.ledger.add(listOf(
+            tx(6, "Emergency fund", 13_000, "cat-out-9").copy(objectiveId = "g1"),
+            tx(9, "Goa trip", 31_500, "cat-out-8").copy(objectiveId = "g2"),
+            // One-time loans and upcoming bills
+            tx(11, "Kiran", 7_500, "cat-out-9").copy(kind = com.mansaketh.chitta.core.model.TransactionKind.LENT, income = false),
+            tx(14, "Dad", 50_000, "cat-in-1", income = true).copy(kind = com.mansaketh.chitta.core.model.TransactionKind.BORROWED),
+            tx(-1, "ICICI card bill", 12_480, "cat-out-3", "a-card").copy(kind = com.mansaketh.chitta.core.model.TransactionKind.UPCOMING, paid = false, originalDueMs = now + DAY),
+            tx(-4, "Netflix", 649, "cat-out-7", "a-card").copy(kind = com.mansaketh.chitta.core.model.TransactionKind.SUBSCRIPTION, paid = false, originalDueMs = now + 4 * DAY, periodLength = 1, repeat = com.mansaketh.chitta.core.model.Repeat.MONTHLY),
+            tx(2, "Electricity", 1_240, "cat-out-3").copy(kind = com.mansaketh.chitta.core.model.TransactionKind.UPCOMING, paid = false, originalDueMs = now - 2 * DAY),
+        ))
     }
 }
