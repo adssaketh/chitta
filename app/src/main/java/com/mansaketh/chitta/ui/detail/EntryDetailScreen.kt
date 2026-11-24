@@ -8,6 +8,7 @@ import com.mansaketh.chitta.core.design.kit.GlyphTile
 import com.mansaketh.chitta.core.design.kit.ValueRow
 import com.mansaketh.chitta.core.design.kit.TopBarDetail
 import com.mansaketh.chitta.core.design.kit.ButtonKind
+import com.mansaketh.chitta.core.design.kit.ButtonPair
 import com.mansaketh.chitta.core.design.kit.ChittaButton
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -215,14 +216,31 @@ fun EntryDetailScreen(vm: EntryDetailViewModel, entryId: String, onBack: () -> U
                 )
             }
             Edit.Delete -> impact?.let { im ->
-                val lines = buildList {
-                    add("This removes ${im.toDelete.size} ${if (im.toDelete.size == 1) "entry" else "entries"}.")
+                // PDF p.22: title with the name and amount, a "This also changes" list of before -> after rows, a note, Keep it / Delete.
+                val c = ChittaTheme.colors
+                val notes = buildList {
+                    if (im.toDelete.size > 1) add("This removes ${im.toDelete.size} entries.")
                     if (im.extraTransferLegs > 0) add("It also removes the other half of this transfer, so no balance is left half-moved.")
-                    im.balanceShifts.forEach { add("${it.account.name}: ${IndianFormat.rupees(it.before)} becomes ${IndianFormat.rupees(it.after)}.") }
                     if (im.linkedToGoalOrLoan > 0) add("It is linked to a goal or loan.")
-                    add("You can undo this for 10 seconds, and it stays in history.")
+                    add("You can undo for 10 seconds, and it stays in the entry\u2019s history.")
                 }
-                ConfirmSheet("Delete?", lines, "Delete", { vm.confirmDelete(im, onBack); edit = Edit.None }, { edit = Edit.None })
+                com.mansaketh.chitta.ui.BottomOverlay({ edit = Edit.None }, handle = false) {
+                    com.mansaketh.chitta.core.design.kit.SheetHeader("Delete ${e.name.ifBlank { "this entry" }}, ${IndianFormat.rupees(Paise(Math.abs(e.amount)))}?")
+                    if (im.balanceShifts.isNotEmpty()) {
+                        Spacer(Modifier.height(Dimens.Gap2))
+                        Text("This also changes", style = ChittaTheme.type.body, color = c.inkMuted)
+                        Spacer(Modifier.height(Dimens.Gap2))
+                        im.balanceShifts.forEach {
+                            ValueRow("${it.account.name} balance", "${IndianFormat.rupees(it.before)} \u2192 ${IndianFormat.rupees(it.after)}")
+                        }
+                    }
+                    notes.forEach { FootNote(it) }
+                    Spacer(Modifier.height(Dimens.Gap3))
+                    ButtonPair(
+                        first = { m -> ChittaButton("Keep it", { edit = Edit.None }, m, kind = ButtonKind.Secondary) },
+                        second = { m -> ChittaButton("Delete", { vm.confirmDelete(im, onBack); edit = Edit.None }, m) },
+                    )
+                }
             }
             Edit.Split -> {
                 val group = if (ui.siblings.isNotEmpty()) listOf(e) + ui.siblings else emptyList()

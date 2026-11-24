@@ -219,7 +219,7 @@ class QuickAddViewModel @Inject constructor(
         val entry = built.entries.singleOrNull() ?: return false
         val parts = com.mansaketh.chitta.core.domain.Splits.build(entry, Paise(Math.abs(entry.amount)), lines, ids::newId) ?: return false
         viewModelScope.launch {
-            actions.add(marked(parts), "Saved · ${entry.name.ifBlank { "entry" }} split into ${parts.size} lines")
+            actions.add(marked(parts), "Saved ${entry.name.ifBlank { "entry" }}, split into ${parts.size} lines")
             onSaved()
         }
         return true
@@ -232,8 +232,8 @@ class QuickAddViewModel @Inject constructor(
         val built = QuickAdd.build(d, u.accounts, ids::newId) as? QuickAddResult.Ready ?: return
         viewModelScope.launch {
             val first = built.entries.first()
-            val label = if (d.type == EntryType.Transfer) "Saved · transfer ${IndianFormat.rupees(Paise(Math.abs(first.amount)))}"
-            else "Saved · ${first.name.ifBlank { "entry" }} ${IndianFormat.rupees(Paise(Math.abs(first.amount)))}"
+            val label = if (d.type == EntryType.Transfer) "Saved transfer, ${IndianFormat.rupees(Paise(Math.abs(first.amount)))}"
+            else "Saved ${first.name.ifBlank { "entry" }}, ${IndianFormat.rupees(Paise(Math.abs(first.amount)))}"
             actions.add(marked(built.entries), label)
             if (d.type != EntryType.Transfer && d.title.isNotBlank() && d.categoryId != null) titleRepo.remember(d.title, d.categoryId!!, clock.nowMs(), ids.newId())
             onSaved()

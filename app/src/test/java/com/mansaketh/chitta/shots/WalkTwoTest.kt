@@ -34,4 +34,9 @@ class WalkTwoTest : ShotBase() {
         prepare()
         tap("Plan"); tap("Bills"); tap("Electricity"); shot("23_bill_sheet"); tap("Pay another amount or from another account"); shot("23b_pay_sheet")
     }
+
+    @Test fun entryDelete() {
+        prepare()
+        tap("Ledger"); tap("Dmart"); tap("Delete entry"); shot("30_entry_delete")
+    }
 }

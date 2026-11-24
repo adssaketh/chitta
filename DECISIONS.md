@@ -401,3 +401,5 @@ Master section 7 lists both. Decided with the user on 13 Nov 2026: Ping already 
 - Settings group summaries removed to match PDF p.36 (this reverses D271).
 
 - Pay sheet: "Paid on" is read-only Today and the transfer note is omitted, because Bills.pay saves at the current time with no transfer pairing. Minimum tile appears only when a minimum exists.
+
+- Delete sheet shows only account balance changes (the impact model has no card/budget/category figures). Save bar does not jump to Ledger.

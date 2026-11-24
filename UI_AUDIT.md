@@ -382,3 +382,8 @@ Not matched or not compared yet:
 ## Pay a bill sheet (PDF p.30)
 - Built `PaySheet`: Full / Other tiles (Minimum only when a minimum is known; plain bills have none), Paid from picker, Paid on shown as Today, Cancel / Confirm payment. Opened from "Pay another amount or from another account".
 - Left out: tappable "Paid on" date and the "saved as a transfer" note. Payments are saved as of now and the bill flow does not pair a transfer (money rule), so showing either would be untrue.
+
+## Entry delete sheet and save bar (PDF p.22, p.17)
+- Delete sheet rebuilt: "Delete {name}, {amount}?", "This also changes" rows (account balance before -> after), note, Keep it / Delete.
+- Left out: "card outstanding", "budget spent" and "category this month" rows. The delete-impact model only reports account balances; adding the others needs new domain code.
+- Save bar wording now "Saved Swiggy, ₹486". The PDF lands on Ledger after saving; the app stays on the screen you were on. Behaviour left to the master prompt, not changed.

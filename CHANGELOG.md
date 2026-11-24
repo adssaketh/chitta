@@ -530,3 +530,5 @@
 - Mutual funds: Current value, Invested and Gain pair with the gain percent, "Your funds" with a count, the AMFI footnote and a red Import holdings button; price refresh and the two switches follow the list.
 
 - Bills: Pay sheet rebuilt to PDF p.30 (amount tiles, Paid from, Paid on, Cancel / Confirm payment).
+
+- Entry delete sheet follows PDF p.22; save bar reads "Saved name, amount" (p.17).
