@@ -62,8 +62,13 @@ fun CustomiseScreen(vm: HomeViewModel, onBack: () -> Unit) {
             HomeSectionRows(layout, prefs, onAccounts = { sheet = "acc:$it" }, onRange = { sheet = "range:$it" })
 
             Section("Bottom tabs")
-            tabs.slots.forEachIndexed { i, key -> ValueRow("Tab ${i + 1}", key.label, onClick = { sheet = "slot:$i" }) }
+            // PDF p.37 shows "Opens first" alone; the tab slots stay, under it.
             ValueRow("Opens first", tabs.first.label, onClick = { sheet = "first" })
+            tabs.slots.forEachIndexed { i, key -> ValueRow("Tab ${i + 1}", key.label, onClick = { sheet = "slot:$i" }) }
+
+            Section("Cash check")
+            SwitchRow("Always show the cash check", preferCash, { prefs.setPreferCash(it) }, sub = "Even when a budget is set")
+            ValueRow("Accounts for spending", if (cash.isEmpty()) "None" else "${cash.size}", onClick = { sheet = "cash" })
 
             Section("More shortcuts")
             more.forEachIndexed { i, item ->
@@ -73,10 +78,6 @@ fun CustomiseScreen(vm: HomeViewModel, onBack: () -> Unit) {
                 }
                 HairlineRule()
             }
-
-            Section("Cash check")
-            SwitchRow("Always show the cash check", preferCash, { prefs.setPreferCash(it) }, sub = "Even when a budget is set")
-            ValueRow("Accounts for spending", if (cash.isEmpty()) "None" else "${cash.size}", onClick = { sheet = "cash" })
 
             Section("Week")
             ValueRow("First day of the week", firstDay.getDisplayName(TextStyle.FULL, Locale.ENGLISH), onClick = { sheet = "weekday" })
