@@ -157,6 +157,7 @@ fun MutualFundsScreen(vm: ManageViewModel, onBack: () -> Unit) {
         Column(Modifier.fillMaxSize()) {
             TopBarDetail(
                 "Mutual funds", onBack = onBack,
+                subtitle = if (tab == 0) MutualFunds.totals(ui.funds).priceDate?.let { d -> "Prices as of " + runCatching { LocalDate.parse(d).format(DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH)) }.getOrDefault(d) } else null,
                 actions = {
                     IconAction(
                         ChittaIcons.Plus, if (tab == 0) "Add or import holdings" else "Add an NPS account",
@@ -238,40 +239,52 @@ private fun FundsTab(
         else if (ui.funds.isEmpty()) item {
             EmptyState(null, null, "No mutual funds yet. Add one by hand, or import your statement.", "Add holdings", onAdd)
         } else {
+            // PDF p.33: Current value, then Invested and Gain side by side under ink rules, then "Your funds".
             item {
                 Spacer(Modifier.height(Dimens.Gap3))
-                Text("Value", style = ChittaTheme.type.label, color = c.inkMuted)
-                if (totals.priced > 0) AmountText(totals.value, style = ChittaTheme.type.amountHero, alwaysShowPaise = true)
+                Text("Current value", style = ChittaTheme.type.label, color = c.inkMuted)
+                if (totals.priced > 0) AmountText(totals.value, style = ChittaTheme.type.amountLarge)
                 else Text("No price yet", style = ChittaTheme.type.title, color = c.inkMuted)
-                Text(
-                    totals.priceDate?.let { "Price as of ${priceDateText(it)}" } ?: "No price yet. Refresh prices, or import your statement.",
-                    style = ChittaTheme.type.label, color = c.inkMuted,
-                )
-                ui.priceStatus.note?.let { Text(it, style = ChittaTheme.type.label, color = c.inkMuted) }
+                val gain = totals.gain
+                if (gain != null) {
+                    val invested = totals.value - gain
+                    Row(Modifier.fillMaxWidth().padding(top = Dimens.Gap3), horizontalArrangement = Arrangement.spacedBy(Dimens.Gap6)) {
+                        Column(Modifier.weight(1f)) {
+                            HairlineRule(Modifier.padding(bottom = Dimens.Gap2))
+                            Text("Invested", style = ChittaTheme.type.label, color = c.inkMuted)
+                            AmountText(invested, style = ChittaTheme.type.amountTile)
+                            Text("${totals.gainCovers} of ${totals.count} funds", style = ChittaTheme.type.label, color = c.inkMuted)
+                        }
+                        Column(Modifier.weight(1f)) {
+                            HairlineRule(Modifier.padding(bottom = Dimens.Gap2))
+                            Text("Gain", style = ChittaTheme.type.label, color = c.inkMuted)
+                            AmountText(gain, style = ChittaTheme.type.amountTile, tone = if (gain.value > 0) AmountTone.Income else AmountTone.Neutral)
+                            if (invested.value > 0) {
+                                val pct = java.math.BigDecimal(gain.value).multiply(java.math.BigDecimal(100)).divide(java.math.BigDecimal(invested.value), 1, java.math.RoundingMode.HALF_UP)
+                                Text((if (gain.value > 0) "+" else "") + pct.toPlainString() + "%", style = ChittaTheme.type.label, color = c.inkMuted)
+                            }
+                        }
+                    }
+                } else if (totals.priced > 0) Text("No gain to show: no fund with a price has an average price.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
+                ui.priceStatus.note?.let { Text(it, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2)) }
                 val unlinked = ui.funds.count { it.schemeCode.isBlank() }
                 if (ui.priceStatus.okMs > 0 && unlinked > 0) Text(
                     "$unlinked ${if (unlinked == 1) "fund is" else "funds are"} not linked to a price scheme and ${if (unlinked == 1) "keeps" else "keep"} the statement price. Open one to choose its scheme.",
                     style = ChittaTheme.type.label, color = c.inkMuted,
                 )
                 if (totals.priced in 1 until totals.count) Text("${totals.unpriced} of ${totals.count} funds have no price and are left out.", style = ChittaTheme.type.label, color = c.inkMuted)
-                Spacer(Modifier.height(Dimens.Gap3))
-                val gain = totals.gain
-                if (gain != null) {
-                    ValueRow("Gain", (if (gain.value > 0) "+" else "") + maskedRupees(gain))
-                    Text(
-                        "Covers ${totals.gainCovers} of ${totals.priced} priced ${if (totals.priced == 1) "fund" else "funds"}. A fund with no average price is left out.",
-                        style = ChittaTheme.type.label, color = c.inkMuted,
-                    )
-                } else if (totals.priced > 0) Text("No gain to show: no fund with a price has an average price.", style = ChittaTheme.type.label, color = c.inkMuted)
-                Spacer(Modifier.height(Dimens.Gap3))
+                Section("Your funds", note = ui.funds.size.toString())
+            }
+            items(ui.funds, key = { it.id }) { f -> FundRow(f, ui.nowMs, ui.zone, f.id in stampedIds) { onOpen(f) } }
+            item {
+                FootNote("Prices are end-of-day from AMFI. Units change only when you import.")
+                Spacer(Modifier.height(Dimens.Gap2))
                 ChittaButton(if (ui.pricesRunning) "Fetching prices…" else "Refresh prices", onRefresh, kind = ButtonKind.Secondary, enabled = !ui.pricesRunning, modifier = Modifier.fillMaxWidth())
                 SwitchRow("Update prices daily", ui.pricesAuto, { onToggleAuto(it) })
                 SwitchRow("Count in Net worth", ui.nwFunds, { onToggleNetWorth(it) })
-                Text("Prices come from AMFI's public file once a day. Nothing about you is sent.", style = ChittaTheme.type.label, color = c.inkMuted)
-                Spacer(Modifier.height(Dimens.Gap3))
-                HairlineRule()
+                Spacer(Modifier.height(Dimens.Gap4))
+                ChittaButton("Import holdings", onAdd, modifier = Modifier.fillMaxWidth())
             }
-            items(ui.funds, key = { it.id }) { f -> FundRow(f, ui.nowMs, ui.zone, f.id in stampedIds) { onOpen(f) } }
         }
     }
 }
