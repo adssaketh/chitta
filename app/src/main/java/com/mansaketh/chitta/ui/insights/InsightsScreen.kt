@@ -73,7 +73,6 @@ fun InsightsScreen(vm: InsightsViewModel, onOpenEntry: (String) -> Unit) {
         TextTabs(
             listOf("Current", "History", "Net worth", "Review"), tab, { tab = it },
             Modifier.ownsSideways().horizontalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin),
-            icons = com.mansaketh.chitta.core.design.icons.ChittaIcons.let { listOf(it.Insights, it.Undo, it.CatChartLineUp, it.Receipt) },
         )
         HairlineRule()
         when {
@@ -207,39 +206,19 @@ private fun CurrentTab(ui: InsightsUi, onRange: () -> Unit, onAccounts: () -> Un
         }
     }
 
-    Section("Totals")
-    HairlineRule()
-    TotalRow("Net total", s.net, bold = true)
-    TotalRow("Money in", s.income)
-    TotalRow("Money out", s.expense)
-    if (!s.balanceCorrection.isZero) TotalRow("Balance corrections", s.balanceCorrection)
-    if (!s.lent.isZero) TotalRow("Lent", s.lent)
-    if (!s.borrowed.isZero) TotalRow("Borrowed", s.borrowed)
-    if (!s.upcoming.isZero) TotalRow("Upcoming to pay", s.upcoming)
-    if (!s.overdue.isZero) TotalRow("Overdue to pay", s.overdue)
-    Text(
-        "Transfers between your own accounts are left out. A refund reduces its category.",
-        style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2),
-    )
-
-    Section("Cash flow")
-    if (ui.flow.isEmpty()) {
-        Text("Nothing in this range.", style = ChittaTheme.type.body, color = c.inkMuted)
-    } else {
-        FlowBars(ui.flow, label = { bucketLabel(it, ui.flowBucket) }, average = null, labelEvery = maxOf(1, ui.flow.size / 6))
-        Text("Money out in each ${bucketWord(ui.flowBucket)}. The grey outline is where this one ends at today's pace.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
+    // PDF p.31: the heading and the Bars / Donut switch share one line.
+    var donut by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    Row(Modifier.fillMaxWidth().padding(top = Dimens.SectionGap), verticalAlignment = Alignment.CenterVertically) {
+        Text("By category", style = ChittaTheme.type.sectionTitle, color = c.ink, modifier = Modifier.weight(1f))
+        if (ui.bars.isNotEmpty()) Segmented(listOf("Bars", "Donut"), if (donut) 1 else 0, { donut = it == 1 })
     }
-
-    Section("By category")
+    HairlineRule()
     TextTabs(listOf("Spending", "Income"), if (ui.showIncome) 1 else 0, { onIncome(it == 1) })
     Spacer(Modifier.height(Dimens.Gap2))
     if (ui.bars.isEmpty()) {
         Text(if (ui.showIncome) "No income in this range." else "No spending in this range.", style = ChittaTheme.type.body, color = c.inkMuted)
     } else {
         val top = ui.bars.maxOf { it.amount.value }.coerceAtLeast(1L)
-        var donut by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { Segmented(listOf("Bars", "Donut"), if (donut) 1 else 0, { donut = it == 1 }) }
-        Spacer(Modifier.height(Dimens.Gap2))
         if (donut) {
             val slices = com.mansaketh.chitta.core.domain.Donut.slices(ui.bars)
             val whole = com.mansaketh.chitta.core.money.Paise(slices.sumOf { it.amount.value })
@@ -262,6 +241,29 @@ private fun CurrentTab(ui: InsightsUi, onRange: () -> Unit, onAccounts: () -> Un
             }
         }
         Text("Tap a category to see what is in it.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
+    }
+
+    Section("Totals")
+    HairlineRule()
+    TotalRow("Net total", s.net, bold = true)
+    TotalRow("Money in", s.income)
+    TotalRow("Money out", s.expense)
+    if (!s.balanceCorrection.isZero) TotalRow("Balance corrections", s.balanceCorrection)
+    if (!s.lent.isZero) TotalRow("Lent", s.lent)
+    if (!s.borrowed.isZero) TotalRow("Borrowed", s.borrowed)
+    if (!s.upcoming.isZero) TotalRow("Upcoming to pay", s.upcoming)
+    if (!s.overdue.isZero) TotalRow("Overdue to pay", s.overdue)
+    Text(
+        "Transfers between your own accounts are left out. A refund reduces its category.",
+        style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2),
+    )
+
+    Section("Cash flow")
+    if (ui.flow.isEmpty()) {
+        Text("Nothing in this range.", style = ChittaTheme.type.body, color = c.inkMuted)
+    } else {
+        FlowBars(ui.flow, label = { bucketLabel(it, ui.flowBucket) }, average = null, labelEvery = maxOf(1, ui.flow.size / 6))
+        Text("Money out in each ${bucketWord(ui.flowBucket)}. The grey outline is where this one ends at today's pace.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
     }
 
     if (ui.changes.isNotEmpty()) {

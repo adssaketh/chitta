@@ -124,26 +124,22 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
             }
             if (ui.busy) Text("Working. Keep this screen open.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap2))
 
-            ExpandGroup("Look and feel", summary = "Theme, vibration, animations", icon = ChittaIcons.Gear, initiallyExpanded = true) {
+            ExpandGroup("Look and feel", icon = com.mansaketh.chitta.core.design.icons.KitIcons.Palette, initiallyExpanded = true) {
                 ValueRow("Theme", themeLabel(theme), onClick = { sheet = "theme" })
                 ValueRow("Vibration strength", com.mansaketh.chitta.ui.VibrationLevel.of(vibrate).label, onClick = { sheet = "vibration" })
                 SwitchRow("Animations", animations, { vm.setAnimations(it) })
             }
 
-            ExpandGroup("Security", summary = "App lock ${onOff(ui.lockEnabled).lowercase()}", icon = ChittaIcons.Lock) {
-                ValueRow("App lock", onOff(ui.lockEnabled), onClick = ::toggleLock)
+            ExpandGroup("Security", icon = ChittaIcons.Lock, initiallyExpanded = true) {
+                SwitchRow("App lock", ui.lockEnabled, { toggleLock() }, sub = "Fingerprint or PIN on open")
                 if (ui.lockEnabled) ValueRow("PIN", "Change", onClick = { pinFlow = "change" })
+                SwitchRow("Hide in recent apps", ui.hideInRecents, { vm.setHideInRecents(it) }, sub = "Blank the app in the switcher")
                 if (ui.lockEnabled) ValueRow("Lock after leaving", ui.timeout.label, onClick = { sheet = "timeout" })
-                ValueRow("Hide in recent apps", onOff(ui.hideInRecents), onClick = { vm.setHideInRecents(!ui.hideInRecents) })
                 FootNote("The lock uses your PIN, or your fingerprint or face. If you forget the PIN, your phone's own lock lets you choose a new one. Hiding in recent apps also stops screenshots.")
             }
 
-            ExpandGroup("Household", summary = "Share chosen entries with others", icon = ChittaIcons.Users) {
-                NavRow("Household", { onOpen("household") })
-                FootNote("Share chosen entries with up to 8 people, each signed in with their own Google account. Your book stays private unless you share.")
-            }
 
-            ExpandGroup("Backup and restore", summary = "Drive, sync, restore points, backup files", icon = ChittaIcons.Download) {
+            ExpandGroup("Backup and restore", icon = com.mansaketh.chitta.core.design.icons.KitIcons.Cloud) {
                 NavRow("Google Drive backup", { onOpen("cloud-backup") })
                 NavRow("Sync between phones", { onOpen("sync") })
                 ValueRow("Restore points", "${ui.points.size}", onClick = { vm.refreshPoints(); onOpen("restore-points") })
@@ -156,7 +152,7 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
                 )
             }
 
-            ExpandGroup("Import and export", summary = if (waiting > 0) "$waiting bank messages waiting" else "Rules, automation, CSV, your Paddhu book", icon = ChittaIcons.Transfer) {
+            ExpandGroup("Import and export", icon = com.mansaketh.chitta.core.design.icons.KitIcons.DownloadSimple) {
                 NavRow("Rules", { onOpen("rules") })
                 NavRow("Automation", { onOpen("automation") })
                 ValueRow("Bank messages and UPI", if (waiting > 0) "$waiting waiting" else "", onClick = { onOpen("intake") })
@@ -165,15 +161,21 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
                 NavRow("Bring over your Paddhu book", { onOpen("import") })
             }
 
-            val errorCount = com.mansaketh.chitta.diagnostics.Diagnostics.count()
-            ExpandGroup("Help", summary = if (errorCount == 0) "Diagnostics: no errors" else "Diagnostics: $errorCount recorded", icon = ChittaIcons.Info) {
-                ValueRow("Diagnostics", if (errorCount == 0) "No errors" else "$errorCount recorded", onClick = { sheet = "diagnostics" })
+            ExpandGroup("Household", icon = ChittaIcons.Users) {
+                NavRow("Household", { onOpen("household") })
+                FootNote("Share chosen entries with up to 8 people, each signed in with their own Google account. Your book stays private unless you share.")
             }
 
-            ExpandGroup("Data", summary = "Delete everything", icon = ChittaIcons.Trash) {
+            ExpandGroup("Data", icon = com.mansaketh.chitta.core.design.icons.KitIcons.Database) {
                 NavRow("Delete everything", { sheet = "delete" })
                 FootNote("This empties the book on this phone. A restore point is made first, so you can bring it back from Restore points.")
             }
+
+            val errorCount = com.mansaketh.chitta.diagnostics.Diagnostics.count()
+            ExpandGroup("Help", icon = com.mansaketh.chitta.core.design.icons.KitIcons.Question) {
+                ValueRow("Diagnostics", if (errorCount == 0) "No errors" else "$errorCount recorded", onClick = { sheet = "diagnostics" })
+            }
+
         }
     }
 

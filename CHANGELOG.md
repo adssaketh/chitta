@@ -520,3 +520,7 @@
 ## Accounts (PDF p.32) and Categories (PDF p.38)
 - Accounts: title with "As of <time>", Net worth figure with an info sheet, "Accounts" group with a total, glyph rows ("For spending · today", "Entered 2 Oct", STALE stamp after 35 days with no entry on an account not used for spending), card panels (statement, outstanding, unbilled, limit gauge), Investments group total. Move money and Exchange rates are kept, at the end of the page. Back arrow is now the chevron on every detail screen.
 - Categories: Expense/Income switch, coloured glyph circles, colour dots for subcategories, counts with chevrons, long-press note.
+
+## Settings (PDF p.36) and Insights (PDF p.31)
+- Settings: group rows have no summary lines, Look and feel and Security open first, App lock and Hide in recent apps are switches with the PDF's sub-lines, groups in PDF order (Backup, Import, Household, Data, Help), Phosphor palette, cloud, download, database and question icons.
+- Insights Current: By category comes right after Spent/Saved with the Bars/Donut switch on the heading line; Totals and Cash flow follow; tab icons removed.
