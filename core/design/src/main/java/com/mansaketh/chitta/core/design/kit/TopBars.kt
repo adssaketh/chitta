@@ -92,7 +92,7 @@ fun TopBarDetail(
                 .padding(horizontal = Dimens.Margin - ActionInset),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (onBack != null) IconAction(ChittaIcons.ArrowLeft, "Back", onBack) else Spacer(Modifier.width(ActionInset))
+            if (onBack != null) IconAction(com.mansaketh.chitta.core.design.icons.KitIcons.CaretLeft, "Back", onBack) else Spacer(Modifier.width(ActionInset))
             Column(Modifier.weight(1f).padding(horizontal = Dimens.Space1)) {
                 Text(
                     title,

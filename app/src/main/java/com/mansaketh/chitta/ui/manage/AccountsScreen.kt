@@ -17,6 +17,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
+import com.mansaketh.chitta.core.design.kit.EntryRow
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +48,7 @@ private sealed interface AccSheet {
     data class Rename(val a: Account) : AccSheet
     data class Correct(val a: Account) : AccSheet
     data object Rates : AccSheet
+    data object NetWorthInfo : AccSheet
     data class Card(val a: Account) : AccSheet
     data class Deposit(val d: FixedDeposit) : AccSheet
     data class DepositEdit(val d: FixedDeposit?) : AccSheet
@@ -69,28 +74,32 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            TopBarDetail("Accounts", onBack = onBack, actions = { IconAction(ChittaIcons.Plus, "Add an account", onClick = { sheet = AccSheet.Add }) })
+            val asOf = remember(ui.nowMs, ui.zone) { java.time.Instant.ofEpochMilli(ui.nowMs).atZone(ui.zone).format(java.time.format.DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.ENGLISH)).lowercase() }
+            TopBarDetail("Accounts", subtitle = "As of $asOf", onBack = onBack, actions = { IconAction(ChittaIcons.Plus, "Add an account", onClick = { sheet = AccSheet.Add }) })
             LazyColumn(Modifier.padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.FabInset)) {
+                // PDF p.32: Net worth leads, with an info mark that says what it counts.
                 item {
-                    Text("Total balance", style = ChittaTheme.type.label, color = c.inkMuted)
-                    AmountText(total, style = ChittaTheme.type.amountHero, alwaysShowPaise = true)
+                    Row(Modifier.padding(top = Dimens.Gap4), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Net worth", style = ChittaTheme.type.label, color = c.inkMuted)
+                        androidx.compose.material3.Icon(ChittaIcons.Info, contentDescription = "What Net worth counts", tint = c.inkMuted, modifier = Modifier.padding(start = Dimens.Gap2).size(Dimens.IconSmall).pressClickable(role = androidx.compose.ui.semantics.Role.Button) { sheet = AccSheet.NetWorthInfo })
+                    }
+                    AmountText(ui.net?.total ?: total, style = ChittaTheme.type.amountLarge, roundToRupee = true)
                     if (live.size != rupee.size) FootNote("Accounts in other currencies are listed below and not added in.")
                     notice?.let { FootNote(it) }
-                    ButtonPair(
-                        first = { m -> ChittaButton("Move money", onTransfer, m, kind = ButtonKind.Secondary, enabled = live.size >= 2) },
-                        second = { m -> ChittaButton("Exchange rates", { sheet = AccSheet.Rates }, m, kind = ButtonKind.Secondary) },
-                        modifier = Modifier.padding(vertical = Dimens.Gap3),
-                    )
                 }
-                // Headed groups (PDF page 32): the accounts first, then deposits, investments and what Net worth counts.
-                item { Section("Accounts", first = true) }
+                item { Section("Accounts", note = IndianFormat.rupees(total)) }
                 if (ui.loading) item { LoadingPlaceholder() }
                 if (!ui.loading && live.isEmpty()) item { EmptyState(FeatureIcons.tab(TabKey.Accounts), null, "No accounts yet. Add one to start.", "Add an account", { sheet = AccSheet.Add }) }
-                items(live, key = { it.id }) { a -> AccountRow(a, ui.balances[a.id] ?: Paise.ZERO, ui.cards[a.id]) { sheet = AccSheet.Actions(a) } }
+                items(live.filter { ui.cards[it.id] == null }, key = { it.id }) { a -> AccountRow(a, ui.balances[a.id] ?: Paise.ZERO, ui, null) { sheet = AccSheet.Actions(a) } }
+                // Cards (PDF p.32): a bordered panel per card with the statement, what is outstanding and the limit used.
+                if (ui.cards.isNotEmpty()) {
+                    item { Section("Cards") }
+                    items(live.filter { ui.cards[it.id] != null }, key = { "cc-" + it.id }) { a -> CardPanel(a, ui.cards[a.id]!!) { sheet = AccSheet.Actions(a) } }
+                }
                 if (archived.isNotEmpty()) item {
                     Section("Archived", note = if (showArchived) "Hide" else "Show", onNote = { showArchived = !showArchived })
                 }
-                if (showArchived) items(archived, key = { "x-" + it.id }) { a -> AccountRow(a, ui.balances[a.id] ?: Paise.ZERO, null) { sheet = AccSheet.Actions(a) } }
+                if (showArchived) items(archived, key = { "x-" + it.id }) { a -> AccountRow(a, ui.balances[a.id] ?: Paise.ZERO, ui, null) { sheet = AccSheet.Actions(a) } }
                 // Fixed deposits (Phase 8b). Worth shown is today's value; Net worth counts them only when switched on.
                 item { Section("Fixed deposits", note = "Add", onNote = { sheet = AccSheet.DepositEdit(null) }) }
                 if (ui.deposits.isEmpty() && !ui.loading) item {
@@ -101,7 +110,11 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                 }
                 sharedDepositSection(sharedViews.deposits, ui.nowMs, ui.zone) { sheet = AccSheet.SharedDeposit(it) }
                 // Investments: mutual funds (Phase 8c) and gold, EPF and PPF typed in by hand (Phase 8i) each have their own screen.
-                item { Section("Investments") }
+                item {
+                    val t = com.mansaketh.chitta.core.domain.MutualFunds.totals(ui.funds)
+                    val dep = ui.deposits.filter { !it.closed }.fold(Paise.ZERO) { acc, d -> acc + FixedDeposits.currentValue(d, ui.nowMs, ui.zone) }
+                    Section("Investments", note = IndianFormat.rupees(t.value + dep))
+                }
                 item {
                     val t = com.mansaketh.chitta.core.domain.MutualFunds.totals(ui.funds)
                     ValueRow("Mutual funds", if (ui.funds.isEmpty()) "None yet" else if (t.priced > 0) maskedRupees(t.value) else "${t.count} ${if (t.count == 1) "fund" else "funds"}", onClick = onOpenFunds)
@@ -127,6 +140,14 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                         if (matched) FootNote("Counted in that account's card details.")
                     }
                     item { FootNote("Spend, payment and refund messages change what is owed. Payment messages are not saved as entries.") }
+                }
+                item { Section("Money moves") }
+                item {
+                    ButtonPair(
+                        first = { m -> ChittaButton("Move money", onTransfer, m, kind = ButtonKind.Secondary, enabled = live.size >= 2) },
+                        second = { m -> ChittaButton("Exchange rates", { sheet = AccSheet.Rates }, m, kind = ButtonKind.Secondary) },
+                        modifier = Modifier.padding(vertical = Dimens.Gap3),
+                    )
                 }
             }
         }
@@ -183,24 +204,74 @@ fun AccountsScreen(vm: ManageViewModel, onBack: () -> Unit, onTransfer: () -> Un
                     }, { sheet = AccSheet.None }, numeric = true, saveLabel = "Set",
                 )
             }
+            AccSheet.NetWorthInfo -> ConfirmSheet("What Net worth counts", listOf(
+                "Your rupee accounts, plus what people owe you, minus what you owe.",
+                "Mutual funds, gold, EPF and PPF are added when their switches below are on. Fixed deposits and instalment loans follow their own switches.",
+                "Cards count through the accounts they are set up on.",
+            ), "Close", { sheet = AccSheet.None }, { sheet = AccSheet.None }, attention = false)
             AccSheet.Rates -> RatesSheet(vm, ui, { notice = it }, { sheet = AccSheet.None })
             AccSheet.None -> Unit
         }
     }
 }
 
+/** Account row (PDF p.32): a grey glyph circle, the name, "For spending · today" or "Entered 2 Oct", an optional STALE stamp and the balance. */
 @Composable
-private fun AccountRow(a: Account, balance: Paise, card: com.mansaketh.chitta.core.domain.CardFigures?, onClick: () -> Unit) {
+private fun AccountRow(a: Account, balance: Paise, ui: ManageUi, card: com.mansaketh.chitta.core.domain.CardFigures?, onClick: () -> Unit) {
     val c = ChittaTheme.colors
-    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick).padding(vertical = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text(a.name, style = ChittaTheme.type.title, color = c.ink)
-            if (!(a.currency ?: "INR").equals("INR", ignoreCase = true)) Text((a.currency ?: "").uppercase(), style = ChittaTheme.type.label, color = c.inkMuted)
-            if (card != null) Text("Owes ${IndianFormat.rupees(card.outstanding)} · due in ${card.daysToDue} ${if (card.daysToDue == 1L) "day" else "days"}", style = ChittaTheme.type.label, color = c.inkMuted)
-        }
-        AmountText(balance, alwaysShowPaise = true, tone = if (balance.value < 0) AmountTone.Expense else AmountTone.Neutral)
+    val last = ui.lastEntryMs[a.id]
+    val day = last?.let { friendlyDay(it, ui.nowMs, ui.zone).replaceFirstChar { ch -> ch.lowercase() } }
+    val forSpending = a.id in ui.spending
+    val stale = !forSpending && last != null && ui.nowMs - last > 35L * 86_400_000L
+    val foreign = !(a.currency ?: "INR").equals("INR", ignoreCase = true)
+    val meta = when {
+        foreign -> (a.currency ?: "").uppercase()
+        card != null -> "Owes ${IndianFormat.rupees(card.outstanding)} · due in ${card.daysToDue} ${if (card.daysToDue == 1L) "day" else "days"}"
+        forSpending -> "For spending" + (day?.let { " · $it" } ?: "")
+        day != null -> "Entered $day"
+        else -> "No entries yet"
     }
-    HairlineRule()
+    EntryRow(
+        title = a.name, meta = meta,
+        glyph = if (a.name.contains("cash", ignoreCase = true)) ChittaIcons.Tag else ChittaIcons.Bank, glyphColor = c.inkMuted,
+        amount = balance, tone = if (balance.value < 0) AmountTone.Expense else AmountTone.Neutral,
+        stamp = if (stale) "Stale" else null, onClick = onClick,
+    )
+}
+
+/** Card panel (PDF p.32): glyph and name with "Due 18 Nov", Statement and Outstanding side by side, "incl. unbilled", the limit gauge and its caption. */
+@Composable
+private fun CardPanel(a: Account, f: com.mansaketh.chitta.core.domain.CardFigures, onClick: () -> Unit) {
+    val c = ChittaTheme.colors
+    val shape = com.mansaketh.chitta.core.design.tokens.Shapes.Control
+    Column(
+        Modifier.fillMaxWidth().padding(vertical = Dimens.Gap2).clip(shape).background(c.surface).border(Dimens.Hairline, c.rule, shape)
+            .pressClickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick).padding(Dimens.Gap4),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            com.mansaketh.chitta.core.design.kit.Glyph(ChittaIcons.CreditCard, c.sindoor)
+            Text(a.name, style = ChittaTheme.type.title, color = c.ink, modifier = Modifier.weight(1f).padding(start = Dimens.Gap3))
+            Text("Due ${f.nextDue.dayOfMonth} ${f.nextDue.month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.ENGLISH)}", style = ChittaTheme.type.label, color = c.inkMuted)
+        }
+        Spacer(Modifier.height(Dimens.Gap3))
+        Row(Modifier.fillMaxWidth()) {
+            Column(Modifier.weight(1f)) {
+                Text("Statement", style = ChittaTheme.type.label, color = c.inkMuted)
+                AmountText(f.statementBalance, style = ChittaTheme.type.amountTile)
+            }
+            Column(Modifier.weight(1f)) {
+                Text("Outstanding", style = ChittaTheme.type.label, color = c.inkMuted)
+                AmountText(f.outstanding, style = ChittaTheme.type.amountTile)
+                if (f.unbilled.value > 0) Text("incl. ${IndianFormat.rupees(f.unbilled)} unbilled", style = ChittaTheme.type.label, color = c.inkMuted)
+            }
+        }
+        val limit = a.creditLimit
+        if (limit != null && limit > 0) {
+            Spacer(Modifier.height(Dimens.Gap3))
+            com.mansaketh.chitta.core.design.kit.GaugeBar(com.mansaketh.chitta.core.money.Segments.gauge(f.outstanding, Paise(limit), 20), "${a.name} limit used")
+            Text("${((f.utilisationBp ?: 0) / 100)}% of ${IndianFormat.rupees(Paise(limit))} limit used", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap1))
+        }
+    }
 }
 
 @Composable

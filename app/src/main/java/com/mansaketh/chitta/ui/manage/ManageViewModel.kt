@@ -45,6 +45,10 @@ data class ManageUi(
     val pricesRunning: Boolean = false,
     val nowMs: Long = 0L,
     val zone: java.time.ZoneId = java.time.ZoneId.systemDefault(),
+    val net: NetWorthFigures? = null,
+    /** Newest entry per account (for the "today" / "Entered 2 Oct" line) and the accounts the cash check counts ("For spending"). */
+    val lastEntryMs: Map<String, Long> = emptyMap(),
+    val spending: Set<String> = emptySet(),
 )
 
 @HiltViewModel
@@ -56,6 +60,8 @@ class ManageViewModel @Inject constructor(
     private val titleRepo: TitleRepository,
     private val ratesRepo: RatesRepository,
     private val assets: AssetsRepository,
+    private val plan: PlanRepository,
+    private val netInputs: com.mansaketh.chitta.data.NetWorthInputs,
     /** Loans and deposits shared inside the household (step 5a); the screens read and set it through here. */
     val shared: com.mansaketh.chitta.cloud.HouseholdSharedItems,
     private val prefs: com.mansaketh.chitta.data.UiPrefs,
@@ -84,7 +90,7 @@ class ManageViewModel @Inject constructor(
 
     private val fundSwitches = combine(prefs.netWorthFunds, prefs.netWorthNps, prefs.fundPricesAuto, prefs.fundPriceStatus, pricesRunning) { f, n, auto, st, run -> FundSwitches(f, n, auto, st, run) }
 
-    val ui: StateFlow<ManageUi> = combine(base, assetsFlow, prefs.netWorthDeposits, prefs.netWorthInstalments, fundSwitches) { b, a, nd, ni, fs ->
+    private val ui0: kotlinx.coroutines.flow.Flow<ManageUi> = combine(base, assetsFlow, prefs.netWorthDeposits, prefs.netWorthInstalments, fundSwitches) { b, a, nd, ni, fs ->
         val d = a.deposits; val du = a.dues
         val now = clock.nowMs()
         val today = java.time.Instant.ofEpochMilli(now).atZone(clock.zone()).toLocalDate()
@@ -93,6 +99,15 @@ class ManageViewModel @Inject constructor(
             cardSetup(acc)?.let { acc.id to com.mansaketh.chitta.core.domain.Cards.figures(it, b.entries, today, clock.zone(), CardDues.flowsFor(acc, du, b.entries)) }
         }.toMap()
         ManageUi(b.accounts, b.categories, Balances.balances(b.entries), b.rates, b.overrides, loading = false, cards = cards, deposits = d, dues = du, funds = a.funds.filter { !it.isNps }, nps = a.nps, npsSchemes = a.funds.filter { it.isNps }, nwDeposits = nd, nwInstalments = ni, nwFunds = fs.funds, nwNps = fs.nps, pricesAuto = fs.auto, priceStatus = fs.status, pricesRunning = fs.running, nowMs = now, zone = clock.zone())
+    }
+
+    /** The same Net worth figure Home and Insights show (PDF p.32 leads with it), worked out here from the same inputs. */
+    val ui: StateFlow<ManageUi> = combine(ui0, entries, plan.observeObjectives(), netInputs.extras, prefs.cashAccounts) { u, e, o, x, cash ->
+        u.copy(
+            net = NetWorth.at(u.nowMs, e, u.accounts, o, x, u.zone),
+            lastEntryMs = e.filter { it.dateMs <= u.nowMs }.groupBy { it.accountId }.mapValues { (_, l) -> l.maxOf { it.dateMs } },
+            spending = cash,
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ManageUi())
 
     // ---- fixed deposits (Phase 8b)

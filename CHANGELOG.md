@@ -516,3 +516,7 @@
 - Plan: budget/goal rows show "of ₹X" and a "₹Y left/over" figure, goals use "done by <month>", Loans get the two-column Owed/You owe summary and one "Lent and borrowed" section; the extra "Add a …" buttons are gone (FAB and empty states remain); no bell on Plan.
 - Bills: "Still to pay" block replaced by the "Coming up" section note, subscription stamp dropped, link row now "Reminders". Calendar: caption removed, legend is Due, Overdue, Paid, Skipped, Today.
 - Bottom bar only on the five main tabs; Ledger tabs hide during a non-empty search; pin icon is the Phosphor push-pin.
+
+## Accounts (PDF p.32) and Categories (PDF p.38)
+- Accounts: title with "As of <time>", Net worth figure with an info sheet, "Accounts" group with a total, glyph rows ("For spending · today", "Entered 2 Oct", STALE stamp after 35 days with no entry on an account not used for spending), card panels (statement, outstanding, unbilled, limit gauge), Investments group total. Move money and Exchange rates are kept, at the end of the page. Back arrow is now the chevron on every detail screen.
+- Categories: Expense/Income switch, coloured glyph circles, colour dots for subcategories, counts with chevrons, long-press note.

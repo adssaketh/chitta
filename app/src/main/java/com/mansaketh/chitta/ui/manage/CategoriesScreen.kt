@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.background
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,7 +46,8 @@ fun CategoriesScreen(vm: ManageViewModel, onBack: () -> Unit) {
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
             TopBarDetail("Categories", onBack = onBack, actions = { IconAction(ChittaIcons.Plus, "Add a category", onClick = { sheet = CatSheet.Add }) })
-            TextTabs(listOf("Spending", "Income"), if (income) 1 else 0, { income = it == 1 }, Modifier.padding(horizontal = Dimens.Margin))
+            // PDF p.38: a two-part switch, not screen tabs.
+            com.mansaketh.chitta.core.design.kit.Segmented(listOf("Expense", "Income"), if (income) 1 else 0, { income = it == 1 }, Modifier.padding(horizontal = Dimens.Margin, vertical = Dimens.Gap1))
             HairlineRule()
             notice?.let { Text(it, style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(horizontal = Dimens.Margin, vertical = Dimens.Gap2)) }
             if (!ui.loading && mains.isEmpty()) EmptyState(null, null, "No categories here yet.", "Add a category", { sheet = CatSheet.Add }, Modifier.padding(horizontal = Dimens.Margin))
@@ -52,6 +56,7 @@ fun CategoriesScreen(vm: ManageViewModel, onBack: () -> Unit) {
                     item(key = main.id) { CategoryRow(main, 0, vm.entriesIn(main)) { sheet = CatSheet.Actions(main) } }
                     items(ui.categories.filter { it.mainCategoryId == main.id }.sortedBy { it.sortOrder }, key = { it.id }) { sub -> CategoryRow(sub, 1, vm.entriesIn(sub)) { sheet = CatSheet.Actions(sub) } }
                 }
+                item { FootNote("Long-press a category to merge, archive or reorder.") }
             }
         }
 
@@ -101,14 +106,31 @@ fun CategoriesScreen(vm: ManageViewModel, onBack: () -> Unit) {
     }
 }
 
+/** Category row (PDF p.38): a coloured glyph circle (a colour dot for a subcategory), the name, the entry count and a chevron. Archived and transfer marks keep their words under the name. */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun CategoryRow(cat: Category, depth: Int, count: Int, onClick: () -> Unit) {
     val c = ChittaTheme.colors
-    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin).pressClickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick).padding(start = (depth * 24).dp, top = Dimens.Gap2, bottom = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text(cat.name, style = ChittaTheme.type.title, color = if (cat.archived) c.inkMuted else c.ink)
-            Text("$count ${if (count == 1) "entry" else "entries"}" + (if (cat.archived) " · archived" else "") + (if (cat.countsAsTransfer) " · counts as a transfer" else ""), style = ChittaTheme.type.label, color = c.inkMuted)
+    val tint = c.categoryTint(cat.id)
+    val note = listOfNotNull("archived".takeIf { cat.archived }, "counts as a transfer".takeIf { cat.countsAsTransfer }).joinToString(" · ")
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin)
+            .combinedClickable(onLongClick = onClick, onClick = onClick)
+            .padding(vertical = Dimens.Gap2),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (depth == 0) com.mansaketh.chitta.core.design.kit.Glyph(CategoryIconCatalog.imageFor(cat.iconName, cat.name) ?: ChittaIcons.Tag, tint)
+        else {
+            Spacer(Modifier.width(Dimens.GlyphCircle / 2 - 4.dp))
+            Box(Modifier.size(8.dp).clip(androidx.compose.foundation.shape.CircleShape).background(tint))
+            Spacer(Modifier.width(Dimens.GlyphCircle / 2 - 4.dp))
         }
+        Column(Modifier.weight(1f).padding(start = Dimens.Gap3)) {
+            Text(cat.name, style = ChittaTheme.type.body, color = if (cat.archived) c.inkMuted else c.ink)
+            if (note.isNotEmpty()) Text(note, style = ChittaTheme.type.label, color = c.inkMuted)
+        }
+        Text(count.toString(), style = ChittaTheme.type.body, color = c.inkMuted)
+        androidx.compose.material3.Icon(ChittaIcons.CaretRight, contentDescription = null, tint = c.inkMuted, modifier = Modifier.padding(start = Dimens.Gap3).size(Dimens.IconSmall))
     }
     HairlineRule()
 }
