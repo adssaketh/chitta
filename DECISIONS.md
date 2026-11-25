@@ -407,3 +407,5 @@ Master section 7 lists both. Decided with the user on 13 Nov 2026: Ping already 
 - Split is a full-screen overlay (OverlayState counted so the + button hides), opened from Entry detail and Quick Add.
 
 - Budget detail rows are NavRows opening in-screen sub-pages (BackHandler); Alerts row omitted because the app has no budget alerts.
+
+- Bell list grouping is by "no reasons left" (stillApplies); import review lists keep their old layout.

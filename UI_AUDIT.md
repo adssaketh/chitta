@@ -396,3 +396,7 @@ Not matched or not compared yet:
 - Under the chart: "Limits by category (n set)", "Rollover (On/Off)", "History (n periods)" as caret rows with edge-to-edge rules. Limits and History open as their own pages (back returns to the budget); Rollover opens the edit form where the switch lives.
 - Left out: "Alerts, At 90%". The app has no budget alerts and the money rules do not define them, so showing the row would be untrue.
 - Difference: History reads "n periods" (PDF shows "6 months"), because budgets repeat weekly, monthly or yearly.
+
+## Waiting for a look (PDF p.23), 25 Nov 2026
+- Behind the bell the list is titled "Waiting for a look" with "From Ping · N messages". Rows split into "Ready" (nothing flagged, with "n ticked") and "Needs a look" (with count); each row shows its reason as the sub-line. Intro line, "Fix selected" (opens the category fix for rows without one) with "Tick to include", and "Save N entries" as drawn.
+- Difference: the sub-line of Ready rows shows date, account and category (the PDF's "Card bill payment · from HDFC" wording needs a reason the importer does not produce). Import review lists keep the older header.

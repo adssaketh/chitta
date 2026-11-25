@@ -536,3 +536,5 @@
 - Split rebuilt as a full screen to PDF p.21 (same Split money rules).
 
 - Budget detail: PDF p.25 rows (Limits by category, Rollover, History) with sub-pages; no Alerts row (feature does not exist).
+
+- Waiting for a look (bell list) grouped into Ready / Needs a look to PDF p.23.

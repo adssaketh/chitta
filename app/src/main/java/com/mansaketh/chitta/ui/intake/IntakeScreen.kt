@@ -24,7 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -80,7 +80,10 @@ fun IntakeScreen(vm: IntakeViewModel, onBack: () -> Unit) {
         if (what.startsWith("upi:")) vm.readShared(what.removePrefix("upi:")) else vm.openWaiting()
     }
     Column(Modifier.fillMaxSize()) {
-        TopBarDetail("Bank messages and UPI", onBack = { vm.reset(); onBack() })
+        val waitingList = (stage as? IntakeStage.Review)?.takeIf { it.source == ReviewSource.Waiting }
+        // PDF p.23: behind the bell the page is titled "Waiting for a look" with where the messages came from.
+        if (waitingList != null) TopBarDetail("Waiting for a look", subtitle = "From Ping · ${waitingList.choices.size} ${if (waitingList.choices.size == 1) "message" else "messages"}", onBack = { vm.reset(); onBack() })
+        else TopBarDetail("Bank messages and UPI", onBack = { vm.reset(); onBack() })
         when (val s = stage) {
             is IntakeStage.Home -> HomeStep(vm, s)
             is IntakeStage.Working -> Column(Modifier.padding(horizontal = Dimens.Margin)) {
@@ -174,20 +177,36 @@ private fun ReviewStep(vm: IntakeViewModel, s: IntakeStage.Review) {
     val unticked = s.choices.count { !it.ticked }
     val missingCategory = s.choices.count { it.categoryId == null }
     val canSave = ticked > 0 || s.claims.isNotEmpty()
+    val waiting = s.source == ReviewSource.Waiting
+    // PDF p.23: "Ready" rows (nothing to flag) first, then "Needs a look" rows, each with its own header and count.
+    val ready = s.choices.indices.filter { s.choices[it].candidate.reasons.none { r -> stillApplies(r, s.choices[it]) } }
+    val needs = s.choices.indices.filter { it !in ready }
 
     // The sheets below fill the screen, so they need a Box of their own: inside the parent Column they were left with no room and never showed.
     Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.padding(horizontal = Dimens.Margin)) {
-            Text("$ticked ticked to save · $unticked left unticked", style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(top = Dimens.Gap2))
-            if (s.alreadyImported > 0 || s.skipped > 0) Text("${s.alreadyImported + s.skipped} left out because they are already in your book or repeated", style = ChittaTheme.type.label, color = c.inkMuted)
+            if (waiting) Text("Everything else was saved on its own. Nothing here is saved until you tap Save.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2, bottom = Dimens.Gap1))
+            else {
+                Text("$ticked ticked to save · $unticked left unticked", style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.padding(top = Dimens.Gap2))
+                if (s.alreadyImported > 0 || s.skipped > 0) Text("${s.alreadyImported + s.skipped} left out because they are already in your book or repeated", style = ChittaTheme.type.label, color = c.inkMuted)
+                Text("Rows that need a look start unticked. Tap a row to change it.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap1))
+            }
             if (s.claims.isNotEmpty()) Text("${s.claims.size} ${if (s.claims.size == 1) "payment is" else "payments are"} already in your book from its other half. Saving adds the details to those entries' notes.", style = ChittaTheme.type.label, color = c.inkMuted)
-            Text("Rows that need a look start unticked. Tap a row to change it.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(bottom = Dimens.Gap1))
-            if (missingCategory > 0) ChittaButton("Set a category for $missingCategory ${if (missingCategory == 1) "row" else "rows"} without one", { bulk = true }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
         }
         if (s.choices.isEmpty()) Text("Nothing to look at.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(Dimens.Margin))
         LazyColumn(Modifier.weight(1f).padding(horizontal = Dimens.Margin), contentPadding = PaddingValues(bottom = Dimens.InlineGap)) {
-            itemsIndexed(s.choices) { i, ch ->
+            val groups = if (waiting) listOf("Ready" to ready, "Needs a look" to needs) else listOf(null to s.choices.indices.toList())
+            groups.forEach { (label, idx) ->
+              if (label != null && idx.isNotEmpty()) item {
+                Row(Modifier.fillMaxWidth().padding(top = Dimens.Gap3, bottom = Dimens.Gap1), verticalAlignment = Alignment.CenterVertically) {
+                    Text(label, style = ChittaTheme.type.bodyMedium, color = c.ink, modifier = Modifier.weight(1f))
+                    Text(if (label == "Ready") "${idx.count { s.choices[it].ticked }} ticked" else "${idx.size}", style = ChittaTheme.type.label, color = c.inkMuted)
+                }
+                HairlineRule()
+              }
+              items(idx) { i ->
+                val ch = s.choices[i]
                 val r = ch.candidate.row
                 Row(
                     Modifier.fillMaxWidth().heightIn(min = Dimens.RowTall).pressClickable(role = Role.Button) { rowSheet = i to "row" }.padding(vertical = Dimens.Gap2),
@@ -200,15 +219,29 @@ private fun ReviewStep(vm: IntakeViewModel, s: IntakeStage.Review) {
                         Text(r.title.ifBlank { "(no title)" }, style = ChittaTheme.type.body, color = c.ink, maxLines = 1)
                         val account = s.accounts.firstOrNull { it.id == ch.accountId }?.name ?: r.accountName ?: "No account"
                         val category = s.picks.firstOrNull { it.categoryId == ch.categoryId && it.subCategoryId == ch.subCategoryId }?.label ?: r.categoryLabel.ifBlank { "No category" }
-                        Text(Instant.ofEpochMilli(r.dateMs).atZone(zone).toLocalDate().toString() + " · " + account + " · " + category, style = ChittaTheme.type.label, color = c.inkMuted, maxLines = 1)
                         val reasons = ch.candidate.reasons.filter { stillApplies(it, ch) }
-                        if (reasons.isNotEmpty()) Text(reasons.joinToString(". ") { it.text }, style = ChittaTheme.type.labelMedium, color = c.ink)
+                        if (waiting && reasons.isNotEmpty()) Text(reasons.joinToString(". ") { it.text }, style = ChittaTheme.type.label, color = c.inkMuted, maxLines = 1)
+                        else {
+                            Text(Instant.ofEpochMilli(r.dateMs).atZone(zone).toLocalDate().toString() + " · " + account + " · " + category, style = ChittaTheme.type.label, color = c.inkMuted, maxLines = 1)
+                            if (reasons.isNotEmpty()) Text(reasons.joinToString(". ") { it.text }, style = ChittaTheme.type.labelMedium, color = c.ink)
+                        }
                     }
                     Spacer(Modifier.width(Dimens.Gap2))
                     Text((if (r.isExpense) "-" else "+") + IndianFormat.rupees(Paise(r.amountPaise), alwaysShowPaise = true), style = ChittaTheme.type.body, color = if (!r.isExpense) c.green else c.ink)
                 }
                 HairlineRule()
+              }
             }
+        }
+        // PDF p.23: "Fix selected" (underlined) on the left, a hint on the right.
+        if (waiting) Row(Modifier.fillMaxWidth().padding(horizontal = Dimens.Margin).padding(top = Dimens.Gap2), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "Fix selected", style = ChittaTheme.type.label.copy(textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline), color = if (missingCategory > 0) c.ink else c.inkMuted,
+                modifier = Modifier.weight(1f).then(if (missingCategory > 0) Modifier.pressClickable(role = Role.Button) { bulk = true } else Modifier),
+            )
+            Text(if (unticked > 0) "Tick to include" else "", style = ChittaTheme.type.label, color = c.inkMuted)
+        } else if (missingCategory > 0) Column(Modifier.padding(horizontal = Dimens.Margin)) {
+            ChittaButton("Set a category for $missingCategory ${if (missingCategory == 1) "row" else "rows"} without one", { bulk = true }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())
         }
         Column(Modifier.padding(horizontal = Dimens.Margin).padding(top = Dimens.Gap2, bottom = Dimens.Gap4)) {
             ChittaButton("Save $ticked ${if (ticked == 1) "entry" else "entries"}", { vm.save() }, enabled = canSave, confirmHaptic = true, modifier = Modifier.fillMaxWidth())
