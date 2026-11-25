@@ -25,7 +25,7 @@ import java.io.File
 abstract class ShotBase {
     @get:Rule val rule: AndroidComposeTestRule<androidx.test.ext.junit.rules.ActivityScenarioRule<MainActivity>, MainActivity> = createAndroidComposeRule<MainActivity>()
     protected val theme: String = System.getenv("SHOT_THEME") ?: "paper"
-    private val dir = File("/home/claude/shots/$theme").also { it.mkdirs() }
+    private val dir = File(System.getenv("SHOT_DIR") ?: (System.getProperty("java.io.tmpdir") + "/chitta-shots"), theme).also { it.mkdirs() }
 
     protected fun prepare(seed: Boolean = true) {
         val app = ApplicationProvider.getApplicationContext<ChittaApp>()
