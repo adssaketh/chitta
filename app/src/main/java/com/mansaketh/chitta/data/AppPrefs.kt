@@ -42,6 +42,10 @@ class AppPrefs @Inject constructor(@ApplicationContext context: Context) {
     fun postedKeys(day: String): Set<String> = if (p.getString("posted.day", "") == day) p.getStringSet("posted.keys", emptySet()) ?: emptySet() else emptySet()
     fun markPosted(day: String, keys: Set<String>) { p.edit().putString("posted.day", day).putStringSet("posted.keys", keys).apply() }
 
+    /** Budget alert keys already sent (one per budget, period and percent), kept so a note is never repeated. */
+    fun alertsSent(): Set<String> = p.getStringSet("alerts.sent", emptySet()) ?: emptySet()
+    fun markAlertSent(key: String) { p.edit().putStringSet("alerts.sent", HashSet(alertsSent()) + key).apply() }
+
     /** Whether Auto-pay overdue is on, and which date a paid bill gets (Phase 5). */
     var autoPayOverdue: Boolean
         get() = p.getBoolean("autoPay", false)

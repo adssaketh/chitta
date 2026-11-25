@@ -66,6 +66,7 @@ fun BudgetDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit
     var deleting by remember { mutableStateOf(false) }
     // PDF p.25: the rows under the chart open "Limits by category" and "History" as their own pages.
     var sub by remember { mutableStateOf<String?>(null) }
+    var alertSheet by remember { mutableStateOf(false) }
     androidx.activity.compose.BackHandler(enabled = sub != null) { sub = null }
     val c = ChittaTheme.colors
     Column(Modifier.fillMaxSize()) {
@@ -124,6 +125,7 @@ fun BudgetDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit
                 Text(if (s.left.isNegative) "over" else "left", style = ChittaTheme.type.amountLarge, color = c.ink)
             }
             Text(if (s.left.isNegative) "over the budget of ${rupees(s.limit)}" else "of ${rupees(s.limit)}", style = ChittaTheme.type.label, color = c.inkMuted)
+            if (BudgetAlerts.reached(b, s)) Text("You have reached ${b.alertPercent}% of the limit.", style = ChittaTheme.type.label, color = c.warningText)
             if (!s.carry.isZero) Text(if (s.carry.isNegative) "Includes ${rupees(-s.carry)} overspent in earlier periods, taken off." else "Includes ${rupees(s.carry)} carried in from earlier periods.", style = ChittaTheme.type.label, color = c.inkMuted)
             if (s.started) {
                 // Spent and Forecast side by side, each under an ink rule (PDF p.25).
@@ -157,6 +159,7 @@ fun BudgetDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit
             HairlineRule()
             NavRow("Limits by category", { sub = "limits" }, value = "${lines.count { it.limit != null }} set")
             NavRow("Rollover", onEdit, value = if (b.rollover) "On" else "Off")
+            if (!b.income) NavRow("Alerts", { alertSheet = true }, value = BudgetAlerts.label(b.alertPercent))
             NavRow("History", { sub = "history" }, value = if (history.size == 1) "1 period" else "${history.size} periods")
             if (b.addedTransactionsOnly) Text("This was an \"added only\" budget in the old Paddhu Pusthakam app. This app cannot tell which entries were added to it, so it counts every matching entry.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap3))
             Text("Counts paid entries only. Lent and borrowed money is ${if (Budgets.filterOn(b.filters, BudgetFilter.INCLUDE_DEBT_AND_CREDIT)) "included" else "left out"}.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
@@ -172,6 +175,10 @@ fun BudgetDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit
             { raw -> if (b != null && vm.setLimit(b, l.categoryId, raw)) editing = null }, { editing = null }, numeric = true,
         )
     }
+    if (alertSheet && b != null) ChoiceSheet(
+        "Alert", buildList { add(Choice("Off", -1, selected = b.alertPercent == null)); BudgetAlerts.CHOICES.forEach { add(Choice(BudgetAlerts.label(it), it, selected = b.alertPercent == it)) } },
+        { v -> alertSheet = false; vm.setAlert(b, v.takeIf { it > 0 }) }, { alertSheet = false },
+    )
     if (deleting && b != null) ConfirmSheet("Delete ${b.name}?", listOf("Its category goals go too. Your entries are not touched.", "You can undo this for 10 seconds."), "Delete", { vm.deleteBudget(id); deleting = false; onBack() }, { deleting = false })
 }
 

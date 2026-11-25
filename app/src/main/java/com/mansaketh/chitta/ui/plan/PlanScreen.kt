@@ -388,7 +388,9 @@ private fun BillsTab(vm: PlanViewModel, ui: PlanUi, onSheet: (String) -> Unit, o
 
     acting?.let { t ->
         ChoiceSheet(t.name.ifBlank { "Bill" }, buildList {
-            if (Bills.needsAmount(t)) add(Choice("Set the amount", "amount")) else {
+            if (Bills.needsAmount(t)) add(Choice("Set the amount", "amount"))
+            else if (vm.isCardBill(t)) add(Choice("Pay ${rupees(Paise(Math.abs(t.amount)))}…", "different"))
+            else {
                 add(Choice("Pay ${rupees(Paise(Math.abs(t.amount)))}", "pay")); add(Choice("Pay another amount or from another account", "different"))
             }
             add(Choice("Skip this one", "skip")); add(Choice("Edit", "edit")); add(Choice("Delete", "delete"))
@@ -398,9 +400,7 @@ private fun BillsTab(vm: PlanViewModel, ui: PlanUi, onSheet: (String) -> Unit, o
         }, { acting = null })
     }
     different?.let { t ->
-        PaySheet(t.name.ifBlank { "Pay a bill" }, Paise(Math.abs(t.amount)), null, ui.accounts, t.accountId,
-            friendlyDay(ui.nowMs, ui.nowMs, ui.zone), "Only this one changes. The next one keeps the usual amount and account.",
-            onConfirm = { amount, account, problem -> if (vm.pay(t, amount, account, problem)) different = null }, onDismiss = { different = null })
+        PayAnotherSheet(vm, ui, t) { different = null }
     }
     amountFor?.let { t ->
         TextSheet("Amount", "Amount", "", { if (vm.setAmount(t, it)) amountFor = null }, { amountFor = null }, numeric = true)
@@ -408,6 +408,22 @@ private fun BillsTab(vm: PlanViewModel, ui: PlanUi, onSheet: (String) -> Unit, o
     deleting?.let { t ->
         ConfirmSheet("Delete this bill?", listOf("${t.name.ifBlank { "This bill" }} is removed from the list. ${if (Bills.isRepeating(t)) "Later ones are not made." else ""}".trim(), "You can undo this for 10 seconds, and it stays in history."), "Delete", { vm.deleteBill(t); deleting = null }, { deleting = null })
     }
+}
+
+/**
+ * Pay a bill (PDF p.30). A bill due on a credit card is paid from another account and saved as a transfer; any other bill can change its
+ * amount, account and date for this one payment only.
+ */
+@Composable
+internal fun PayAnotherSheet(vm: PlanViewModel, ui: PlanUi, t: Transaction, onDone: () -> Unit) {
+    val card = Bills.cardOf(t, ui.accounts)
+    val choices = if (card == null) ui.accounts else ui.accounts.filter { it.id != card.id && Cards.setupOf(it) == null && !HouseholdSharing.isPlaceholderAccountId(it.id) }
+    PaySheet(
+        t.name.ifBlank { "Pay a bill" }, Paise(Math.abs(t.amount)), card?.let { Cards.setupOf(it)?.minimumDue }, choices, if (card == null) t.accountId else null,
+        today = java.time.LocalDate.now(ui.zone), zone = ui.zone, cardName = card?.name,
+        note = "Only this one changes. The next one keeps the usual amount and account.",
+        onConfirm = { amount, account, paidOnMs, problem -> if (vm.pay(t, amount, account, problem, paidOnMs)) onDone() }, onDismiss = onDone,
+    )
 }
 
 private fun plainAmount(t: Transaction) = if (t.amount == 0L) "" else com.mansaketh.chitta.core.money.IndianFormat.rupees(Paise(Math.abs(t.amount)), symbol = "").replace(",", "")
@@ -420,6 +436,8 @@ private fun CalendarTab(vm: PlanViewModel, ui: PlanUi) {
     val month = YearMonth.of(epoch / 12, epoch % 12 + 1)
     val days = remember(ui.entries, month, ui.nowMs) { BillCalendar.month(ui.entries, month, ui.nowMs, ui.zone) }
     var day by remember { mutableStateOf<CalendarDay?>(null) }
+    var payCard by remember { mutableStateOf<Transaction?>(null) }
+    payCard?.let { t -> PayAnotherSheet(vm, ui, t) { payCard = null; day = null } }
     val c = ChittaTheme.colors
     val toPay = Paise(days.sumOf { it.toPay.value })
     Column(Modifier.fillMaxSize().padding(horizontal = Dimens.Margin)) {
@@ -482,7 +500,7 @@ private fun CalendarTab(vm: PlanViewModel, ui: PlanUi) {
                             Spacer(Modifier.height(Dimens.Gap2))
                             when (item.status) {
                                 BillStatus.Upcoming, BillStatus.Overdue -> ButtonPair(
-                                    first = { m -> ChittaButton("Pay", { vm.pay(t); day = null }, m, confirmHaptic = true) },
+                                    first = { m -> ChittaButton("Pay", { if (vm.isCardBill(t)) payCard = t else { vm.pay(t); day = null } }, m, confirmHaptic = true) },
                                     second = { m -> ChittaButton("Skip", { vm.skip(t); day = null }, m, kind = ButtonKind.Secondary) },
                                 )
                                 BillStatus.Paid -> ChittaButton("Undo payment", { vm.undoPaid(t); day = null }, kind = ButtonKind.Secondary, modifier = Modifier.fillMaxWidth())

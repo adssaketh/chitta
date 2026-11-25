@@ -61,12 +61,12 @@ fun TransactionEntity.toModel() = Transaction(
 fun Budget.toEntity() = BudgetEntity(
     id, name, amount, colour, startMs, endMs, accountIds.toJson(), categoryIds.toJson(), excludedCategoryIds.toJson(), income, archived,
     addedTransactionsOnly, periodLength, repeat?.code, createdAtMs, modifiedAtMs, pinned, sortOrder, accountId,
-    filters?.map { it.code }.intsToJson(), memberFilters.toJson(), absoluteSpendingLimit, rollover,
+    filters?.map { it.code }.intsToJson(), memberFilters.toJson(), absoluteSpendingLimit, rollover, alertPercent,
 )
 fun BudgetEntity.toModel() = Budget(
     id, name, amountPaise, colour, startMs, endMs, accountIdsJson.toStrings(), categoryIdsJson.toStrings(), excludedCategoryIdsJson.toStrings(), income, archived,
     addedTransactionsOnly, periodLength, Repeat.fromCode(repeatCode), createdAtMs, modifiedAtMs, pinned, sortOrder, accountId,
-    filtersJson.toInts()?.mapNotNull { BudgetFilter.fromCode(it) }, memberFiltersJson.toStrings(), absoluteSpendingLimit, rollover,
+    filtersJson.toInts()?.mapNotNull { BudgetFilter.fromCode(it) }, memberFiltersJson.toStrings(), absoluteSpendingLimit, rollover, alertPercent,
 )
 
 fun CategoryLimit.toEntity() = CategoryLimitEntity(id, categoryId, budgetId, amount, modifiedAtMs, accountId)

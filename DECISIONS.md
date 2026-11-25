@@ -409,3 +409,6 @@ Master section 7 lists both. Decided with the user on 13 Nov 2026: Ping already 
 - Budget detail rows are NavRows opening in-screen sub-pages (BackHandler); Alerts row omitted because the app has no budget alerts.
 
 - Bell list grouping is by "no reasons left" (stillApplies); import review lists keep their old layout.
+
+- Budget alerts: stored as a nullable percent on the budget (migration 10 to 11, nothing dropped); sent from a watcher on book changes while the app runs, keys kept in app preferences so a note is never repeated (changing the percent or a new period alerts again). Checked in whole paise: spent x 100 >= limit x percent.
+- Card bills: no stored link between a bill and a card, so detection is by title and account (see UI_AUDIT). Paying one makes a paired transfer (money rule: card bill payments are never spending); other bills pay as before, with an optional chosen date.

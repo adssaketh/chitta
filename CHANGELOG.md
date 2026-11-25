@@ -538,3 +538,5 @@
 - Budget detail: PDF p.25 rows (Limits by category, Rollover, History) with sub-pages; no Alerts row (feature does not exist).
 
 - Waiting for a look (bell list) grouped into Ready / Needs a look to PDF p.23.
+
+- Budget alerts: Alerts row with a percent picker (schema 11, column `alertPercent`), one notification per budget and period; Pay a bill: tappable Paid on date and card bills saved as a paired transfer.

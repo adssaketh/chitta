@@ -85,6 +85,13 @@ object Migrations {
      * Phase 9c part 2 (D247): sync bookkeeping. Two small tables; nothing existing is changed or dropped. The triggers that fill
      * `sync_change` are put on every time the database opens (ChittaDatabase.syncCallback), not here.
      */
+    /** Budget alerts: the percent of the limit that sends one notification per period. Null (no alert) for every existing budget. Nothing is dropped. */
+    val V10_TO_V11 = object : Migration(10, 11) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `budget` ADD COLUMN `alertPercent` INTEGER")
+        }
+    }
+
     val V9_TO_V10 = object : Migration(9, 10) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("CREATE TABLE IF NOT EXISTS `sync_change` (`tbl` TEXT NOT NULL, `rowId` TEXT NOT NULL, `atMs` INTEGER NOT NULL, `deleted` INTEGER NOT NULL, PRIMARY KEY(`tbl`, `rowId`))")

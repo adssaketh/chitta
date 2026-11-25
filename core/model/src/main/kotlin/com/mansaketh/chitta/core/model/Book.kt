@@ -136,6 +136,8 @@ data class Budget(
     val absoluteSpendingLimit: Boolean,
     /** New in Chitta (schema 7). Unspent or overspent money carries into the next period of a repeating spending budget. Off for every imported budget. */
     val rollover: Boolean = false,
+    /** New in Chitta (schema 11). Percent of the limit at which one notification is sent per period; null = no alert. Spending budgets only. */
+    val alertPercent: Int? = null,
 )
 
 data class CategoryLimit(

@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit
 const val CHANNEL_BILLS = "bills"
 const val CHANNEL_LOG = "log"
 const val CHANNEL_AUTO = "auto"
+const val CHANNEL_BUDGET = "budget"
 private const val WORK_NAME = "chitta-reminders"
 
 /** Lets a Worker (which Hilt does not build here) reach the repositories. */
@@ -56,6 +57,7 @@ object ReminderNotifications {
         if (Build.VERSION.SDK_INT < 26) return
         val m = context.getSystemService(NotificationManager::class.java)
         m.createNotificationChannel(NotificationChannel(CHANNEL_BILLS, "Due bills", NotificationManager.IMPORTANCE_DEFAULT).apply { description = "A bill due today or tomorrow." })
+        m.createNotificationChannel(NotificationChannel(CHANNEL_BUDGET, "Budget alerts", NotificationManager.IMPORTANCE_DEFAULT).apply { description = "A budget has reached the share of its limit you chose." })
         m.createNotificationChannel(NotificationChannel(CHANNEL_AUTO, "Added in the background", NotificationManager.IMPORTANCE_LOW).apply { description = "Tells you when another app added an entry, with Undo." })
         m.createNotificationChannel(NotificationChannel(CHANNEL_LOG, "Log reminder", NotificationManager.IMPORTANCE_LOW).apply { description = "A quiet evening nudge to log what you spent." })
     }

@@ -137,13 +137,15 @@ fun repeatUnit(r: Repeat) = when (r) { Repeat.DAILY -> "day"; Repeat.WEEKLY -> "
 
 /**
  * Pay a bill (PDF p.30): Amount as three choices (Full, Minimum when the card has one, Other typed), a Paid from row, a Paid on row and
- * Cancel / Confirm payment. "Paid on" is today and not tappable, because a payment is saved as of now. [onConfirm] gets the typed
- * amount (null = the bill's usual amount) and the account (null = the bill's own), and says what is wrong through the callback.
+ * Cancel / Confirm payment. "Paid on" opens the date sheet (today unless changed). A bill due on a credit card ([cardName]) is paid from
+ * another account and saved as a transfer, and says so. [onConfirm] gets the typed amount (null = the bill's usual amount), the account
+ * (null = the bill's own) and the chosen day (null = today, so the usual paid-date setting applies), and says what is wrong through the callback.
  */
 @Composable
 fun PaySheet(
-    title: String, full: Paise, minimum: Paise?, accounts: List<Account>, initialAccountId: String?, todayText: String, note: String?,
-    onConfirm: (amount: String?, accountId: String?, problem: (String) -> Unit) -> Unit, onDismiss: () -> Unit,
+    title: String, full: Paise, minimum: Paise?, accounts: List<Account>, initialAccountId: String?, today: java.time.LocalDate, zone: java.time.ZoneId,
+    cardName: String?, note: String?,
+    onConfirm: (amount: String?, accountId: String?, paidOnMs: Long?, problem: (String) -> Unit) -> Unit, onDismiss: () -> Unit,
 ) {
     val c = ChittaTheme.colors
     val active = accounts.filter { !it.archived }
@@ -152,6 +154,8 @@ fun PaySheet(
     var account by remember { mutableStateOf(initialAccountId?.takeIf { id -> active.any { it.id == id } } ?: active.firstOrNull()?.id ?: "") }
     var picking by remember { mutableStateOf(false) }
     var problem by remember { mutableStateOf<String?>(null) }
+    var paidOn by remember { mutableStateOf(today) }
+    val paidOnText = (if (paidOn == today) "Today, " else if (paidOn == today.minusDays(1)) "Yesterday, " else "") + paidOn.format(java.time.format.DateTimeFormatter.ofPattern("d MMM", java.util.Locale.ENGLISH))
     fun plain(p: Paise) = IndianFormat.rupees(p, symbol = "").replace(",", "")
     if (picking) {
         ChoiceSheet("Paid from", active.map { Choice(it.name, it.id, selected = it.id == account) }, { account = it; picking = false }, { picking = false })
@@ -189,14 +193,17 @@ fun PaySheet(
         }
         Spacer(Modifier.height(Dimens.Gap2))
         ValueRow("Paid from", active.firstOrNull { it.id == account }?.name ?: "", onClick = { picking = true })
-        ValueRow("Paid on", todayText)
-        if (note != null) FootNote(note)
+        // PDF p.30: the date opens the app's own date sheet; the sheet is drawn over this one by DatePickHost.
+        ValueRow("Paid on", paidOnText, onClick = { DatePick.request = DatePick.Request(paidOn, zone, { paidOn = it }, {}) })
+        if (cardName != null) FootNote("Saved as a transfer from ${active.firstOrNull { it.id == account }?.name ?: "your account"} to $cardName, so it isn\u2019t counted as spending twice.")
+        else if (note != null) FootNote(note)
         Spacer(Modifier.height(Dimens.Gap3))
         Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(Dimens.Gap3)) {
             ChittaButton("Cancel", onDismiss, Modifier.weight(0.8f).fillMaxHeight(), kind = ButtonKind.Secondary)
             ChittaButton("Confirm payment", {
                 val amt = when (choice) { 1 -> plain(minimum!!); 2 -> other; else -> null }
-                if (choice == 2 && other.isBlank()) problem = "Enter an amount above zero." else onConfirm(amt, account.takeIf { it != initialAccountId }) { problem = it }
+                val paidOnMs = if (paidOn == today) null else paidOn.atTime(java.time.LocalTime.now(zone)).atZone(zone).toInstant().toEpochMilli()
+                if (choice == 2 && other.isBlank()) problem = "Enter an amount above zero." else onConfirm(amt, account.takeIf { it != initialAccountId }, paidOnMs) { problem = it }
             }, Modifier.weight(1.2f).fillMaxHeight(), confirmHaptic = true)
         }
     }

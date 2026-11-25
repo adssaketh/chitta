@@ -239,14 +239,30 @@ class PlanViewModel @Inject constructor(
         return Goals.isGoal(o) && Goals.progress(o, ui.value.entries, clock.nowMs(), clock.zone()).reached
     }
 
-    private suspend fun applyBill(message: String, c: BillChange) = commit(message, updated = listOf(c.updated), created = listOfNotNull(c.next))
+    private suspend fun applyBill(message: String, c: BillChange) = commit(message, updated = listOf(c.updated), created = listOfNotNull(c.next) + c.extra)
 
-    fun pay(t: Transaction, amountRaw: String? = null, accountId: String? = null, onProblem: (String) -> Unit = {}): Boolean {
+    /** True when the bill is due on a credit card: paying it is a transfer from another account (PDF p.30), so it needs the Pay a bill sheet. */
+    fun isCardBill(t: Transaction): Boolean = Bills.cardOf(t, ui.value.accounts) != null
+
+    /** [paidOnMs] null = the usual rule (today, or the due date when that setting is on); otherwise the day chosen on the sheet. */
+    fun pay(t: Transaction, amountRaw: String? = null, accountId: String? = null, onProblem: (String) -> Unit = {}, paidOnMs: Long? = null): Boolean {
         val amount = if (amountRaw.isNullOrBlank()) null else (AmountExpression.evaluate(amountRaw)?.takeIf { !it.isZero }?.value ?: run { onProblem("Enter an amount above zero."); return false })
         if (!Bills.isOpen(t)) return false
-        val change = Bills.pay(t, clock.nowMs(), clock.zone(), rule, ids::newId, amount, accountId, goalReached(t))
+        val accounts = ui.value.accounts
+        val card = Bills.cardOf(t, accounts)
+        val change = if (card != null) {
+            val payer = accounts.firstOrNull { it.id == accountId && it.id != card.id } ?: run { onProblem("Choose the account the payment is made from."); return false }
+            Bills.payCardBill(t, card, payer, clock.nowMs(), clock.zone(), rule, ids::newId, amount, goalReached(t), paidOnMs)
+        } else Bills.pay(t, clock.nowMs(), clock.zone(), rule, ids::newId, amount, accountId, goalReached(t), paidOnMs)
         viewModelScope.launch { applyBill("${t.name.ifBlank { "Bill" }} paid", change) }
         return true
+    }
+
+    /** Sets or clears the share of a spending budget's limit at which one notification is sent per period (PDF p.25 "Alerts"). */
+    fun setAlert(b: Budget, percent: Int?) = viewModelScope.launch {
+        val saved = b.copy(alertPercent = percent, modifiedAtMs = clock.nowMs())
+        plan.saveBudget(saved)
+        undo.post("Alert ${BudgetAlerts.label(percent).replaceFirstChar { it.lowercase() }}") { plan.saveBudget(b) }
     }
 
     fun skip(t: Transaction) {

@@ -14,7 +14,7 @@ class WalkTwoTest : ShotBase() {
     @Test fun walk() {
         prepare()
         tap("Plan")
-        tap("Budgets"); tap("November budget"); shot("20_budget_detail"); tap("Limits by category"); shot("20b_budget_limits"); back(); tap("History"); shot("20c_budget_history"); back(); back()
+        tap("Budgets"); tap("November budget"); shot("20_budget_detail"); tap("Alerts"); shot("20d_budget_alerts"); back(); tap("Limits by category"); shot("20b_budget_limits"); back(); tap("History"); shot("20c_budget_history"); back(); back()
         tap("Goals"); tap("Emergency fund"); shot("21_goal_detail"); back()
         tap("More", -1)
         tap("Accounts"); tap("Mutual funds"); shot("26_mutual_funds"); back(); back()
@@ -33,6 +33,11 @@ class WalkTwoTest : ShotBase() {
     @Test fun billSheet() {
         prepare()
         tap("Plan"); tap("Bills"); tap("Electricity"); shot("23_bill_sheet"); tap("Pay another amount or from another account"); shot("23b_pay_sheet")
+    }
+
+    @Test fun cardBillSheet() {
+        prepare()
+        tap("Plan"); tap("Bills"); tap("ICICI card bill"); tap("Pay ₹12,480…"); shot("23c_card_pay_sheet"); tap("Paid on"); shot("23d_card_pay_date")
     }
 
     @Test fun entryDelete() {

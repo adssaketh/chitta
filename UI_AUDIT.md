@@ -394,9 +394,15 @@ Not matched or not compared yet:
 
 ## Budget detail rows (PDF p.25), 25 Nov 2026
 - Under the chart: "Limits by category (n set)", "Rollover (On/Off)", "History (n periods)" as caret rows with edge-to-edge rules. Limits and History open as their own pages (back returns to the budget); Rollover opens the edit form where the switch lives.
-- Left out: "Alerts, At 90%". The app has no budget alerts and the money rules do not define them, so showing the row would be untrue.
+- "Alerts" is now real (25 Nov 2026, see below).
 - Difference: History reads "n periods" (PDF shows "6 months"), because budgets repeat weekly, monthly or yearly.
 
 ## Waiting for a look (PDF p.23), 25 Nov 2026
 - Behind the bell the list is titled "Waiting for a look" with "From Ping · N messages". Rows split into "Ready" (nothing flagged, with "n ticked") and "Needs a look" (with count); each row shows its reason as the sub-line. Intro line, "Fix selected" (opens the category fix for rows without one) with "Tick to include", and "Save N entries" as drawn.
 - Difference: the sub-line of Ready rows shows date, account and category (the PDF's "Card bill payment · from HDFC" wording needs a reason the importer does not produce). Import review lists keep the older header.
+
+## Budget alerts and Pay a bill (PDF p.25, p.30), 25 Nov 2026
+- Alerts row on Budget detail (spending budgets only): "Off" or "At 50/75/90/100%", picked in a sheet. One notification per budget, period and percent, the first time spent reaches that share of the period's limit (carry-over included); also a line on the budget while reached. Checked whenever the book changes while the app process is alive (typed, Ping, share); not when the app is fully stopped and nothing runs.
+- Pay a bill: "Paid on" opens the date sheet (default today; the usual paid-date setting applies when left on today). A bill that pays a credit card is saved as a transfer: the bill entry becomes the money-out leg on the paid-from account, a new paired leg brings the same amount onto the card, both in the transfer category, so it never counts as spending and lowers the card's outstanding. The sheet says so under Paid on.
+- Card bill detection (no stored link exists): the bill's title contains a card account's name, or the bill sits on a card account and its title says card bill / card payment. A purchase merely charged to a card (a subscription) is not a card bill. Card accounts are those with statement and due days set.
+- Differences: "Minimum" appears only when the card has a minimum due typed in; the note names both accounts (PDF says "to the card").

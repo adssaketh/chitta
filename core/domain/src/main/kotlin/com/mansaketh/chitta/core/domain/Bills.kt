@@ -12,7 +12,7 @@ enum class BillStatus { Upcoming, Overdue, Paid, Skipped }
 enum class PaidDateRule { Today, DueDate }
 
 /** The result of paying or skipping: the entry as it should be saved, and the next occurrence if one is due. */
-data class BillChange(val updated: Transaction, val next: Transaction?)
+data class BillChange(val updated: Transaction, val next: Transaction?, val extra: List<Transaction> = emptyList())
 
 /**
  * Upcoming, repeating and subscription entries. Behaviour follows Paddhu's `upcomingTransactionsFunctions.dart` (read, not copied):
@@ -59,14 +59,14 @@ object Bills {
      */
     fun pay(
         t: Transaction, nowMs: Long, zone: ZoneId, rule: PaidDateRule, newId: () -> String,
-        amountPaise: Long? = null, accountId: String? = null, goalReached: Boolean = false,
+        amountPaise: Long? = null, accountId: String? = null, goalReached: Boolean = false, paidOnMs: Long? = null,
     ): BillChange {
         require(isOpen(t)) { "Only an open bill can be paid." }
         val sign = if (t.income) 1L else -1L
         val next = makeNext(t, zone, newId, goalReached)
         val paid = t.copy(
             paid = true, skipPaid = false,
-            dateMs = if (rule == PaidDateRule.Today) nowMs else t.dateMs,
+            dateMs = paidOnMs ?: if (rule == PaidDateRule.Today) nowMs else t.dateMs,
             originalDueMs = dueMs(t),
             amount = if (amountPaise != null) sign * amountPaise else t.amount,
             accountId = accountId ?: t.accountId,
@@ -74,6 +74,50 @@ object Bills {
             modifiedAtMs = nowMs,
         )
         return BillChange(paid, next)
+    }
+
+    private val cardBillWords = Regex("card ?bill|card ?payment|credit ?card|cc ?bill|cc ?payment", RegexOption.IGNORE_CASE)
+
+    private fun norm(s: String) = s.lowercase().filter { it.isLetterOrDigit() }
+
+    /**
+     * The credit card a spending bill pays (PDF p.30), or null for an ordinary bill. A bill is a card bill when its title contains the name of
+     * a card account ("ICICI card bill" and a card called "ICICI card"), or when it sits on a card account and its title says it is a card
+     * bill or payment. A bill for a purchase that merely sits on a card (a subscription charged to it) is not one. Card accounts are the
+     * ones with a statement day and a due day set.
+     */
+    fun cardOf(t: Transaction, accounts: List<com.mansaketh.chitta.core.model.Account>): com.mansaketh.chitta.core.model.Account? {
+        if (t.income) return null
+        val cards = accounts.filter { !it.archived && Cards.setupOf(it) != null }
+        if (cards.isEmpty()) return null
+        val title = norm(t.name)
+        cards.firstOrNull { norm(it.name).length >= 3 && title.contains(norm(it.name)) }?.let { return it }
+        val own = cards.firstOrNull { it.id == t.accountId } ?: return null
+        return if (cardBillWords.containsMatchIn(t.name)) own else null
+    }
+
+    /**
+     * Paying a card bill from another account (PDF p.30, money rule "card bill payments never count as spending"). The bill entry becomes the
+     * money-out leg on [payer]; a new leg brings the same amount into [card]; the two point at each other, so it is a transfer, not spending.
+     * Falls back on the bill's own amount when [amountPaise] is null. The next occurrence of a repeating bill is made as for any payment.
+     */
+    fun payCardBill(
+        t: Transaction, card: com.mansaketh.chitta.core.model.Account, payer: com.mansaketh.chitta.core.model.Account, nowMs: Long, zone: ZoneId,
+        rule: PaidDateRule, newId: () -> String, amountPaise: Long? = null, goalReached: Boolean = false, paidOnMs: Long? = null,
+    ): BillChange {
+        require(isOpen(t)) { "Only an open bill can be paid." }
+        require(payer.id != card.id) { "A card bill is paid from another account." }
+        val amount = amountPaise ?: Math.abs(t.amount)
+        require(amount > 0) { "The payment must be above zero." }
+        val at = paidOnMs ?: if (rule == PaidDateRule.Today) nowMs else t.dateMs
+        val legs = Transfers.create(payer, card, Paise(amount), Paise(amount), at, t.note, t.ownerUid, newId)
+        val cardLeg = legs[1].copy(pairedTransactionId = t.id)
+        val out = t.copy(
+            paid = true, skipPaid = false, dateMs = at, originalDueMs = dueMs(t), amount = -amount, income = false, currency = payer.currency,
+            categoryId = QuickAdd.TRANSFER_CATEGORY_ID, subCategoryId = null, accountId = payer.id, pairedTransactionId = cardLeg.id,
+            createdAnotherFuture = if (isRepeating(t)) true else t.createdAnotherFuture, modifiedAtMs = nowMs,
+        )
+        return BillChange(out, makeNext(t, zone, newId, goalReached), listOf(cardLeg))
     }
 
     fun skip(t: Transaction, nowMs: Long, zone: ZoneId, newId: () -> String, goalReached: Boolean = false): BillChange {

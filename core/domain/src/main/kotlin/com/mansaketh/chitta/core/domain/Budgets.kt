@@ -170,3 +170,34 @@ object Budgets {
         return Paise(sum.coerceAtLeast(0))
     }
 }
+
+/**
+ * Budget alerts (PDF p.25 "Alerts"). A spending budget with an alert percent sends one notification per period, the first time the money
+ * spent in that period reaches that share of the period's limit (the limit including any carried-over amount, as shown on the budget).
+ * Done in whole paise: spent × 100 >= limit × percent.
+ */
+object BudgetAlerts {
+    /** What the picker offers. */
+    val CHOICES: List<Int> = listOf(50, 75, 90, 100)
+
+    fun label(percent: Int?): String = if (percent == null) "Off" else "At $percent%"
+
+    fun reached(budget: Budget, s: BudgetSummary): Boolean {
+        val pct = budget.alertPercent ?: return false
+        if (budget.income || !s.started || s.ended || s.limit.value <= 0L) return false
+        return Math.multiplyExact(s.spent.value, 100L) >= Math.multiplyExact(s.limit.value, pct.toLong())
+    }
+
+    data class Due(val key: String, val budgetName: String, val spent: Paise, val limit: Paise, val percent: Int)
+
+    /** The alerts to send now: budgets whose current period has reached their percent and whose key is not in [alreadySent]. */
+    fun due(budgets: List<Budget>, entries: List<Transaction>, categories: List<Category>, nowMs: Long, zone: ZoneId, alreadySent: Set<String>): List<Due> =
+        budgets.filter { it.alertPercent != null && !it.archived && !it.income }.mapNotNull { b ->
+            val s = Budgets.summarize(b, Budgets.periodAt(b, nowMs, zone), entries, categories, nowMs, zone)
+            val key = key(b, s)
+            if (key in alreadySent || !reached(b, s)) null else Due(key, b.name, s.spent, s.limit, b.alertPercent!!)
+        }
+
+    /** One key per budget, period and percent, so a notification is not repeated and changing the percent can alert again. */
+    fun key(budget: Budget, s: BudgetSummary): String = "alert|${budget.id}|${s.period.startMs}|${budget.alertPercent}"
+}

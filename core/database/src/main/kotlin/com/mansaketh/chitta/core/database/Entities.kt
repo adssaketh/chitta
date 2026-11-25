@@ -122,6 +122,7 @@ data class BudgetEntity(
     val memberFiltersJson: String?,
     val absoluteSpendingLimit: Boolean,
     val rollover: Boolean,
+    val alertPercent: Int? = null,
 )
 
 @Entity(tableName = "category_budget_limit", indices = [Index("budgetId"), Index("categoryId")])

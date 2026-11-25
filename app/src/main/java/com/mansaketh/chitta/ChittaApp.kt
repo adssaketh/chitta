@@ -26,6 +26,8 @@ class ChittaApp : Application() {
     @Inject lateinit var householdSync: com.mansaketh.chitta.cloud.HouseholdSync
     @Inject lateinit var householdSharedItems: com.mansaketh.chitta.cloud.HouseholdSharedItems
     @Inject lateinit var personalSync: com.mansaketh.chitta.cloud.PersonalSync
+    @Inject lateinit var plan: com.mansaketh.chitta.core.database.PlanRepository
+    @Inject lateinit var categories: com.mansaketh.chitta.core.database.CategoryRepository
 
     /** A restore staged by Settings is swapped in here, before anything can open the book (DECISIONS D69). */
     override fun attachBaseContext(base: Context) {
@@ -43,6 +45,7 @@ class ChittaApp : Application() {
         com.mansaketh.chitta.diagnostics.Diagnostics.install(this)
         ReminderNotifications.createChannels(this)
         ReminderScheduler.scheduleNext(this, prefs.reminders, clock.nowMs(), clock.zone())
+        com.mansaketh.chitta.reminders.BudgetAlertWatcher.start(this, kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default), ledger, plan, categories, prefs, clock)
         com.mansaketh.chitta.data.FundPriceScheduler.sync(this, uiPrefs.fundPricesAuto.value)
         com.mansaketh.chitta.widgets.Shortcuts.publish(this)
         // Daily Drive backup (Phase 9a): queued only while signed in with the switch on. Also tried when the app opens, if none was made today.
