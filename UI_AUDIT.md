@@ -391,3 +391,8 @@ Not matched or not compared yet:
 ## Split (PDF p.21) and Date (p.16)
 - Split is now a full screen: back arrow, "Name · ₹total", red "Still to assign" amount, one row per line (dot, category, amount box), Add a line / Equal parts, "Add the ₹X to {first category}?" shortcut, dashed "Save · ₹X left" that turns solid "Save split" when the lines balance. Money rules unchanged (Splits.check / remainder).
 - Date sheet already matched p.16. The Quick Add sheet still peeks above it; the PDF hides it. Left as is.
+
+## Budget detail rows (PDF p.25), 25 Nov 2026
+- Under the chart: "Limits by category (n set)", "Rollover (On/Off)", "History (n periods)" as caret rows with edge-to-edge rules. Limits and History open as their own pages (back returns to the budget); Rollover opens the edit form where the switch lives.
+- Left out: "Alerts, At 90%". The app has no budget alerts and the money rules do not define them, so showing the row would be untrue.
+- Difference: History reads "n periods" (PDF shows "6 months"), because budgets repeat weekly, monthly or yearly.

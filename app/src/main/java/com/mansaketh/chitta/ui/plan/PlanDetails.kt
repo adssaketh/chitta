@@ -7,6 +7,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import com.mansaketh.chitta.core.design.kit.GaugeBar
 import com.mansaketh.chitta.core.design.kit.Section
 import com.mansaketh.chitta.core.design.kit.ValueRow
+import com.mansaketh.chitta.core.design.kit.NavRow
 import com.mansaketh.chitta.core.design.kit.TopBarDetail
 import com.mansaketh.chitta.core.design.kit.ButtonKind
 import com.mansaketh.chitta.core.design.kit.ChittaButton
@@ -63,17 +64,54 @@ fun BudgetDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit
     val b = ui.budgets.firstOrNull { it.id == id }
     var editing by remember { mutableStateOf<CategoryLine?>(null) }
     var deleting by remember { mutableStateOf(false) }
+    // PDF p.25: the rows under the chart open "Limits by category" and "History" as their own pages.
+    var sub by remember { mutableStateOf<String?>(null) }
+    androidx.activity.compose.BackHandler(enabled = sub != null) { sub = null }
     val c = ChittaTheme.colors
     Column(Modifier.fillMaxSize()) {
         val nameForBar = ui.budgets.firstOrNull { it.id == id }
         val dayLine = nameForBar?.let { nb -> val pd = Budgets.periodAt(nb, ui.nowMs, ui.zone); val sm = Budgets.summarize(nb, pd, ui.entries, ui.categories, ui.nowMs, ui.zone); if (sm.started && !sm.ended) "Day ${sm.dayOfPeriod} of ${sm.daysInPeriod}" else periodText(pd, ui.zone) }
-        TopBarDetail(nameForBar?.name ?: "Budget", subtitle = dayLine, onBack = onBack, actions = { IconAction(com.mansaketh.chitta.core.design.icons.ChittaIcons.Pencil, "Edit budget", onEdit) })
+        if (sub == null) TopBarDetail(nameForBar?.name ?: "Budget", subtitle = dayLine, onBack = onBack, actions = { IconAction(com.mansaketh.chitta.core.design.icons.ChittaIcons.Pencil, "Edit budget", onEdit) })
+        else TopBarDetail(if (sub == "limits") "Limits by category" else "History", subtitle = nameForBar?.name, onBack = { sub = null })
         if (b == null) { if (!ui.loading) Gone("budget"); return@Column }
         val period = remember(b, ui.nowMs) { Budgets.periodAt(b, ui.nowMs, ui.zone) }
         val s = remember(b, ui.entries, ui.categories, ui.nowMs) { Budgets.summarize(b, period, ui.entries, ui.categories, ui.nowMs, ui.zone) }
         val lines = remember(b, ui.entries, ui.categories, ui.limits, ui.nowMs) { Budgets.breakdown(b, period, ui.entries, ui.categories, ui.limits) }
         val history = remember(b, ui.entries, ui.categories, ui.nowMs) { Budgets.history(b, ui.entries, ui.categories, ui.nowMs, ui.zone) }
         val verb = if (b.income) "saved" else "spent"
+        if (sub == "limits") {
+            Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.FabInset)) {
+                Text(if (b.absoluteSpendingLimit) "Press and hold a category to set its goal as an amount." else "Press and hold a category to set its goal as a percentage of the budget.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap3))
+                if (lines.isEmpty()) Text("Nothing counted yet in this period.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap3))
+                lines.forEach { l ->
+                    Column(Modifier.fillMaxWidth().combinedClickable(role = Role.Button, onClick = {}, onLongClick = { editing = l }).padding(vertical = Dimens.Gap3)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(categoryName(l.categoryId, ui.categories), style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.weight(1f))
+                            AmountText(l.spent, style = ChittaTheme.type.amountSmall)
+                        }
+                        if (l.limit != null && l.gauge != null) {
+                            Text("goal ${rupees(l.limit!!)}", style = ChittaTheme.type.label, color = c.inkMuted)
+                            GaugeBar(l.gauge!!, "${categoryName(l.categoryId, ui.categories)} against its goal")
+                        }
+                    }
+                    HairlineRule()
+                }
+            }
+        } else if (sub == "history") {
+            Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.FabInset)) {
+                if (history.isEmpty()) Text("No earlier periods yet.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap3))
+                history.forEach { (p, spent, limit) ->
+                    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin), verticalAlignment = Alignment.CenterVertically) {
+                        Text(periodText(p, ui.zone), style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.weight(1f))
+                        AmountText(spent, style = ChittaTheme.type.amountSmall)
+                        Spacer(Modifier.width(Dimens.Gap2))
+                        if (!b.income && spent > limit) Stamp("Over", tone = StampTone.Attention)
+                    }
+                    HairlineRule()
+                }
+            }
+        }
+        if (sub == null)
         Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Dimens.Margin).padding(bottom = Dimens.FabInset)) {
             // PDF p.25: the pace stamp with its short verdict, then the figure with "left" on the same line.
             Row(Modifier.padding(top = Dimens.Gap3), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
@@ -114,34 +152,12 @@ fun BudgetDetailScreen(vm: PlanViewModel, id: String, onBack: () -> Unit, onEdit
                 }
                 if (!s.ended && s.dayOfPeriod >= 1) FootNote("Forecast = ${rupees(Paise(s.spent.value / s.dayOfPeriod))} a day so far × ${s.daysInPeriod} days. Shown from day 7.")
             }
-            Section("Where it went")
-            Text(if (b.absoluteSpendingLimit) "Press and hold a category to set its goal as an amount." else "Press and hold a category to set its goal as a percentage of the budget.", style = ChittaTheme.type.label, color = c.inkMuted)
-            if (lines.isEmpty()) Text("Nothing counted yet in this period.", style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.padding(vertical = Dimens.Gap3))
-            lines.forEach { l ->
-                Column(Modifier.fillMaxWidth().combinedClickable(role = Role.Button, onClick = {}, onLongClick = { editing = l }).padding(vertical = Dimens.Gap3)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(categoryName(l.categoryId, ui.categories), style = ChittaTheme.type.body, color = c.ink, modifier = Modifier.weight(1f))
-                        AmountText(l.spent, style = ChittaTheme.type.amountSmall)
-                    }
-                    if (l.limit != null && l.gauge != null) {
-                        Text("goal ${rupees(l.limit!!)}", style = ChittaTheme.type.label, color = c.inkMuted)
-                        GaugeBar(l.gauge!!, "${categoryName(l.categoryId, ui.categories)} against its goal")
-                    }
-                }
-                HairlineRule()
-            }
-            if (history.isNotEmpty()) {
-                Section("Earlier periods")
-                history.forEach { (p, spent, limit) ->
-                    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.RowMin), verticalAlignment = Alignment.CenterVertically) {
-                        Text(periodText(p, ui.zone), style = ChittaTheme.type.body, color = c.inkMuted, modifier = Modifier.weight(1f))
-                        AmountText(spent, style = ChittaTheme.type.amountSmall)
-                        Spacer(Modifier.width(Dimens.Gap2))
-                        if (!b.income && spent > limit) Stamp("Over", tone = StampTone.Attention)
-                    }
-                    HairlineRule()
-                }
-            }
+            // PDF p.25: four rows with their value and a caret. "Alerts" is left out: the app has no budget alerts.
+            Spacer(Modifier.height(Dimens.Gap3))
+            HairlineRule()
+            NavRow("Limits by category", { sub = "limits" }, value = "${lines.count { it.limit != null }} set")
+            NavRow("Rollover", onEdit, value = if (b.rollover) "On" else "Off")
+            NavRow("History", { sub = "history" }, value = if (history.size == 1) "1 period" else "${history.size} periods")
             if (b.addedTransactionsOnly) Text("This was an \"added only\" budget in the old Paddhu Pusthakam app. This app cannot tell which entries were added to it, so it counts every matching entry.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap3))
             Text("Counts paid entries only. Lent and borrowed money is ${if (Budgets.filterOn(b.filters, BudgetFilter.INCLUDE_DEBT_AND_CREDIT)) "included" else "left out"}.", style = ChittaTheme.type.label, color = c.inkMuted, modifier = Modifier.padding(top = Dimens.Gap2))
             Spacer(Modifier.height(Dimens.Gap4))

@@ -14,7 +14,7 @@ class WalkTwoTest : ShotBase() {
     @Test fun walk() {
         prepare()
         tap("Plan")
-        tap("Budgets"); tap("November budget"); shot("20_budget_detail"); back()
+        tap("Budgets"); tap("November budget"); shot("20_budget_detail"); tap("Limits by category"); shot("20b_budget_limits"); back(); tap("History"); shot("20c_budget_history"); back(); back()
         tap("Goals"); tap("Emergency fund"); shot("21_goal_detail"); back()
         tap("More", -1)
         tap("Accounts"); tap("Mutual funds"); shot("26_mutual_funds"); back(); back()

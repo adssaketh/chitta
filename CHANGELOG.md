@@ -534,3 +534,5 @@
 - Entry delete sheet follows PDF p.22; save bar reads "Saved name, amount" (p.17).
 
 - Split rebuilt as a full screen to PDF p.21 (same Split money rules).
+
+- Budget detail: PDF p.25 rows (Limits by category, Rollover, History) with sub-pages; no Alerts row (feature does not exist).
