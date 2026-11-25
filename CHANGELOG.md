@@ -540,3 +540,8 @@
 - Waiting for a look (bell list) grouped into Ready / Needs a look to PDF p.23.
 
 - Budget alerts: Alerts row with a percent picker (schema 11, column `alertPercent`), one notification per budget and period; Pay a bill: tappable Paid on date and card bills saved as a paired transfer.
+
+## Material 3 Expressive theme option
+- Settings → Theme now offers "Material 3 Expressive" next to Follow the phone, Paper and Ink.
+- Colours only: Android 12+ takes them from the wallpaper (Material You); older phones use Material's fixed baseline palette. Light/dark follows the phone. Shapes, type and layout are unchanged.
+- Muted text, red text and green are nudged to 4.5:1 against the background, since wallpaper colours can be anything.

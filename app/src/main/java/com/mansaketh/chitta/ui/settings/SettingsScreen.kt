@@ -63,7 +63,7 @@ internal fun closeApp(activity: FragmentActivity?) {
 
 private fun onOff(v: Boolean) = if (v) "On" else "Off"
 
-private fun themeLabel(k: String) = when (k) { "paper" -> "Paper (light)"; "ink" -> "Ink (dark)"; else -> "Follow the phone" }
+private fun themeLabel(k: String) = when (k) { "paper" -> "Paper (light)"; "ink" -> "Ink (dark)"; "expressive" -> "Material 3 Expressive"; else -> "Follow the phone" }
 
 /**
  * Settings, as far as this phase goes: Security, Backup and restore (with Google Drive backup, Phase 9a), Import and export, Data.
@@ -187,7 +187,7 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpen: (String) -
         )
         "theme" -> ChoiceSheet(
             "Theme",
-            listOf("system" to "Follow the phone", "paper" to "Paper (light)", "ink" to "Ink (dark)").map { (k, label) -> Choice(label, k, selected = k == theme) },
+            listOf("system" to "Follow the phone", "paper" to "Paper (light)", "ink" to "Ink (dark)", "expressive" to "Material 3 Expressive").map { (k, label) -> Choice(label, k, selected = k == theme) },
             { vm.setThemeMode(it); sheet = null }, { sheet = null },
         )
         "diagnostics" -> com.mansaketh.chitta.ui.BottomOverlay({ sheet = null }, handle = false) {

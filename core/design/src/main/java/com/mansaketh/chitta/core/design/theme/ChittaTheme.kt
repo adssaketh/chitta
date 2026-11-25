@@ -11,6 +11,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -19,8 +20,8 @@ import com.mansaketh.chitta.core.design.tokens.ChittaColors
 import com.mansaketh.chitta.core.design.tokens.ChittaType
 import com.mansaketh.chitta.core.money.IndianFormat
 
-/** Paper (light), Ink (dark), or follow the phone. */
-enum class ThemeMode { Paper, Ink, System }
+/** Paper (light), Ink (dark), follow the phone, or Material 3 Expressive colours (wallpaper-based, follows the phone's light/dark). */
+enum class ThemeMode { Paper, Ink, System, Expressive }
 
 private val LocalColors = staticCompositionLocalOf { ChittaColors.Paper }
 private val LocalType = staticCompositionLocalOf { ChittaType() }
@@ -53,15 +54,20 @@ fun ChittaTheme(
     val dark = when (mode) {
         ThemeMode.Paper -> false
         ThemeMode.Ink -> true
-        ThemeMode.System -> isSystemInDarkTheme()
+        ThemeMode.System, ThemeMode.Expressive -> isSystemInDarkTheme()
     }
-    val colors = remember(dark, accent) {
-        val base = if (dark) ChittaColors.Ink else ChittaColors.Paper
-        if (accent != null) base.withAccent(accent) else base
+    val context = LocalContext.current
+    // Expressive: wallpaper colours win over a custom accent (the accent picker only tints Paper and Ink).
+    val expressive = remember(mode, dark, context) { if (mode == ThemeMode.Expressive) expressiveScheme(context, dark) else null }
+    val colors = remember(dark, accent, expressive) {
+        if (expressive != null) expressive.toChittaColors(dark) else {
+            val base = if (dark) ChittaColors.Ink else ChittaColors.Paper
+            if (accent != null) base.withAccent(accent) else base
+        }
     }
     val type = remember { ChittaType() }
-    val scheme = remember(colors) {
-        if (colors.isDark) {
+    val scheme = remember(colors, expressive) {
+        if (expressive != null) expressive else if (colors.isDark) {
             darkColorScheme(
                 primary = colors.sindoor, onPrimary = colors.onSindoor,
                 background = colors.background, onBackground = colors.ink,

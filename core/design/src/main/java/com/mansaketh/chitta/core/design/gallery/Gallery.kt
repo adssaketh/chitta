@@ -336,7 +336,7 @@ fun ComponentGallery(
     Column(modifier.fillMaxSize().background(c.background).statusBarsPadding().verticalScroll(rememberScrollState())) {
         TopBarDetail("Component gallery", actions = { HideAmountsAction(hideAmounts) { onHideAmountsChange(!hideAmounts) } })
         Row(Modifier.padding(horizontal = Dimens.Margin), horizontalArrangement = Arrangement.spacedBy(Dimens.Gap2)) {
-            ThemeMode.entries.forEach { m ->
+            ThemeMode.entries.filter { it != ThemeMode.Expressive }.forEach { m ->
                 ChittaButton(m.name, { onModeChange(m) }, Modifier.weight(1f), kind = if (m == mode) ButtonKind.Primary else ButtonKind.Secondary)
             }
         }

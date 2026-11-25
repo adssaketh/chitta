@@ -406,3 +406,5 @@ Not matched or not compared yet:
 - Pay a bill: "Paid on" opens the date sheet (default today; the usual paid-date setting applies when left on today). A bill that pays a credit card is saved as a transfer: the bill entry becomes the money-out leg on the paid-from account, a new paired leg brings the same amount onto the card, both in the transfer category, so it never counts as spending and lowers the card's outstanding. The sheet says so under Paid on.
 - Card bill detection (no stored link exists): the bill's title contains a card account's name, or the bill sits on a card account and its title says card bill / card payment. A purchase merely charged to a card (a subscription) is not a card bill. Card accounts are those with statement and due days set.
 - Differences: "Minimum" appears only when the card has a minimum due typed in; the note names both accounts (PDF says "to the card").
+
+- Expressive theme: not in the PDF (user request). Needs a phone check on Android 12+ with a wallpaper, in light and dark: contrast of muted text, red and green, and the Quick Add button.

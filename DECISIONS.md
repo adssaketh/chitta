@@ -412,3 +412,10 @@ Master section 7 lists both. Decided with the user on 13 Nov 2026: Ping already 
 
 - Budget alerts: stored as a nullable percent on the budget (migration 10 to 11, nothing dropped); sent from a watcher on book changes while the app runs, keys kept in app preferences so a note is never repeated (changing the percent or a new period alerts again). Checked in whole paise: spent x 100 >= limit x percent.
 - Card bills: no stored link between a bill and a card, so detection is by title and account (see UI_AUDIT). Paying one makes a paired transfer (money rule: card bill payments are never spending); other bills pay as before, with an optional chosen date.
+
+## Material 3 Expressive as a theme option
+- Colours only, not shapes or type: the exact-match rule (UI follows the PDF) still governs layout. Expressive swaps the palette alone.
+- Built from `dynamicLightColorScheme`/`dynamicDarkColorScheme` (stable material3, API 31+) with the default baseline scheme as fallback; no alpha Expressive APIs used.
+- The scheme is mapped onto `ChittaColors` (`ExpressiveColors.kt`) so every existing component recolours untouched; Paper and Ink are not changed.
+- Custom accent is ignored in Expressive (wallpaper colours win). Component gallery keeps its three buttons so design snapshots do not change.
+- Follows the phone's light/dark; system bar icons follow the same result.

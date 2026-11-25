@@ -104,7 +104,7 @@ class MainActivity : FragmentActivity() {
             val themeName by uiPrefs.themeMode.collectAsState()
             val vibrationKey by uiPrefs.vibration.collectAsState()
             val animationsOn by uiPrefs.animations.collectAsState()
-            val mode = when (themeName) { "paper" -> ThemeMode.Paper; "ink" -> ThemeMode.Ink; else -> ThemeMode.System }
+            val mode = when (themeName) { "paper" -> ThemeMode.Paper; "ink" -> ThemeMode.Ink; "expressive" -> ThemeMode.Expressive; else -> ThemeMode.System }
             // The status and navigation bar icons follow the app's own theme (dark icons on Paper, light on Ink), not the phone's dark mode.
             val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
             val darkTheme = when (mode) { ThemeMode.Paper -> false; ThemeMode.Ink -> true; else -> systemDark }
